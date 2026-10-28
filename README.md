@@ -22,7 +22,10 @@ required.
 
 ## Running it
 
-Open the project in Godot 4.5 or later and press Play. Export presets for
+Play it in your browser at https://xsoc.github.io/chiptune-forge/ (deployed
+from `main` on every push).
+
+Or open the project in Godot 4.5 or later and press Play. Export presets for
 Web, Linux, Windows, macOS and Android are included; see
 [CONTRIBUTING.md](CONTRIBUTING.md) for building them.
 
