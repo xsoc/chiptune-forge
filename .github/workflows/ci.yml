@@ -86,3 +86,28 @@ jobs:
           name: ${{ matrix.artifact }}
           path: build/
           if-no-files-found: error
+
+  pages:
+    name: Deploy web build to GitHub Pages
+    needs: export
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    concurrency:
+      group: pages
+      cancel-in-progress: true
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: chiptune-forge-web
+          path: site
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site/web
+      - id: deploy
+        uses: actions/deploy-pages@v4
