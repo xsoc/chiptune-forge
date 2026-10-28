@@ -1,0 +1,12 @@
+# Godot
+.godot/
+/android/
+/build/
+*.translation
+export_credentials.cfg
+
+# Editors and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
