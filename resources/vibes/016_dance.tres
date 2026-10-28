@@ -1,0 +1,35 @@
+[gd_resource type="Resource" script_class="Vibe" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/vibe.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "dance"
+display_name = "Dance"
+group = "Energetic"
+description = "Dance: major key, 120 to 135 BPM, driving"
+mode_weights = {
+"major": 2.0,
+"minor": 2.0,
+"mixolydian": 0.5,
+"dorian": 0.5
+}
+progression_weights = {
+"pop": 2.0,
+"modal": 1.0
+}
+chord_colour = 0.1
+bars_per_chord = 1.0
+tempo_min = 120
+tempo_max = 135
+energy = 0.85
+brightness = 0.6
+tension = 0.25
+weirdness = 0.0
+contour = 0.3
+legato = 0.25
+swing = 0.0
+echo = 0.1
+beats_per_bar = 0
+form_hint = ""
+length_hint = 0.0

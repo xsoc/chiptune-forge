@@ -1,0 +1,14 @@
+[remap]
+
+importer="chipforge.song"
+type="Resource"
+uid="uid://cawfqvofimoei"
+path="res://.godot/imported/song_happy_platformer_42.chipsong-20e67892d0d87768711488cd7a169d66.res"
+
+[deps]
+
+source_file="res://tests/golden/song_happy_platformer_42.chipsong"
+dest_files=["res://.godot/imported/song_happy_platformer_42.chipsong-20e67892d0d87768711488cd7a169d66.res"]
+
+[params]
+

@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="SfxPreset" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/sfx_preset.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "achievement"
+display_name = "Achievement"
+group = "Game flow"
+description = "Achievement: sparkly chime"
+base = {
+"wave": "sine",
+"sustain": 0.15,
+"punch": 0.4,
+"decay": 0.55,
+"base_freq": 0.65,
+"arp_mod": 0.4,
+"arp_speed": 0.7,
+"echo": 0.3,
+"repeat_speed": 0.55
+}
+ranges = {
+"base_freq": [-0.08, 0.08],
+"arp_mod": [-0.1, 0.1],
+"decay": [-0.1, 0.1]
+}
+waves = PackedStringArray("sine", "square")

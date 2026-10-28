@@ -1,0 +1,271 @@
+[gd_scene load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://scenes/screens/generate_screen.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/ui/responsive_columns.gd" id="2"]
+[ext_resource type="PackedScene" path="res://scenes/components/catalog_picker.tscn" id="3"]
+[ext_resource type="PackedScene" path="res://scenes/components/slider_row.tscn" id="4"]
+[ext_resource type="PackedScene" path="res://scenes/components/seed_field.tscn" id="5"]
+[ext_resource type="Script" path="res://scenes/components/song_view.gd" id="6"]
+[ext_resource type="Texture2D" path="res://assets/ui/icon_refresh.svg" id="7"]
+
+[node name="GenerateScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1")
+
+[node name="Scroll" type="ScrollContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+horizontal_scroll_mode = 0
+
+[node name="Margin" type="MarginContainer" parent="Scroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 16
+
+[node name="Columns" type="Container" parent="Scroll/Margin"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+script = ExtResource("2")
+min_column_width = 320
+column_weights = {
+3: [1.15, 1.0, 1.1]
+}
+
+[node name="Browser" type="VBoxContainer" parent="Scroll/Margin/Columns"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="VibeCard" type="PanelContainer" parent="Scroll/Margin/Columns/Browser"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_type_variation = &"Card"
+
+[node name="VibePicker" parent="Scroll/Margin/Columns/Browser/VibeCard" instance=ExtResource("3")]
+unique_name_in_owner = true
+layout_mode = 2
+title = "Vibe"
+hint = "Blend up to 3"
+multi_select = true
+show_strengths = true
+chips_min_height = 200
+
+[node name="StyleCard" type="PanelContainer" parent="Scroll/Margin/Columns/Browser"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_type_variation = &"Card"
+
+[node name="StylePicker" parent="Scroll/Margin/Columns/Browser/StyleCard" instance=ExtResource("3")]
+unique_name_in_owner = true
+layout_mode = 2
+title = "Style"
+hint = "Pick one"
+chips_min_height = 160
+
+[node name="ControlsCard" type="PanelContainer" parent="Scroll/Margin/Columns"]
+layout_mode = 2
+theme_type_variation = &"Card"
+
+[node name="Controls" type="VBoxContainer" parent="Scroll/Margin/Columns/ControlsCard"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="FeelLabel" type="Label" parent="Scroll/Margin/Columns/ControlsCard/Controls"]
+layout_mode = 2
+theme_type_variation = &"SectionLabel"
+text = "FEEL"
+
+[node name="Intensity" parent="Scroll/Margin/Columns/ControlsCard/Controls" instance=ExtResource("4")]
+unique_name_in_owner = true
+layout_mode = 2
+tooltip_text = "How busy and driving the song is"
+label_text = "Intensity"
+value = 60.0
+
+[node name="Complexity" parent="Scroll/Margin/Columns/ControlsCard/Controls" instance=ExtResource("4")]
+unique_name_in_owner = true
+layout_mode = 2
+tooltip_text = "Richer chords, wider melodies, more syncopation"
+label_text = "Complexity"
+
+[node name="AutoKeyTempo" type="CheckButton" parent="Scroll/Margin/Columns/ControlsCard/Controls"]
+unique_name_in_owner = true
+layout_mode = 2
+button_pressed = true
+text = "Let the vibe pick key and tempo"
+
+[node name="Tempo" parent="Scroll/Margin/Columns/ControlsCard/Controls" instance=ExtResource("4")]
+unique_name_in_owner = true
+layout_mode = 2
+label_text = "Tempo"
+min_value = 50.0
+max_value = 220.0
+value = 120.0
+value_format = "%d BPM"
+
+[node name="KeyRow" type="HBoxContainer" parent="Scroll/Margin/Columns/ControlsCard/Controls"]
+layout_mode = 2
+
+[node name="Key" type="OptionButton" parent="Scroll/Margin/Columns/ControlsCard/Controls/KeyRow"]
+clip_text = true
+fit_to_longest_item = false
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+size_flags_horizontal = 3
+tooltip_text = "Key"
+
+[node name="Mode" type="OptionButton" parent="Scroll/Margin/Columns/ControlsCard/Controls/KeyRow"]
+clip_text = true
+fit_to_longest_item = false
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+size_flags_horizontal = 3
+tooltip_text = "Mode"
+
+[node name="LengthLabel" type="Label" parent="Scroll/Margin/Columns/ControlsCard/Controls"]
+layout_mode = 2
+theme_type_variation = &"SectionLabel"
+text = "LENGTH"
+
+[node name="Lengths" type="HFlowContainer" parent="Scroll/Margin/Columns/ControlsCard/Controls"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="CustomLength" type="SpinBox" parent="Scroll/Margin/Columns/ControlsCard/Controls/Lengths"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+tooltip_text = "Length in seconds"
+min_value = 4.0
+max_value = 300.0
+value = 60.0
+suffix = "s"
+
+[node name="StructureLabel" type="Label" parent="Scroll/Margin/Columns/ControlsCard/Controls"]
+layout_mode = 2
+theme_type_variation = &"SectionLabel"
+text = "STRUCTURE"
+
+[node name="FormRow" type="HBoxContainer" parent="Scroll/Margin/Columns/ControlsCard/Controls"]
+layout_mode = 2
+
+[node name="Form" type="OptionButton" parent="Scroll/Margin/Columns/ControlsCard/Controls/FormRow"]
+clip_text = true
+fit_to_longest_item = false
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+size_flags_horizontal = 3
+tooltip_text = "Song form"
+
+[node name="Energy" type="OptionButton" parent="Scroll/Margin/Columns/ControlsCard/Controls/FormRow"]
+clip_text = true
+fit_to_longest_item = false
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+size_flags_horizontal = 3
+tooltip_text = "How intensity moves across the song"
+
+[node name="Parts" type="HFlowContainer" parent="Scroll/Margin/Columns/ControlsCard/Controls"]
+layout_mode = 2
+
+[node name="Intro" type="CheckBox" parent="Scroll/Margin/Columns/ControlsCard/Controls/Parts"]
+unique_name_in_owner = true
+layout_mode = 2
+button_pressed = true
+text = "Intro"
+
+[node name="Loop" type="CheckBox" parent="Scroll/Margin/Columns/ControlsCard/Controls/Parts"]
+unique_name_in_owner = true
+layout_mode = 2
+tooltip_text = "Seamless loop point"
+button_pressed = true
+text = "Loop"
+
+[node name="Outro" type="CheckBox" parent="Scroll/Margin/Columns/ControlsCard/Controls/Parts"]
+unique_name_in_owner = true
+layout_mode = 2
+tooltip_text = "Plays after the loop when the song does not loop"
+button_pressed = true
+text = "Outro"
+
+[node name="SongCard" type="PanelContainer" parent="Scroll/Margin/Columns"]
+layout_mode = 2
+theme_type_variation = &"Card"
+
+[node name="Song" type="VBoxContainer" parent="Scroll/Margin/Columns/SongCard"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Title" type="Label" parent="Scroll/Margin/Columns/SongCard/Song"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"BigTitleLabel"
+text = "Your song"
+autowrap_mode = 3
+
+[node name="Info" type="Label" parent="Scroll/Margin/Columns/SongCard/Song"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"MutedLabel"
+autowrap_mode = 3
+
+[node name="Hint" type="Label" parent="Scroll/Margin/Columns/SongCard/Song"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_type_variation = &"WarningLabel"
+autowrap_mode = 3
+
+[node name="SongView" type="Control" parent="Scroll/Margin/Columns/SongCard/Song"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 170)
+layout_mode = 2
+tooltip_text = "Click to play from here"
+script = ExtResource("6")
+
+[node name="SeedField" parent="Scroll/Margin/Columns/SongCard/Song" instance=ExtResource("5")]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="Generate" type="Button" parent="Scroll/Margin/Columns/SongCard/Song"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 52)
+layout_mode = 2
+theme_type_variation = &"PrimaryButton"
+text = "Generate new song"
+
+[node name="Regenerate" type="Button" parent="Scroll/Margin/Columns/SongCard/Song"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+tooltip_text = "New parts for every layer you have not locked on the Layers screen"
+text = "Regenerate unlocked parts"
+icon = ExtResource("7")
+
+[node name="Save" type="Button" parent="Scroll/Margin/Columns/SongCard/Song"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "Save to library"
+
+[node name="Debounce" type="Timer" parent="."]
+unique_name_in_owner = true
+wait_time = 0.25
+one_shot = true

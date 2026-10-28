@@ -1,0 +1,35 @@
+[gd_resource type="Resource" script_class="Vibe" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/vibe.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "longing"
+display_name = "Longing"
+group = "Sad and reflective"
+description = "Longing: minor key, 65 to 95 BPM, steady, long, smooth notes"
+mode_weights = {
+"minor": 3.0,
+"dorian": 1.5,
+"harmonic_minor": 0.5
+}
+progression_weights = {
+"pop": 1.5,
+"classical": 1.0,
+"dreamy": 1.0
+}
+chord_colour = 0.35
+bars_per_chord = 2.0
+tempo_min = 65
+tempo_max = 95
+energy = 0.25
+brightness = 0.3
+tension = 0.2
+weirdness = 0.0
+contour = 0.1
+legato = 0.85
+swing = 0.0
+echo = 0.45
+beats_per_bar = 0
+form_hint = ""
+length_hint = 0.0

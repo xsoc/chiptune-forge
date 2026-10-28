@@ -1,0 +1,46 @@
+[gd_resource type="Resource" script_class="Style" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/style.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "drum_and_bass"
+display_name = "Drum and Bass"
+group = "Electronic"
+description = "Drum and Bass: fast breakbeat, rolling bass, 165 to 178 BPM"
+tempo_min = 165
+tempo_max = 178
+beats_per_bar = 4
+swing = 0.0
+drum_pattern = "dnb"
+drum_density = 0.6
+bass_patterns = {
+"dnb": 3.0
+}
+accompaniment = {
+"pad": 2.0,
+"arp": 1.0
+}
+harmony_parts = {
+"echo": 1.0,
+"counter": 1.0
+}
+melody_density = 0.4
+syncopation = 0.35
+progression_weights = {
+"pop": 1.0,
+"modal": 1.0,
+"epic": 0.5
+}
+mode_bias = {
+"minor": 1.0
+}
+chord_colour = 0.0
+lead_wave = ""
+bass_wave = "saw"
+lead_glide = false
+forms = {
+"build": 2.0,
+"loop": 1.0,
+"verse_chorus": 1.0
+}

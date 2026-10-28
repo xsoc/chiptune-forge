@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="SfxPreset" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/sfx_preset.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "small_creature"
+display_name = "Small Creature"
+group = "Creatures and voices"
+description = "Small Creature: chirp"
+base = {
+"wave": "square",
+"sustain": 0.06,
+"decay": 0.1,
+"base_freq": 0.55,
+"freq_ramp": 0.3,
+"vib_strength": 0.2,
+"vib_speed": 0.6,
+"repeat_speed": 0.65
+}
+ranges = {
+"base_freq": [-0.1, 0.1],
+"freq_ramp": [-0.5, 0.1],
+"repeat_speed": [-0.15, 0.1]
+}
+waves = PackedStringArray("square")

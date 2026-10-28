@@ -1,0 +1,43 @@
+[gd_resource type="Resource" script_class="Style" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/style.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "dance"
+display_name = "Dance"
+group = "Dance and club"
+description = "Dance: four-on-the-floor kick, octave bass, 118 to 130 BPM"
+tempo_min = 118
+tempo_max = 130
+beats_per_bar = 4
+swing = 0.0
+drum_pattern = "four_floor"
+drum_density = 0.65
+bass_patterns = {
+"octave": 3.0
+}
+accompaniment = {
+"stabs": 2.0,
+"arp": 1.0,
+"pad": 0.5
+}
+harmony_parts = {
+"thirds": 1.0,
+"echo": 1.0
+}
+melody_density = 0.5
+syncopation = 0.4
+progression_weights = {
+"pop": 2.0,
+"jazz": 0.5
+}
+mode_bias = {}
+chord_colour = 0.2
+lead_wave = "pulse"
+bass_wave = "pulse"
+lead_glide = false
+forms = {
+"verse_chorus": 2.0,
+"loop": 1.0
+}

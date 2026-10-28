@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="SfxPreset" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/sfx_preset.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "ghost_wail"
+display_name = "Ghost Wail"
+group = "Creatures and voices"
+description = "Ghost Wail: wobbling tone"
+base = {
+"wave": "sine",
+"sustain": 0.6,
+"decay": 0.6,
+"base_freq": 0.45,
+"vib_strength": 0.25,
+"vib_speed": 0.2,
+"duty": 0.5,
+"attack": 0.2,
+"echo": 0.4
+}
+ranges = {
+"base_freq": [-0.1, 0.1],
+"vib_speed": [-0.1, 0.1],
+"vib_strength": [-0.1, 0.1]
+}
+waves = PackedStringArray("sine")

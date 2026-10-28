@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="SfxPreset" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/sfx_preset.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "success"
+display_name = "Success"
+group = "Game flow"
+description = "Success: rising jingle"
+base = {
+"wave": "square",
+"sustain": 0.25,
+"decay": 0.3,
+"base_freq": 0.4,
+"arp_mod": 0.3,
+"arp_speed": 0.55,
+"repeat_speed": 0.35,
+"duty": 0.25,
+"echo": 0.2
+}
+ranges = {
+"base_freq": [-0.05, 0.05],
+"arp_mod": [-0.05, 0.1]
+}
+waves = PackedStringArray("square", "saw")

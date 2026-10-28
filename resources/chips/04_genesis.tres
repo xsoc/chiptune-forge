@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="ChipProfile" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/chip_profile.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "genesis"
+display_name = "Mega Drive / Genesis"
+chip_name = "YM2612 + SN76489"
+description = "6 FM, 3 square, 1 noise. Exports VGM for SGDK."
+phase = 4
+available = false
+stereo = true
+echo = false
+max_voices = 10
+voices = Array[Dictionary]([])
+export_formats = PackedStringArray("vgm")

@@ -1,0 +1,40 @@
+[gd_resource type="Resource" script_class="Style" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/style.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "funk_pop"
+display_name = "Funk Pop"
+group = "Pop, soul and hip hop"
+description = "Funk Pop: funky sixteenths, syncopated bass, 105 to 120 BPM"
+tempo_min = 105
+tempo_max = 120
+beats_per_bar = 4
+swing = 0.0
+drum_pattern = "funk"
+drum_density = 0.5
+bass_patterns = {
+"synco": 3.0
+}
+accompaniment = {
+"stabs": 2.0
+}
+harmony_parts = {
+"thirds": 1.0,
+"counter": 1.0
+}
+melody_density = 0.5
+syncopation = 0.35
+progression_weights = {
+"pop": 3.0
+}
+mode_bias = {}
+chord_colour = 0.2
+lead_wave = "pulse"
+bass_wave = "triangle"
+lead_glide = false
+forms = {
+"verse_chorus": 3.0,
+"aaba": 1.0
+}

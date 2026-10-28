@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="SfxPreset" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/sfx_preset.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "parry"
+display_name = "Parry"
+group = "Combat"
+description = "Parry: metallic clang"
+base = {
+"wave": "noise_short",
+"sustain": 0.05,
+"punch": 0.5,
+"decay": 0.35,
+"base_freq": 0.6,
+"hpf_freq": 0.15,
+"echo": 0.2
+}
+ranges = {
+"base_freq": [-0.1, 0.1],
+"decay": [-0.08, 0.1]
+}
+waves = PackedStringArray("noise_short")

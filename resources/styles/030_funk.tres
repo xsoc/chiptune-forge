@@ -1,0 +1,45 @@
+[gd_resource type="Resource" script_class="Style" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/style.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "funk"
+display_name = "Funk"
+group = "Dance and club"
+description = "Funk: funky sixteenths, syncopated bass, 95 to 115 BPM"
+tempo_min = 95
+tempo_max = 115
+beats_per_bar = 4
+swing = 0.15
+drum_pattern = "funk"
+drum_density = 0.65
+bass_patterns = {
+"synco": 3.0
+}
+accompaniment = {
+"stabs": 2.0,
+"chord_arp": 0.5
+}
+harmony_parts = {
+"thirds": 1.0,
+"echo": 1.0
+}
+melody_density = 0.5
+syncopation = 0.6
+progression_weights = {
+"blues": 2.0,
+"jazz": 1.0
+}
+mode_bias = {
+"dorian": 1.0,
+"mixolydian": 1.0
+}
+chord_colour = 0.2
+lead_wave = "pulse"
+bass_wave = "pulse"
+lead_glide = false
+forms = {
+"verse_chorus": 2.0,
+"loop": 1.0
+}

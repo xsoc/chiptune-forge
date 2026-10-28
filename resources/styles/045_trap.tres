@@ -1,0 +1,44 @@
+[gd_resource type="Resource" script_class="Style" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/style.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "trap"
+display_name = "Trap"
+group = "Pop, soul and hip hop"
+description = "Trap: trap hats, sliding bass, 130 to 150 BPM"
+tempo_min = 130
+tempo_max = 150
+beats_per_bar = 4
+swing = 0.0
+drum_pattern = "trap"
+drum_density = 0.5
+bass_patterns = {
+"halftime": 3.0
+}
+accompaniment = {
+"pad": 1.0,
+"arp": 1.0
+}
+harmony_parts = {
+"thirds": 1.0,
+"counter": 1.0
+}
+melody_density = 0.5
+syncopation = 0.35
+progression_weights = {
+"dark": 1.0,
+"pop": 1.0
+}
+mode_bias = {
+"minor": 2.0
+}
+chord_colour = 0.2
+lead_wave = "pulse"
+bass_wave = "triangle"
+lead_glide = false
+forms = {
+"verse_chorus": 3.0,
+"aaba": 1.0
+}

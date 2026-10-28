@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="SfxPreset" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/sfx_preset.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "zap"
+display_name = "Zap"
+group = "Machines and sci-fi"
+description = "Zap: electric buzz"
+base = {
+"wave": "saw",
+"sustain": 0.12,
+"decay": 0.15,
+"base_freq": 0.8,
+"freq_ramp": -0.5,
+"repeat_speed": 0.7
+}
+ranges = {
+"base_freq": [-0.1, 0.1],
+"freq_ramp": [-0.1, 0.1],
+"repeat_speed": [-0.1, 0.1]
+}
+waves = PackedStringArray("saw", "square")

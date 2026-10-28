@@ -1,0 +1,31 @@
+[gd_resource type="Resource" script_class="Vibe" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/vibe.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "royal"
+display_name = "Royal"
+group = "Epic and grand"
+description = "Royal: major key, 90 to 115 BPM, driving"
+mode_weights = {
+"major": 3.0
+}
+progression_weights = {
+"classical": 3.0
+}
+chord_colour = 0.1
+bars_per_chord = 1.0
+tempo_min = 90
+tempo_max = 115
+energy = 0.75
+brightness = 0.55
+tension = 0.35
+weirdness = 0.0
+contour = 0.4
+legato = 0.6
+swing = 0.0
+echo = 0.3
+beats_per_bar = 0
+form_hint = ""
+length_hint = 0.0

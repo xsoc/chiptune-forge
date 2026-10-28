@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="SfxPreset" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/sfx_preset.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "footstep"
+display_name = "Footstep"
+group = "Movement"
+description = "Footstep: soft thump"
+base = {
+"wave": "noise",
+"sustain": 0.01,
+"decay": 0.06,
+"base_freq": 0.45,
+"lpf_freq": 0.55,
+"punch": 0.3
+}
+ranges = {
+"base_freq": [-0.1, 0.1],
+"decay": [-0.03, 0.04],
+"lpf_freq": [-0.15, 0.15]
+}
+waves = PackedStringArray("noise")

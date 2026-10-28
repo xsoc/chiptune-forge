@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="SfxPreset" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/sfx_preset.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "radar_ping"
+display_name = "Radar Ping"
+group = "Machines and sci-fi"
+description = "Radar Ping: bell ping"
+base = {
+"wave": "sine",
+"sustain": 0.02,
+"punch": 0.5,
+"decay": 0.6,
+"base_freq": 0.65,
+"echo": 0.6,
+"echo_delay": 0.25
+}
+ranges = {
+"base_freq": [-0.1, 0.1],
+"decay": [-0.1, 0.1]
+}
+waves = PackedStringArray("sine", "triangle")

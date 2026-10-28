@@ -1,0 +1,42 @@
+[gd_resource type="Resource" script_class="Style" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/style.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "hip_hop"
+display_name = "Hip Hop"
+group = "Pop, soul and hip hop"
+description = "Hip Hop: boom bap, syncopated bass, 85 to 98 BPM"
+tempo_min = 85
+tempo_max = 98
+beats_per_bar = 4
+swing = 0.2
+drum_pattern = "boom_bap"
+drum_density = 0.5
+bass_patterns = {
+"synco": 1.0,
+"root_whole": 1.0
+}
+accompaniment = {
+"pad": 2.0,
+"stabs": 1.0
+}
+harmony_parts = {
+"thirds": 1.0,
+"counter": 1.0
+}
+melody_density = 0.5
+syncopation = 0.35
+progression_weights = {
+"pop": 3.0
+}
+mode_bias = {}
+chord_colour = 0.2
+lead_wave = "pulse"
+bass_wave = "triangle"
+lead_glide = false
+forms = {
+"verse_chorus": 3.0,
+"aaba": 1.0
+}

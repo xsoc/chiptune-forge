@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="SfxPreset" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/sfx_preset.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "hit"
+display_name = "Hit"
+group = "Combat"
+description = "Hit: sharp drop"
+base = {
+"wave": "noise",
+"sustain": 0.05,
+"decay": 0.2,
+"base_freq": 0.45,
+"freq_ramp": -0.45,
+"hpf_freq": 0.1
+}
+ranges = {
+"base_freq": [-0.25, 0.25],
+"freq_ramp": [-0.15, 0.1],
+"decay": [-0.08, 0.08]
+}
+waves = PackedStringArray("noise")

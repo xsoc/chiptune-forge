@@ -1,0 +1,42 @@
+[gd_resource type="Resource" script_class="Style" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/style.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "vaporwave"
+display_name = "Vaporwave"
+group = "Electronic"
+description = "Vaporwave: slow break, long bass notes, 70 to 90 BPM"
+tempo_min = 70
+tempo_max = 90
+beats_per_bar = 4
+swing = 0.0
+drum_pattern = "trip_hop"
+drum_density = 0.6
+bass_patterns = {
+"root_whole": 1.0,
+"synco": 1.0
+}
+accompaniment = {
+"pad": 3.0
+}
+harmony_parts = {
+"echo": 1.0
+}
+melody_density = 0.4
+syncopation = 0.35
+progression_weights = {
+"jazz": 1.0,
+"dreamy": 2.0
+}
+mode_bias = {}
+chord_colour = 0.7
+lead_wave = ""
+bass_wave = "saw"
+lead_glide = false
+forms = {
+"build": 2.0,
+"loop": 1.0,
+"verse_chorus": 1.0
+}

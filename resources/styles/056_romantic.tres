@@ -1,0 +1,44 @@
+[gd_resource type="Resource" script_class="Style" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/style.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "romantic"
+display_name = "Romantic"
+group = "Orchestral and film"
+description = "Romantic: sparse percussion, long bass notes, 70 to 95 BPM"
+tempo_min = 70
+tempo_max = 95
+beats_per_bar = 4
+swing = 0.0
+drum_pattern = "sparse"
+drum_density = 0.4
+bass_patterns = {
+"root_whole": 1.0,
+"root_quarters": 1.0
+}
+accompaniment = {
+"pad": 2.0,
+"broken": 1.0
+}
+harmony_parts = {
+"counter": 2.0,
+"thirds": 1.0
+}
+melody_density = 0.45
+syncopation = 0.15
+progression_weights = {
+"classical": 2.0,
+"dreamy": 1.0
+}
+mode_bias = {}
+chord_colour = 0.4
+lead_wave = "pulse"
+bass_wave = "triangle"
+lead_glide = false
+forms = {
+"verse_chorus": 1.0,
+"through": 1.0,
+"rondo": 1.0
+}

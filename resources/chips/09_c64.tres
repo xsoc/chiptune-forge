@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="ChipProfile" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/chip_profile.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "c64"
+display_name = "Commodore 64"
+chip_name = "SID 6581/8580"
+description = "3 voices, filter, ring mod. Exports SID."
+phase = 5
+available = false
+stereo = false
+echo = false
+max_voices = 3
+voices = Array[Dictionary]([])
+export_formats = PackedStringArray("sid")

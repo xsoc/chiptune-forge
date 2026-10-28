@@ -1,0 +1,42 @@
+[gd_resource type="Resource" script_class="Style" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/style.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "waltz"
+display_name = "Waltz"
+group = "Orchestral and film"
+description = "Waltz: three-four time, bass on one, 140 to 180 BPM"
+tempo_min = 140
+tempo_max = 180
+beats_per_bar = 3
+swing = 0.0
+drum_pattern = "waltz"
+drum_density = 0.4
+bass_patterns = {
+"waltz": 3.0
+}
+accompaniment = {
+"stabs": 3.0
+}
+harmony_parts = {
+"counter": 2.0,
+"thirds": 1.0
+}
+melody_density = 0.45
+syncopation = 0.15
+progression_weights = {
+"classical": 2.0,
+"pop": 1.0
+}
+mode_bias = {}
+chord_colour = 0.1
+lead_wave = "pulse"
+bass_wave = "triangle"
+lead_glide = false
+forms = {
+"verse_chorus": 1.0,
+"through": 1.0,
+"rondo": 1.0
+}

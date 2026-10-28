@@ -1,0 +1,33 @@
+[gd_resource type="Resource" script_class="Vibe" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/vibe.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "overworld"
+display_name = "Overworld"
+group = "Places"
+description = "Overworld: major key, 120 to 145 BPM, lively"
+mode_weights = {
+"major": 3.0,
+"mixolydian": 1.0
+}
+progression_weights = {
+"pop": 2.0,
+"epic": 1.0
+}
+chord_colour = 0.2
+bars_per_chord = 1.0
+tempo_min = 120
+tempo_max = 145
+energy = 0.6
+brightness = 0.7
+tension = 0.2
+weirdness = 0.0
+contour = 0.3
+legato = 0.5
+swing = 0.0
+echo = 0.25
+beats_per_bar = 0
+form_hint = ""
+length_hint = 0.0

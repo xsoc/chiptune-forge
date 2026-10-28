@@ -1,0 +1,42 @@
+[gd_resource type="Resource" script_class="Style" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/style.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "boom_bap"
+display_name = "Boom Bap"
+group = "Pop, soul and hip hop"
+description = "Boom Bap: boom bap, syncopated bass, 88 to 96 BPM"
+tempo_min = 88
+tempo_max = 96
+beats_per_bar = 4
+swing = 0.3
+drum_pattern = "boom_bap"
+drum_density = 0.5
+bass_patterns = {
+"synco": 2.0
+}
+accompaniment = {
+"pad": 1.0,
+"arp": 1.0,
+"chord_arp": 0.5
+}
+harmony_parts = {
+"thirds": 1.0,
+"counter": 1.0
+}
+melody_density = 0.5
+syncopation = 0.35
+progression_weights = {
+"jazz": 2.0
+}
+mode_bias = {}
+chord_colour = 0.5
+lead_wave = "pulse"
+bass_wave = "triangle"
+lead_glide = false
+forms = {
+"verse_chorus": 3.0,
+"aaba": 1.0
+}

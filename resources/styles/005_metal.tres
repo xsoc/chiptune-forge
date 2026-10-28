@@ -1,0 +1,47 @@
+[gd_resource type="Resource" script_class="Style" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/style.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "metal"
+display_name = "Metal"
+group = "Rock and metal"
+description = "Metal: double kick, eighth-note bass, 120 to 160 BPM"
+tempo_min = 120
+tempo_max = 160
+beats_per_bar = 4
+swing = 0.0
+drum_pattern = "metal"
+drum_density = 0.8
+bass_patterns = {
+"root_8ths": 3.0,
+"octave": 0.5
+}
+accompaniment = {
+"chord_arp": 1.0,
+"arp": 0.6,
+"pad": 0.3
+}
+harmony_parts = {
+"counter": 1.0,
+"thirds": 1.0
+}
+melody_density = 0.5
+syncopation = 0.3
+progression_weights = {
+"rock": 2.0,
+"dark": 1.0
+}
+mode_bias = {
+"minor": 2.0,
+"phrygian": 1.0
+}
+chord_colour = 0.0
+lead_wave = "saw"
+bass_wave = "saw"
+lead_glide = false
+forms = {
+"verse_chorus": 2.0,
+"aaba": 1.0
+}

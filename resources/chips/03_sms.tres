@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="ChipProfile" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/chip_profile.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "sms"
+display_name = "Master System / Game Gear"
+chip_name = "SN76489"
+description = "3 square, 1 noise. Exports PSGlib data for devkitSMS."
+phase = 3
+available = false
+stereo = false
+echo = false
+max_voices = 4
+voices = Array[Dictionary]([{
+"name": "Square 1",
+"waves": ["pulse"]
+}, {
+"name": "Square 2",
+"waves": ["pulse"]
+}, {
+"name": "Square 3",
+"waves": ["pulse"]
+}, {
+"name": "Noise",
+"waves": ["noise"]
+}])
+export_formats = PackedStringArray("c")

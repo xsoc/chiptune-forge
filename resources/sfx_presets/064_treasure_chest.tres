@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="SfxPreset" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/sfx_preset.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "treasure_chest"
+display_name = "Treasure Chest"
+group = "Pickups and rewards"
+description = "Treasure Chest: rising jingle"
+base = {
+"wave": "square",
+"sustain": 0.3,
+"decay": 0.4,
+"base_freq": 0.42,
+"arp_mod": 0.3,
+"arp_speed": 0.55,
+"repeat_speed": 0.35,
+"duty": 0.25,
+"echo": 0.3
+}
+ranges = {
+"base_freq": [-0.05, 0.05],
+"arp_mod": [-0.05, 0.1]
+}
+waves = PackedStringArray("square", "saw")

@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="SfxPreset" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/sfx_preset.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "danger_sting"
+display_name = "Danger Sting"
+group = "Musical stingers"
+description = "Danger Sting: falling jingle"
+base = {
+"wave": "saw",
+"sustain": 0.35,
+"decay": 0.45,
+"base_freq": 0.3,
+"arp_mod": -0.15,
+"arp_speed": 0.55,
+"repeat_speed": 0.5,
+"duty": 0.5,
+"echo": 0.2,
+"crush": 0.2
+}
+ranges = {
+"base_freq": [-0.05, 0.05],
+"arp_mod": [-0.1, 0.05]
+}
+waves = PackedStringArray("saw")

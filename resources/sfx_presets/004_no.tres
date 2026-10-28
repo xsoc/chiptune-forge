@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="SfxPreset" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/sfx_preset.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "no"
+display_name = "No"
+group = "UI and menus"
+description = "No: falling two-note"
+base = {
+"wave": "square",
+"sustain": 0.1,
+"decay": 0.18,
+"base_freq": 0.35,
+"arp_mod": -0.25,
+"arp_speed": 0.62,
+"duty": 0.25
+}
+ranges = {
+"base_freq": [-0.08, 0.08],
+"arp_mod": [-0.1, 0.05]
+}
+waves = PackedStringArray("square", "saw")

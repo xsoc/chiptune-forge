@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="SfxPreset" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/sfx_preset.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "thunder"
+display_name = "Thunder"
+group = "World"
+description = "Thunder: low rumble"
+base = {
+"wave": "noise",
+"sustain": 0.6,
+"punch": 0.8,
+"decay": 0.8,
+"base_freq": 0.08,
+"lpf_freq": 0.35
+}
+ranges = {
+"base_freq": [-0.02, 0.05],
+"sustain": [-0.15, 0.15],
+"decay": [-0.1, 0.15]
+}
+waves = PackedStringArray("noise")

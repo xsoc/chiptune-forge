@@ -1,0 +1,35 @@
+[gd_resource type="Resource" script_class="Vibe" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/vibe.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "dreamy"
+display_name = "Dreamy"
+group = "Calm and warm"
+description = "Dreamy: Lydian, 70 to 100 BPM, steady, lots of echo"
+mode_weights = {
+"lydian": 2.0,
+"major": 1.0
+}
+progression_weights = {
+"dreamy": 2.0,
+"pop": 1.0,
+"jazz": 0.5,
+"folk": 0.5
+}
+chord_colour = 0.6
+bars_per_chord = 2.0
+tempo_min = 70
+tempo_max = 100
+energy = 0.25
+brightness = 0.55
+tension = 0.05
+weirdness = 0.0
+contour = 0.0
+legato = 0.8
+swing = 0.0
+echo = 0.55
+beats_per_bar = 0
+form_hint = ""
+length_hint = 0.0

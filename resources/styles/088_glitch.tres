@@ -1,0 +1,41 @@
+[gd_resource type="Resource" script_class="Style" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/style.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "glitch"
+display_name = "Glitch"
+group = "Chill and ambient"
+description = "Glitch: broken beat, long bass notes, 100 to 130 BPM"
+tempo_min = 100
+tempo_max = 130
+beats_per_bar = 4
+swing = 0.0
+drum_pattern = "breakbeat"
+drum_density = 0.6
+bass_patterns = {
+"root_whole": 3.0
+}
+accompaniment = {
+"pad": 3.0,
+"arp": 0.5
+}
+harmony_parts = {
+"counter": 1.0,
+"echo": 1.0
+}
+melody_density = 0.3
+syncopation = 0.8
+progression_weights = {
+"strange": 2.0
+}
+mode_bias = {}
+chord_colour = 0.4
+lead_wave = ""
+bass_wave = "sine"
+lead_glide = false
+forms = {
+"loop": 2.0,
+"through": 1.0
+}

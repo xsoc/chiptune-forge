@@ -1,0 +1,45 @@
+[gd_resource type="Resource" script_class="Style" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/style.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "metroidvania"
+display_name = "Metroidvania"
+group = "Game genres"
+description = "Metroidvania: driving sixteenths, eighth-note bass, 110 to 140 BPM"
+tempo_min = 110
+tempo_max = 140
+beats_per_bar = 4
+swing = 0.0
+drum_pattern = "driving"
+drum_density = 0.55
+bass_patterns = {
+"root_8ths": 2.0,
+"octave": 1.0
+}
+accompaniment = {
+"arp": 2.0,
+"chord_arp": 1.0,
+"pad": 0.5
+}
+harmony_parts = {
+"echo": 2.0
+}
+melody_density = 0.55
+syncopation = 0.35
+progression_weights = {
+"dark": 1.0,
+"epic": 1.0
+}
+mode_bias = {
+"minor": 2.0
+}
+chord_colour = 0.1
+lead_wave = "pulse"
+bass_wave = "triangle"
+lead_glide = false
+forms = {
+"loop": 1.0,
+"verse_chorus": 2.0
+}

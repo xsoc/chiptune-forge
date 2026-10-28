@@ -1,0 +1,33 @@
+[gd_resource type="Resource" script_class="Vibe" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/vibe.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "alien"
+display_name = "Alien"
+group = "Weird and trippy"
+description = "Alien: whole-tone, 90 to 130 BPM, lively, lots of echo, detuned and odd"
+mode_weights = {
+"whole_tone": 2.0,
+"diminished": 1.0
+}
+progression_weights = {
+"strange": 2.0,
+"modal": 2.0
+}
+chord_colour = 0.3
+bars_per_chord = 1.0
+tempo_min = 90
+tempo_max = 130
+energy = 0.5
+brightness = 0.5
+tension = 0.5
+weirdness = 0.8
+contour = 0.0
+legato = 0.5
+swing = 0.0
+echo = 0.6
+beats_per_bar = 0
+form_hint = ""
+length_hint = 0.0

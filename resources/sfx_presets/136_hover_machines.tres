@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="SfxPreset" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/sfx_preset.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "hover_machines"
+display_name = "Hover"
+group = "Machines and sci-fi"
+description = "Hover: wobbling tone"
+base = {
+"wave": "triangle",
+"sustain": 0.7,
+"decay": 0.2,
+"base_freq": 0.25,
+"vib_strength": 0.15,
+"vib_speed": 0.6,
+"duty": 0.5
+}
+ranges = {
+"base_freq": [-0.1, 0.1],
+"vib_speed": [-0.1, 0.1],
+"vib_strength": [-0.1, 0.1]
+}
+waves = PackedStringArray("triangle")

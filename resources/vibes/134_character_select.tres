@@ -1,0 +1,33 @@
+[gd_resource type="Resource" script_class="Vibe" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/vibe.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "character_select"
+display_name = "Character Select"
+group = "Game moments"
+description = "Character Select: major key, 125 to 145 BPM, lively"
+mode_weights = {
+"major": 2.0,
+"mixolydian": 1.0
+}
+progression_weights = {
+"rock": 1.0,
+"pop": 2.0
+}
+chord_colour = 0.2
+bars_per_chord = 1.0
+tempo_min = 125
+tempo_max = 145
+energy = 0.7
+brightness = 0.5
+tension = 0.2
+weirdness = 0.0
+contour = 0.0
+legato = 0.3
+swing = 0.0
+echo = 0.25
+beats_per_bar = 0
+form_hint = "loop"
+length_hint = 0.0

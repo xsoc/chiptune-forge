@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="SfxPreset" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/sfx_preset.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "door_open"
+display_name = "Door Open"
+group = "World"
+description = "Door Open: air rush"
+base = {
+"wave": "square",
+"attack": 0.0,
+"sustain": 0.2,
+"decay": 0.15,
+"base_freq": 0.2,
+"lpf_freq": 0.4,
+"lpf_ramp": 0.2,
+"hpf_freq": 0.1,
+"freq_ramp": 0.1,
+"crush": 0.3
+}
+ranges = {
+"base_freq": [-0.1, 0.15],
+"attack": [-0.05, 0.05],
+"lpf_freq": [-0.1, 0.15],
+"decay": [-0.1, 0.1]
+}
+waves = PackedStringArray("square", "saw")

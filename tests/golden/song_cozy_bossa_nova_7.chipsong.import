@@ -1,0 +1,14 @@
+[remap]
+
+importer="chipforge.song"
+type="Resource"
+uid="uid://bwci1jmo0o3q4"
+path="res://.godot/imported/song_cozy_bossa_nova_7.chipsong-2b45ffac3927a3d89d4702a1d09dbc08.res"
+
+[deps]
+
+source_file="res://tests/golden/song_cozy_bossa_nova_7.chipsong"
+dest_files=["res://.godot/imported/song_cozy_bossa_nova_7.chipsong-2b45ffac3927a3d89d4702a1d09dbc08.res"]
+
+[params]
+

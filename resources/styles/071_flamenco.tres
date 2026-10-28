@@ -1,0 +1,43 @@
+[gd_resource type="Resource" script_class="Style" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/style.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "flamenco"
+display_name = "Flamenco"
+group = "World and folk"
+description = "Flamenco: flamenco claps, root-fifth bass, 110 to 140 BPM"
+tempo_min = 110
+tempo_max = 140
+beats_per_bar = 3
+swing = 0.0
+drum_pattern = "flamenco"
+drum_density = 0.5
+bass_patterns = {
+"root_fifth": 3.0
+}
+accompaniment = {
+"chord_arp": 2.0
+}
+harmony_parts = {
+"thirds": 2.0,
+"counter": 1.0
+}
+melody_density = 0.55
+syncopation = 0.25
+progression_weights = {
+"dark": 3.0
+}
+mode_bias = {
+"phrygian": 2.0,
+"hijaz": 1.0
+}
+chord_colour = 0.0
+lead_wave = "pulse"
+bass_wave = "triangle"
+lead_glide = false
+forms = {
+"aaba": 2.0,
+"verse_chorus": 1.0
+}

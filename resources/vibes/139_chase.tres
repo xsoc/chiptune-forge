@@ -1,0 +1,32 @@
+[gd_resource type="Resource" script_class="Vibe" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/vibe.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "chase"
+display_name = "Chase"
+group = "Game moments"
+description = "Chase: minor key, 150 to 180 BPM, driving, short, punchy notes"
+mode_weights = {
+"minor": 3.0
+}
+progression_weights = {
+"rock": 2.0,
+"dark": 1.0
+}
+chord_colour = 0.2
+bars_per_chord = 1.0
+tempo_min = 150
+tempo_max = 180
+energy = 0.95
+brightness = 0.5
+tension = 0.5
+weirdness = 0.0
+contour = 0.0
+legato = 0.15
+swing = 0.0
+echo = 0.25
+beats_per_bar = 0
+form_hint = ""
+length_hint = 0.0

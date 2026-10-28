@@ -1,0 +1,44 @@
+[gd_resource type="Resource" script_class="Style" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/style.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "italo_disco"
+display_name = "Italo Disco"
+group = "Dance and club"
+description = "Italo Disco: disco hats, octave bass, 110 to 125 BPM"
+tempo_min = 110
+tempo_max = 125
+beats_per_bar = 4
+swing = 0.0
+drum_pattern = "disco"
+drum_density = 0.65
+bass_patterns = {
+"octave": 3.0
+}
+accompaniment = {
+"arp": 2.0,
+"pad": 1.0
+}
+harmony_parts = {
+"thirds": 1.0,
+"echo": 1.0
+}
+melody_density = 0.5
+syncopation = 0.4
+progression_weights = {
+"pop": 2.0,
+"jazz": 0.5
+}
+mode_bias = {
+"minor": 1.0
+}
+chord_colour = 0.2
+lead_wave = "pulse"
+bass_wave = "pulse"
+lead_glide = false
+forms = {
+"verse_chorus": 2.0,
+"loop": 1.0
+}

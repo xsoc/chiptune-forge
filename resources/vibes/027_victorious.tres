@@ -1,0 +1,32 @@
+[gd_resource type="Resource" script_class="Vibe" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/vibe.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "victorious"
+display_name = "Victorious"
+group = "Energetic"
+description = "Victorious: major key, 135 to 175 BPM, driving, rising tunes"
+mode_weights = {
+"major": 4.0
+}
+progression_weights = {
+"epic": 2.0,
+"classical": 1.0
+}
+chord_colour = 0.1
+bars_per_chord = 1.0
+tempo_min = 135
+tempo_max = 175
+energy = 0.85
+brightness = 0.8
+tension = 0.25
+weirdness = 0.0
+contour = 0.6
+legato = 0.3
+swing = 0.0
+echo = 0.1
+beats_per_bar = 0
+form_hint = ""
+length_hint = 0.0

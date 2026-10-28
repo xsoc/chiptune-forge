@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="SfxPreset" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/sfx_preset.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "double_jump"
+display_name = "Double Jump"
+group = "Movement"
+description = "Double Jump: springy rise"
+base = {
+"wave": "square",
+"sustain": 0.15,
+"decay": 0.2,
+"base_freq": 0.55,
+"freq_ramp": 0.3,
+"duty": 0.3
+}
+ranges = {
+"base_freq": [-0.12, 0.12],
+"freq_ramp": [-0.08, 0.1],
+"sustain": [-0.1, 0.1],
+"duty": [-0.3, 0.3]
+}
+waves = PackedStringArray("square")

@@ -1,0 +1,177 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scenes/screens/export_screen.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/ui/responsive_columns.gd" id="2"]
+[ext_resource type="Texture2D" path="res://assets/ui/icon_download.svg" id="3"]
+
+[node name="ExportScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1")
+
+[node name="Scroll" type="ScrollContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+horizontal_scroll_mode = 0
+
+[node name="Margin" type="MarginContainer" parent="Scroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 16
+
+[node name="Columns" type="Container" parent="Scroll/Margin"]
+layout_mode = 2
+script = ExtResource("2")
+min_column_width = 320
+
+[node name="TargetCard" type="PanelContainer" parent="Scroll/Margin/Columns"]
+layout_mode = 2
+theme_type_variation = &"Card"
+
+[node name="Target" type="VBoxContainer" parent="Scroll/Margin/Columns/TargetCard"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="Scroll/Margin/Columns/TargetCard/Target"]
+layout_mode = 2
+theme_type_variation = &"SectionLabel"
+text = "1  TARGET"
+
+[node name="Targets" type="VBoxContainer" parent="Scroll/Margin/Columns/TargetCard/Target"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="LimitsCard" type="PanelContainer" parent="Scroll/Margin/Columns"]
+layout_mode = 2
+theme_type_variation = &"Card"
+
+[node name="Limits" type="VBoxContainer" parent="Scroll/Margin/Columns/LimitsCard"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="Scroll/Margin/Columns/LimitsCard/Limits"]
+layout_mode = 2
+theme_type_variation = &"SectionLabel"
+text = "2  LIMITS CHECK"
+
+[node name="Report" type="RichTextLabel" parent="Scroll/Margin/Columns/LimitsCard/Limits"]
+unique_name_in_owner = true
+layout_mode = 2
+bbcode_enabled = true
+fit_content = true
+scroll_active = false
+
+[node name="FormatsCard" type="PanelContainer" parent="Scroll/Margin/Columns"]
+layout_mode = 2
+theme_type_variation = &"Card"
+
+[node name="Formats" type="VBoxContainer" parent="Scroll/Margin/Columns/FormatsCard"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="Scroll/Margin/Columns/FormatsCard/Formats"]
+layout_mode = 2
+theme_type_variation = &"SectionLabel"
+text = "3  FORMATS"
+
+[node name="What" type="Label" parent="Scroll/Margin/Columns/FormatsCard/Formats"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"MutedLabel"
+autowrap_mode = 3
+
+[node name="Godot" type="CheckBox" parent="Scroll/Margin/Columns/FormatsCard/Formats"]
+unique_name_in_owner = true
+layout_mode = 2
+button_pressed = true
+text = "Godot: data for the Chiptune Forge plugin"
+
+[node name="Plugin" type="CheckBox" parent="Scroll/Margin/Columns/FormatsCard/Formats"]
+unique_name_in_owner = true
+layout_mode = 2
+button_pressed = true
+text = "    Include the plugin"
+
+[node name="Wav" type="CheckBox" parent="Scroll/Margin/Columns/FormatsCard/Formats"]
+unique_name_in_owner = true
+layout_mode = 2
+button_pressed = true
+text = "Audio: WAV, 44.1 kHz"
+
+[node name="WavOptions" type="HBoxContainer" parent="Scroll/Margin/Columns/FormatsCard/Formats"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="LoopsLabel" type="Label" parent="Scroll/Margin/Columns/FormatsCard/Formats/WavOptions"]
+layout_mode = 2
+text = "    Loops"
+
+[node name="Loops" type="OptionButton" parent="Scroll/Margin/Columns/FormatsCard/Formats/WavOptions"]
+clip_text = true
+fit_to_longest_item = false
+unique_name_in_owner = true
+custom_minimum_size = Vector2(150, 40)
+layout_mode = 2
+selected = 0
+item_count = 3
+popup/item_0/text = "1"
+popup/item_0/id = 1
+popup/item_1/text = "2"
+popup/item_1/id = 2
+popup/item_2/text = "4"
+popup/item_2/id = 4
+
+[node name="Stems" type="CheckBox" parent="Scroll/Margin/Columns/FormatsCard/Formats/WavOptions"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "One file per layer"
+
+[node name="Midi" type="CheckBox" parent="Scroll/Margin/Columns/FormatsCard/Formats"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "MIDI: one track per channel"
+
+[node name="NameRow" type="HBoxContainer" parent="Scroll/Margin/Columns/FormatsCard/Formats"]
+layout_mode = 2
+
+[node name="NameLabel" type="Label" parent="Scroll/Margin/Columns/FormatsCard/Formats/NameRow"]
+layout_mode = 2
+text = "Name"
+
+[node name="Prefix" type="LineEdit" parent="Scroll/Margin/Columns/FormatsCard/Formats/NameRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "song_name"
+
+[node name="Export" type="Button" parent="Scroll/Margin/Columns/FormatsCard/Formats"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 52)
+layout_mode = 2
+theme_type_variation = &"PrimaryButton"
+text = "Export .zip"
+icon = ExtResource("3")
+
+[node name="Progress" type="ProgressBar" parent="Scroll/Margin/Columns/FormatsCard/Formats"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(0, 8)
+layout_mode = 2
+max_value = 1.0
+show_percentage = false
+
+[node name="Status" type="Label" parent="Scroll/Margin/Columns/FormatsCard/Formats"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"MutedLabel"
+autowrap_mode = 3

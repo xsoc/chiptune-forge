@@ -1,0 +1,35 @@
+[gd_resource type="Resource" script_class="Vibe" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/vibe.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "racing"
+display_name = "Racing"
+group = "Energetic"
+description = "Racing: major key, 165 to 195 BPM, driving, short, punchy notes"
+mode_weights = {
+"major": 2.0,
+"minor": 2.0,
+"mixolydian": 0.5,
+"dorian": 0.5
+}
+progression_weights = {
+"rock": 1.0,
+"pop": 2.0
+}
+chord_colour = 0.1
+bars_per_chord = 1.0
+tempo_min = 165
+tempo_max = 195
+energy = 0.85
+brightness = 0.6
+tension = 0.25
+weirdness = 0.0
+contour = 0.3
+legato = 0.2
+swing = 0.0
+echo = 0.1
+beats_per_bar = 0
+form_hint = ""
+length_hint = 0.0

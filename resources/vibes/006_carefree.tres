@@ -1,0 +1,36 @@
+[gd_resource type="Resource" script_class="Vibe" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/vibe.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "carefree"
+display_name = "Carefree"
+group = "Bright and happy"
+description = "Carefree: major key, 100 to 130 BPM, lively"
+mode_weights = {
+"major": 4.0,
+"lydian": 0.6,
+"mixolydian": 0.6,
+"major_pentatonic": 1.0
+}
+progression_weights = {
+"pop": 2.0,
+"folk": 1.0,
+"classical": 0.5
+}
+chord_colour = 0.15
+bars_per_chord = 1.0
+tempo_min = 100
+tempo_max = 130
+energy = 0.5
+brightness = 0.8
+tension = 0.05
+weirdness = 0.0
+contour = 0.3
+legato = 0.4
+swing = 0.0
+echo = 0.25
+beats_per_bar = 0
+form_hint = ""
+length_hint = 0.0

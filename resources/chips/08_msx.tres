@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="ChipProfile" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/chip_profile.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "msx"
+display_name = "MSX / ZX Spectrum 128"
+chip_name = "AY-3-8910"
+description = "3 square, noise, hardware envelope. Exports Arkos Tracker 2."
+phase = 5
+available = false
+stereo = false
+echo = false
+max_voices = 3
+voices = Array[Dictionary]([])
+export_formats = PackedStringArray("aks")

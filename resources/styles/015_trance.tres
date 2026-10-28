@@ -1,0 +1,43 @@
+[gd_resource type="Resource" script_class="Style" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/style.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "trance"
+display_name = "Trance"
+group = "Electronic"
+description = "Trance: four-on-the-floor kick, eighth-note bass, 132 to 142 BPM"
+tempo_min = 132
+tempo_max = 142
+beats_per_bar = 4
+swing = 0.0
+drum_pattern = "four_floor"
+drum_density = 0.6
+bass_patterns = {
+"root_8ths": 2.0
+}
+accompaniment = {
+"arp": 3.0,
+"pad": 1.0
+}
+harmony_parts = {
+"echo": 1.0,
+"counter": 1.0
+}
+melody_density = 0.4
+syncopation = 0.35
+progression_weights = {
+"epic": 2.0,
+"pop": 1.0
+}
+mode_bias = {}
+chord_colour = 0.0
+lead_wave = "saw"
+bass_wave = "saw"
+lead_glide = false
+forms = {
+"build": 2.0,
+"loop": 1.0,
+"verse_chorus": 1.0
+}

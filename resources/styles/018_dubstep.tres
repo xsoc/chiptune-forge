@@ -1,0 +1,46 @@
+[gd_resource type="Resource" script_class="Style" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/style.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "dubstep"
+display_name = "Dubstep"
+group = "Electronic"
+description = "Dubstep: half-time groove, sliding bass, 138 to 142 BPM"
+tempo_min = 138
+tempo_max = 142
+beats_per_bar = 4
+swing = 0.0
+drum_pattern = "halftime"
+drum_density = 0.6
+bass_patterns = {
+"halftime": 3.0
+}
+accompaniment = {
+"arp": 2.0,
+"pad": 1.0,
+"chord_arp": 0.5
+}
+harmony_parts = {
+"echo": 1.0,
+"counter": 1.0
+}
+melody_density = 0.4
+syncopation = 0.35
+progression_weights = {
+"dark": 1.0,
+"pop": 1.0
+}
+mode_bias = {
+"minor": 2.0
+}
+chord_colour = 0.0
+lead_wave = "saw"
+bass_wave = "saw"
+lead_glide = false
+forms = {
+"build": 2.0,
+"loop": 1.0,
+"verse_chorus": 1.0
+}

@@ -1,0 +1,36 @@
+[gd_resource type="Resource" script_class="Vibe" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/vibe.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "hyped"
+display_name = "Hyped"
+group = "Energetic"
+description = "Hyped: major key, 150 to 180 BPM, driving"
+mode_weights = {
+"major": 2.0,
+"minor": 2.0,
+"mixolydian": 0.5,
+"dorian": 0.5
+}
+progression_weights = {
+"rock": 2.0,
+"pop": 1.0,
+"epic": 1.0
+}
+chord_colour = 0.1
+bars_per_chord = 1.0
+tempo_min = 150
+tempo_max = 180
+energy = 1.0
+brightness = 0.6
+tension = 0.25
+weirdness = 0.0
+contour = 0.3
+legato = 0.3
+swing = 0.0
+echo = 0.1
+beats_per_bar = 0
+form_hint = ""
+length_hint = 0.0

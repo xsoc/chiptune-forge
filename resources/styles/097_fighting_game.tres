@@ -1,0 +1,45 @@
+[gd_resource type="Resource" script_class="Style" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/style.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "fighting_game"
+display_name = "Fighting Game"
+group = "Game genres"
+description = "Fighting Game: rock beat, eighth-note bass, 140 to 165 BPM"
+tempo_min = 140
+tempo_max = 165
+beats_per_bar = 4
+swing = 0.0
+drum_pattern = "rock"
+drum_density = 0.55
+bass_patterns = {
+"root_8ths": 2.0,
+"octave": 1.0
+}
+accompaniment = {
+"arp": 2.0,
+"chord_arp": 1.0,
+"pad": 0.5
+}
+harmony_parts = {
+"echo": 1.0,
+"counter": 1.0,
+"thirds": 0.5
+}
+melody_density = 0.55
+syncopation = 0.35
+progression_weights = {
+"rock": 2.0,
+"epic": 1.0
+}
+mode_bias = {}
+chord_colour = 0.1
+lead_wave = "pulse"
+bass_wave = "triangle"
+lead_glide = false
+forms = {
+"loop": 1.0,
+"verse_chorus": 2.0
+}

@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="SfxPreset" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/sfx_preset.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "hurry_up"
+display_name = "Hurry Up"
+group = "Game flow"
+description = "Hurry Up: plain beep"
+base = {
+"wave": "square",
+"sustain": 0.35,
+"decay": 0.1,
+"base_freq": 0.55,
+"duty": 0.5,
+"repeat_speed": 0.7
+}
+ranges = {
+"base_freq": [-0.05, 0.05]
+}
+waves = PackedStringArray("square", "sine", "triangle")

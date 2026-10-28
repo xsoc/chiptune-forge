@@ -1,0 +1,14 @@
+[remap]
+
+importer="chipforge.song"
+type="Resource"
+uid="uid://db0fswrjchws5"
+path="res://.godot/imported/song_boss_fight_metal_boss.chipsong-6ed135d8473591b3086e8c827638ebec.res"
+
+[deps]
+
+source_file="res://tests/golden/song_boss_fight_metal_boss.chipsong"
+dest_files=["res://.godot/imported/song_boss_fight_metal_boss.chipsong-6ed135d8473591b3086e8c827638ebec.res"]
+
+[params]
+

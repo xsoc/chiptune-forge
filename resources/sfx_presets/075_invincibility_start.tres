@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="SfxPreset" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/sfx_preset.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "invincibility_start"
+display_name = "Invincibility Start"
+group = "Power"
+description = "Invincibility Start: rising sweep"
+base = {
+"wave": "square",
+"sustain": 0.3,
+"decay": 0.3,
+"base_freq": 0.45,
+"freq_ramp": 0.3,
+"duty": 0.3,
+"repeat_speed": 0.75,
+"vib_strength": 0.2,
+"vib_speed": 0.6
+}
+ranges = {
+"base_freq": [-0.1, 0.15],
+"freq_ramp": [-0.1, 0.15],
+"sustain": [-0.1, 0.1]
+}
+waves = PackedStringArray("square", "saw")

@@ -1,0 +1,44 @@
+[gd_resource type="Resource" script_class="Style" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/style.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "techno"
+display_name = "Techno"
+group = "Electronic"
+description = "Techno: four-on-the-floor kick, eighth-note bass, 125 to 140 BPM"
+tempo_min = 125
+tempo_max = 140
+beats_per_bar = 4
+swing = 0.0
+drum_pattern = "four_floor"
+drum_density = 0.6
+bass_patterns = {
+"root_8ths": 2.0,
+"pedal": 1.0
+}
+accompaniment = {
+"arp": 3.0
+}
+harmony_parts = {
+"echo": 1.0,
+"counter": 1.0
+}
+melody_density = 0.3
+syncopation = 0.35
+progression_weights = {
+"modal": 3.0
+}
+mode_bias = {
+"minor": 2.0
+}
+chord_colour = 0.0
+lead_wave = ""
+bass_wave = "saw"
+lead_glide = false
+forms = {
+"build": 2.0,
+"loop": 1.0,
+"verse_chorus": 1.0
+}

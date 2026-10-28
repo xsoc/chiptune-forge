@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="SfxPreset" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/sfx_preset.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "coin"
+display_name = "Coin"
+group = "Pickups and rewards"
+description = "Coin: bright pickup"
+base = {
+"wave": "square",
+"sustain": 0.07,
+"punch": 0.45,
+"decay": 0.3,
+"base_freq": 0.52,
+"arp_mod": 0.5,
+"arp_speed": 0.6
+}
+ranges = {
+"base_freq": [-0.07, 0.08],
+"arp_mod": [-0.1, 0.1],
+"arp_speed": [-0.05, 0.05],
+"decay": [-0.1, 0.1]
+}
+waves = PackedStringArray("square", "saw", "sine")

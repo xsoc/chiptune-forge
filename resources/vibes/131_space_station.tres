@@ -1,0 +1,33 @@
+[gd_resource type="Resource" script_class="Vibe" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/vibe.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "space_station"
+display_name = "Space Station"
+group = "Places"
+description = "Space Station: minor key, 110 to 130 BPM, lively"
+mode_weights = {
+"minor": 2.0,
+"dorian": 1.0
+}
+progression_weights = {
+"modal": 2.0,
+"pop": 1.0
+}
+chord_colour = 0.2
+bars_per_chord = 1.0
+tempo_min = 110
+tempo_max = 130
+energy = 0.5
+brightness = 0.5
+tension = 0.2
+weirdness = 0.3
+contour = 0.0
+legato = 0.5
+swing = 0.0
+echo = 0.4
+beats_per_bar = 0
+form_hint = ""
+length_hint = 0.0

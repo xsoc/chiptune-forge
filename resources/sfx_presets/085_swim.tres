@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="SfxPreset" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/sfx_preset.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "swim"
+display_name = "Swim"
+group = "Movement"
+description = "Swim: watery burst"
+base = {
+"wave": "noise",
+"sustain": 0.08,
+"punch": 0.2,
+"decay": 0.25,
+"base_freq": 0.4,
+"lpf_freq": 0.4,
+"lpf_ramp": -0.3,
+"hpf_freq": 0.15,
+"attack": 0.05
+}
+ranges = {
+"base_freq": [-0.1, 0.1],
+"decay": [-0.1, 0.1],
+"lpf_ramp": [-0.1, 0.1]
+}
+waves = PackedStringArray("noise")

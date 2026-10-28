@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="SfxPreset" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/sfx_preset.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "game_over"
+display_name = "Game Over"
+group = "Game flow"
+description = "Game Over: falling jingle"
+base = {
+"wave": "triangle",
+"sustain": 0.6,
+"decay": 0.7,
+"base_freq": 0.35,
+"arp_mod": -0.25,
+"arp_speed": 0.55,
+"repeat_speed": 0.25,
+"duty": 0.5,
+"echo": 0.2
+}
+ranges = {
+"base_freq": [-0.05, 0.05],
+"arp_mod": [-0.1, 0.05]
+}
+waves = PackedStringArray("triangle")

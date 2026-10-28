@@ -1,0 +1,44 @@
+[gd_resource type="Resource" script_class="Style" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/style.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "synthwave"
+display_name = "Synthwave"
+group = "Electronic"
+description = "Synthwave: driving sixteenths, eighth-note bass, 95 to 118 BPM"
+tempo_min = 95
+tempo_max = 118
+beats_per_bar = 4
+swing = 0.0
+drum_pattern = "driving"
+drum_density = 0.6
+bass_patterns = {
+"root_8ths": 2.0,
+"octave": 1.0
+}
+accompaniment = {
+"pad": 2.0,
+"arp": 1.0
+}
+harmony_parts = {
+"echo": 1.0,
+"counter": 1.0
+}
+melody_density = 0.4
+syncopation = 0.35
+progression_weights = {
+"pop": 2.0,
+"epic": 1.0
+}
+mode_bias = {}
+chord_colour = 0.0
+lead_wave = "saw"
+bass_wave = "saw"
+lead_glide = true
+forms = {
+"build": 2.0,
+"loop": 1.0,
+"verse_chorus": 1.0
+}

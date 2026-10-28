@@ -1,0 +1,44 @@
+[gd_resource type="Resource" script_class="Style" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/style.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "bossa_nova"
+display_name = "Bossa Nova"
+group = "Jazz and lounge"
+description = "Bossa Nova: bossa groove, root-fifth bass, 120 to 140 BPM"
+tempo_min = 120
+tempo_max = 140
+beats_per_bar = 4
+swing = 0.0
+drum_pattern = "bossa"
+drum_density = 0.45
+bass_patterns = {
+"root_fifth": 3.0
+}
+accompaniment = {
+"broken": 2.0,
+"pad": 1.0
+}
+harmony_parts = {
+"counter": 1.0,
+"thirds": 1.0
+}
+melody_density = 0.6
+syncopation = 0.5
+progression_weights = {
+"jazz": 2.0,
+"dreamy": 1.0
+}
+mode_bias = {
+"dorian": 0.5
+}
+chord_colour = 0.7
+lead_wave = "pulse"
+bass_wave = "triangle"
+lead_glide = false
+forms = {
+"aaba": 2.0,
+"verse_chorus": 1.0
+}

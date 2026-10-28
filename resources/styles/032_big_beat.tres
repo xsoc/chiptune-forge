@@ -1,0 +1,44 @@
+[gd_resource type="Resource" script_class="Style" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/style.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "big_beat"
+display_name = "Big Beat"
+group = "Dance and club"
+description = "Big Beat: broken beat, eighth-note bass, 120 to 135 BPM"
+tempo_min = 120
+tempo_max = 135
+beats_per_bar = 4
+swing = 0.0
+drum_pattern = "breakbeat"
+drum_density = 0.65
+bass_patterns = {
+"root_8ths": 1.0,
+"synco": 1.0
+}
+accompaniment = {
+"stabs": 2.0,
+"arp": 1.0,
+"pad": 0.5
+}
+harmony_parts = {
+"thirds": 1.0,
+"echo": 1.0
+}
+melody_density = 0.5
+syncopation = 0.4
+progression_weights = {
+"blues": 2.0,
+"rock": 1.0
+}
+mode_bias = {}
+chord_colour = 0.2
+lead_wave = "pulse"
+bass_wave = "pulse"
+lead_glide = false
+forms = {
+"verse_chorus": 2.0,
+"loop": 1.0
+}

@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="SfxPreset" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/sfx_preset.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "monster_roar"
+display_name = "Monster Roar"
+group = "Creatures and voices"
+description = "Monster Roar: growl"
+base = {
+"wave": "saw",
+"attack": 0.05,
+"sustain": 0.4,
+"decay": 0.35,
+"base_freq": 0.15,
+"freq_ramp": -0.05,
+"vib_strength": 0.5,
+"vib_speed": 0.3,
+"lpf_freq": 0.5,
+"crush": 0.2
+}
+ranges = {
+"base_freq": [-0.05, 0.05],
+"vib_strength": [-0.15, 0.15],
+"sustain": [-0.1, 0.1]
+}
+waves = PackedStringArray("saw", "noise")

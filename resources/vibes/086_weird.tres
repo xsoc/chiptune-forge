@@ -1,0 +1,36 @@
+[gd_resource type="Resource" script_class="Vibe" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/vibe.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "weird"
+display_name = "Weird"
+group = "Weird and trippy"
+description = "Weird: whole-tone, 90 to 130 BPM, lively, detuned and odd"
+mode_weights = {
+"whole_tone": 1.5,
+"lydian": 1.0,
+"dorian": 1.0,
+"diminished": 0.5,
+"japanese": 0.5
+}
+progression_weights = {
+"strange": 2.0,
+"modal": 2.0
+}
+chord_colour = 0.3
+bars_per_chord = 1.0
+tempo_min = 90
+tempo_max = 130
+energy = 0.5
+brightness = 0.5
+tension = 0.5
+weirdness = 0.8
+contour = 0.0
+legato = 0.5
+swing = 0.0
+echo = 0.45
+beats_per_bar = 0
+form_hint = ""
+length_hint = 0.0

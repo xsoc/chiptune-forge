@@ -1,0 +1,32 @@
+[gd_resource type="Resource" script_class="Vibe" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/vibe.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "boss_intro"
+display_name = "Boss Intro"
+group = "Game moments"
+description = "Boss Intro: harmonic minor, 100 to 120 BPM, lively"
+mode_weights = {
+"harmonic_minor": 3.0
+}
+progression_weights = {
+"dark": 2.0,
+"epic": 1.0
+}
+chord_colour = 0.2
+bars_per_chord = 1.0
+tempo_min = 100
+tempo_max = 120
+energy = 0.6
+brightness = 0.5
+tension = 0.7
+weirdness = 0.0
+contour = 0.0
+legato = 0.5
+swing = 0.0
+echo = 0.25
+beats_per_bar = 0
+form_hint = "build"
+length_hint = 20.0

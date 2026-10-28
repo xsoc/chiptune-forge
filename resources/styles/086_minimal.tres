@@ -1,0 +1,41 @@
+[gd_resource type="Resource" script_class="Style" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/style.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "minimal"
+display_name = "Minimal"
+group = "Chill and ambient"
+description = "Minimal: four-on-the-floor kick, long bass notes, 115 to 125 BPM"
+tempo_min = 115
+tempo_max = 125
+beats_per_bar = 4
+swing = 0.0
+drum_pattern = "four_floor"
+drum_density = 0.3
+bass_patterns = {
+"root_whole": 3.0
+}
+accompaniment = {
+"arp": 3.0
+}
+harmony_parts = {
+"counter": 1.0,
+"echo": 1.0
+}
+melody_density = 0.2
+syncopation = 0.2
+progression_weights = {
+"dreamy": 2.0,
+"modal": 1.0
+}
+mode_bias = {}
+chord_colour = 0.4
+lead_wave = ""
+bass_wave = "sine"
+lead_glide = false
+forms = {
+"loop": 2.0,
+"through": 1.0
+}

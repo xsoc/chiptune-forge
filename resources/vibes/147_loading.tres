@@ -1,0 +1,32 @@
+[gd_resource type="Resource" script_class="Vibe" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/vibe.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "loading"
+display_name = "Loading"
+group = "Game moments"
+description = "Loading: major key, 90 to 110 BPM, steady"
+mode_weights = {
+"major": 1.0,
+"dorian": 1.0
+}
+progression_weights = {
+"modal": 2.0
+}
+chord_colour = 0.2
+bars_per_chord = 1.0
+tempo_min = 90
+tempo_max = 110
+energy = 0.3
+brightness = 0.5
+tension = 0.2
+weirdness = 0.0
+contour = 0.0
+legato = 0.5
+swing = 0.0
+echo = 0.25
+beats_per_bar = 0
+form_hint = "loop"
+length_hint = 20.0

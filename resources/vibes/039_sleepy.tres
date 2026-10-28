@@ -1,0 +1,37 @@
+[gd_resource type="Resource" script_class="Vibe" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/vibe.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "sleepy"
+display_name = "Sleepy"
+group = "Calm and warm"
+description = "Sleepy: major key, 55 to 75 BPM, calm"
+mode_weights = {
+"major": 3.0,
+"lydian": 1.0,
+"major_pentatonic": 1.0,
+"mixolydian": 0.5
+}
+progression_weights = {
+"dreamy": 2.0,
+"pop": 1.0,
+"jazz": 0.5,
+"folk": 0.5
+}
+chord_colour = 0.5
+bars_per_chord = 2.0
+tempo_min = 55
+tempo_max = 75
+energy = 0.1
+brightness = 0.55
+tension = 0.05
+weirdness = 0.0
+contour = 0.0
+legato = 0.8
+swing = 0.0
+echo = 0.5
+beats_per_bar = 0
+form_hint = ""
+length_hint = 0.0

@@ -1,0 +1,41 @@
+[gd_resource type="Resource" script_class="Style" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/style.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "electro_swing"
+display_name = "Electro Swing"
+group = "Dance and club"
+description = "Electro Swing: swung ride, walking bass, 115 to 130 BPM"
+tempo_min = 115
+tempo_max = 130
+beats_per_bar = 4
+swing = 0.5
+drum_pattern = "swing"
+drum_density = 0.65
+bass_patterns = {
+"walking": 1.0,
+"octave": 1.0
+}
+accompaniment = {
+"stabs": 2.0
+}
+harmony_parts = {
+"thirds": 1.0,
+"echo": 1.0
+}
+melody_density = 0.5
+syncopation = 0.4
+progression_weights = {
+"jazz": 2.0
+}
+mode_bias = {}
+chord_colour = 0.4
+lead_wave = "pulse"
+bass_wave = "pulse"
+lead_glide = false
+forms = {
+"verse_chorus": 2.0,
+"loop": 1.0
+}

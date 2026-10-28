@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="SfxPreset" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/sfx_preset.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "glitch"
+display_name = "Glitch"
+group = "Machines and sci-fi"
+description = "Glitch: short blip"
+base = {
+"wave": "noise_short",
+"sustain": 0.15,
+"decay": 0.12,
+"base_freq": 0.5,
+"duty": 0.3,
+"hpf_freq": 0.1,
+"repeat_speed": 0.85,
+"crush": 0.6,
+"arp_mod": -0.5,
+"arp_speed": 0.8
+}
+ranges = {
+"base_freq": [-0.1, 0.1],
+"duty": [-0.2, 0.2],
+"sustain": [-0.02, 0.03]
+}
+waves = PackedStringArray("noise_short", "square", "saw")

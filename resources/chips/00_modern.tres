@@ -1,0 +1,38 @@
+[gd_resource type="Resource" script_class="ChipProfile" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/chip_profile.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "modern"
+display_name = "Modern chiptune"
+chip_name = "Idealised chip voices"
+description = "No limits: up to 16 voices, stereo, echo. Exports JSON for the Godot plugin, WAV and MIDI."
+phase = 1
+available = true
+stereo = true
+echo = true
+max_voices = 0
+voices = Array[Dictionary]([{
+"name": "Lead",
+"waves": ["pulse", "saw", "triangle", "sine", "wave"]
+}, {
+"name": "Harmony",
+"waves": ["pulse"]
+}, {
+"name": "Arp",
+"waves": ["pulse"]
+}, {
+"name": "Pad",
+"waves": ["triangle", "pulse", "saw"]
+}, {
+"name": "Bass",
+"waves": ["triangle", "pulse", "saw", "sine"]
+}, {
+"name": "Drums",
+"waves": ["triangle"]
+}, {
+"name": "Noise",
+"waves": ["noise"]
+}])
+export_formats = PackedStringArray("chipsong", "wav", "midi")

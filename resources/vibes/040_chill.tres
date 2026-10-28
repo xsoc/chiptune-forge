@@ -1,0 +1,35 @@
+[gd_resource type="Resource" script_class="Vibe" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/vibe.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "chill"
+display_name = "Chill"
+group = "Calm and warm"
+description = "Chill: major key, 80 to 100 BPM, steady"
+mode_weights = {
+"major": 3.0,
+"lydian": 1.0,
+"major_pentatonic": 1.0,
+"mixolydian": 0.5
+}
+progression_weights = {
+"jazz": 1.0,
+"dreamy": 2.0
+}
+chord_colour = 0.5
+bars_per_chord = 2.0
+tempo_min = 80
+tempo_max = 100
+energy = 0.25
+brightness = 0.55
+tension = 0.05
+weirdness = 0.0
+contour = 0.0
+legato = 0.8
+swing = 0.15
+echo = 0.35
+beats_per_bar = 0
+form_hint = ""
+length_hint = 0.0

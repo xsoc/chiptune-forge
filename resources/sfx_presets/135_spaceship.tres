@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="SfxPreset" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/sfx_preset.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "spaceship"
+display_name = "Spaceship"
+group = "Machines and sci-fi"
+description = "Spaceship: slow rise"
+base = {
+"wave": "saw",
+"sustain": 0.8,
+"decay": 0.2,
+"base_freq": 0.12,
+"freq_ramp": 0.02,
+"vib_strength": 0.1,
+"vib_speed": 0.5,
+"duty": 0.4,
+"duty_ramp": -0.2,
+"pha_offset": 0.3,
+"pha_ramp": 0.1
+}
+ranges = {
+"base_freq": [-0.05, 0.05],
+"freq_ramp": [-0.05, 0.05],
+"sustain": [-0.15, 0.15]
+}
+waves = PackedStringArray("saw")

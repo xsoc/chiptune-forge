@@ -1,0 +1,42 @@
+[gd_resource type="Resource" script_class="Style" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/style.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "big_band"
+display_name = "Big Band"
+group = "Jazz and lounge"
+description = "Big Band: swung ride, walking bass, 140 to 170 BPM"
+tempo_min = 140
+tempo_max = 170
+beats_per_bar = 4
+swing = 0.55
+drum_pattern = "swing"
+drum_density = 0.45
+bass_patterns = {
+"walking": 3.0
+}
+accompaniment = {
+"stabs": 2.0
+}
+harmony_parts = {
+"thirds": 2.0
+}
+melody_density = 0.6
+syncopation = 0.5
+progression_weights = {
+"jazz": 3.0,
+"blues": 0.5
+}
+mode_bias = {
+"dorian": 0.5
+}
+chord_colour = 0.7
+lead_wave = "pulse"
+bass_wave = "triangle"
+lead_glide = false
+forms = {
+"aaba": 2.0,
+"verse_chorus": 1.0
+}

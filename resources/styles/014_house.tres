@@ -1,0 +1,45 @@
+[gd_resource type="Resource" script_class="Style" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/style.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "house"
+display_name = "House"
+group = "Electronic"
+description = "House: four-on-the-floor kick, octave bass, 118 to 128 BPM"
+tempo_min = 118
+tempo_max = 128
+beats_per_bar = 4
+swing = 0.1
+drum_pattern = "four_floor"
+drum_density = 0.6
+bass_patterns = {
+"octave": 2.0,
+"root_8ths": 1.0
+}
+accompaniment = {
+"stabs": 2.0,
+"pad": 1.0
+}
+harmony_parts = {
+"echo": 1.0,
+"counter": 1.0
+}
+melody_density = 0.4
+syncopation = 0.35
+progression_weights = {
+"jazz": 0.5,
+"dreamy": 1.0,
+"pop": 1.0
+}
+mode_bias = {}
+chord_colour = 0.4
+lead_wave = ""
+bass_wave = "saw"
+lead_glide = false
+forms = {
+"build": 2.0,
+"loop": 1.0,
+"verse_chorus": 1.0
+}

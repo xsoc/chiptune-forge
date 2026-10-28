@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="SfxPreset" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/sfx_preset.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "engine_loop"
+display_name = "Engine Loop"
+group = "Machines and sci-fi"
+description = "Engine Loop: low rumble"
+base = {
+"wave": "saw",
+"sustain": 0.9,
+"punch": 0.3,
+"decay": 0.2,
+"base_freq": 0.08,
+"lpf_freq": 0.35,
+"vib_strength": 0.2,
+"vib_speed": 0.5
+}
+ranges = {
+"base_freq": [-0.02, 0.05],
+"sustain": [-0.15, 0.15],
+"decay": [-0.1, 0.15]
+}
+waves = PackedStringArray("saw", "square")

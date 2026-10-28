@@ -1,0 +1,83 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scenes/screens/library_screen.gd" id="1"]
+
+[node name="LibraryScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1")
+
+[node name="Scroll" type="ScrollContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+horizontal_scroll_mode = 0
+
+[node name="Center" type="CenterContainer" parent="Scroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+use_top_left = false
+
+[node name="Margin" type="MarginContainer" parent="Scroll/Center"]
+custom_minimum_size = Vector2(340, 0)
+layout_mode = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 16
+
+[node name="Card" type="PanelContainer" parent="Scroll/Center/Margin"]
+layout_mode = 2
+theme_type_variation = &"Card"
+
+[node name="Library" type="VBoxContainer" parent="Scroll/Center/Margin/Card"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="Scroll/Center/Margin/Card/Library"]
+layout_mode = 2
+theme_type_variation = &"SectionLabel"
+text = "LIBRARY"
+
+[node name="Filters" type="HBoxContainer" parent="Scroll/Center/Margin/Card/Library"]
+layout_mode = 2
+
+[node name="Search" type="LineEdit" parent="Scroll/Center/Margin/Card/Library/Filters"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Search saved songs and sounds"
+clear_button_enabled = true
+
+[node name="Kind" type="OptionButton" parent="Scroll/Center/Margin/Card/Library/Filters"]
+clip_text = true
+fit_to_longest_item = false
+unique_name_in_owner = true
+custom_minimum_size = Vector2(140, 40)
+layout_mode = 2
+item_count = 4
+popup/item_0/text = "All"
+popup/item_0/id = 0
+popup/item_1/text = "Songs"
+popup/item_1/id = 1
+popup/item_2/text = "Sounds"
+popup/item_2/id = 2
+popup/item_3/text = "Favourites"
+popup/item_3/id = 3
+
+[node name="Empty" type="Label" parent="Scroll/Center/Margin/Card/Library"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"MutedLabel"
+text = "Nothing saved yet. Use Save to library on a song or a sound. Saved items keep their settings and seed, so they can be made again exactly."
+autowrap_mode = 3
+
+[node name="Rows" type="VBoxContainer" parent="Scroll/Center/Margin/Card/Library"]
+unique_name_in_owner = true
+layout_mode = 2

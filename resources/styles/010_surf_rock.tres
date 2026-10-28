@@ -1,0 +1,45 @@
+[gd_resource type="Resource" script_class="Style" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/style.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "surf_rock"
+display_name = "Surf Rock"
+group = "Rock and metal"
+description = "Surf Rock: rock beat, walking bass, 140 to 170 BPM"
+tempo_min = 140
+tempo_max = 170
+beats_per_bar = 4
+swing = 0.0
+drum_pattern = "rock"
+drum_density = 0.6
+bass_patterns = {
+"walking": 1.0,
+"root_8ths": 1.0
+}
+accompaniment = {
+"chord_arp": 1.0,
+"arp": 0.6,
+"pad": 0.3
+}
+harmony_parts = {
+"echo": 2.0
+}
+melody_density = 0.5
+syncopation = 0.3
+progression_weights = {
+"rock": 2.0,
+"pop": 1.0
+}
+mode_bias = {
+"mixolydian": 1.0
+}
+chord_colour = 0.0
+lead_wave = "pulse"
+bass_wave = "pulse"
+lead_glide = false
+forms = {
+"verse_chorus": 2.0,
+"aaba": 1.0
+}

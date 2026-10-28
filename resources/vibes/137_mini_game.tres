@@ -1,0 +1,32 @@
+[gd_resource type="Resource" script_class="Vibe" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/vibe.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "mini_game"
+display_name = "Mini-game"
+group = "Game moments"
+description = "Mini-game: major key, 140 to 170 BPM, lively, short, punchy notes"
+mode_weights = {
+"major": 3.0
+}
+progression_weights = {
+"pop": 2.0,
+"jazz": 0.5
+}
+chord_colour = 0.2
+bars_per_chord = 1.0
+tempo_min = 140
+tempo_max = 170
+energy = 0.7
+brightness = 0.5
+tension = 0.2
+weirdness = 0.25
+contour = 0.0
+legato = 0.2
+swing = 0.2
+echo = 0.25
+beats_per_bar = 0
+form_hint = ""
+length_hint = 0.0

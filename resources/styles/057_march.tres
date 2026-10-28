@@ -1,0 +1,43 @@
+[gd_resource type="Resource" script_class="Style" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/style.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "march"
+display_name = "March"
+group = "Orchestral and film"
+description = "March: snare march, root-fifth bass, 110 to 125 BPM"
+tempo_min = 110
+tempo_max = 125
+beats_per_bar = 4
+swing = 0.0
+drum_pattern = "march"
+drum_density = 0.6
+bass_patterns = {
+"root_fifth": 3.0
+}
+accompaniment = {
+"broken": 1.0,
+"pad": 2.0,
+"arp": 0.5
+}
+harmony_parts = {
+"thirds": 2.0
+}
+melody_density = 0.45
+syncopation = 0.15
+progression_weights = {
+"classical": 1.0,
+"folk": 1.0
+}
+mode_bias = {}
+chord_colour = 0.1
+lead_wave = "pulse"
+bass_wave = "triangle"
+lead_glide = false
+forms = {
+"verse_chorus": 1.0,
+"through": 1.0,
+"rondo": 1.0
+}

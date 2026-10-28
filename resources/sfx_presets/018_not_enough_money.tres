@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="SfxPreset" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/sfx_preset.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "not_enough_money"
+display_name = "Not Enough Money"
+group = "UI and menus"
+description = "Not Enough Money: low buzz"
+base = {
+"wave": "square",
+"sustain": 0.22,
+"decay": 0.2,
+"base_freq": 0.15,
+"repeat_speed": 0.62,
+"duty": 0.5,
+"lpf_freq": 0.8
+}
+ranges = {
+"base_freq": [-0.05, 0.05],
+"repeat_speed": [-0.08, 0.08]
+}
+waves = PackedStringArray("square", "saw")

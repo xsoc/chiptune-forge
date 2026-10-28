@@ -1,0 +1,35 @@
+[gd_resource type="Resource" script_class="Vibe" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/vibe.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "unstoppable"
+display_name = "Unstoppable"
+group = "Energetic"
+description = "Unstoppable: major key, 135 to 175 BPM, driving"
+mode_weights = {
+"major": 2.0,
+"minor": 2.0,
+"mixolydian": 0.5,
+"dorian": 0.5
+}
+progression_weights = {
+"epic": 2.0,
+"rock": 2.0
+}
+chord_colour = 0.1
+bars_per_chord = 1.0
+tempo_min = 135
+tempo_max = 175
+energy = 0.95
+brightness = 0.6
+tension = 0.35
+weirdness = 0.0
+contour = 0.3
+legato = 0.3
+swing = 0.0
+echo = 0.1
+beats_per_bar = 0
+form_hint = ""
+length_hint = 0.0

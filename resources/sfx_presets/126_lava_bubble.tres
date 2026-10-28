@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="SfxPreset" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/sfx_preset.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "lava_bubble"
+display_name = "Lava Bubble"
+group = "World"
+description = "Lava Bubble: chirp"
+base = {
+"wave": "sine",
+"sustain": 0.04,
+"decay": 0.12,
+"base_freq": 0.25,
+"freq_ramp": 0.4,
+"vib_strength": 0.0,
+"vib_speed": 0.6,
+"repeat_speed": 0.0
+}
+ranges = {
+"base_freq": [-0.1, 0.1],
+"freq_ramp": [-0.5, 0.1],
+"repeat_speed": [-0.15, 0.1]
+}
+waves = PackedStringArray("sine")

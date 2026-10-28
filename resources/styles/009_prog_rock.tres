@@ -1,0 +1,45 @@
+[gd_resource type="Resource" script_class="Style" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/style.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "prog_rock"
+display_name = "Prog Rock"
+group = "Rock and metal"
+description = "Prog Rock: rock beat, eighth-note bass, 100 to 140 BPM"
+tempo_min = 100
+tempo_max = 140
+beats_per_bar = 4
+swing = 0.0
+drum_pattern = "rock"
+drum_density = 0.6
+bass_patterns = {
+"root_8ths": 3.0,
+"octave": 0.5
+}
+accompaniment = {
+"chord_arp": 1.0,
+"arp": 0.6,
+"pad": 0.3
+}
+harmony_parts = {
+"counter": 1.0,
+"thirds": 1.0
+}
+melody_density = 0.5
+syncopation = 0.55
+progression_weights = {
+"modal": 1.0,
+"jazz": 0.5,
+"rock": 1.0
+}
+mode_bias = {}
+chord_colour = 0.3
+lead_wave = "pulse"
+bass_wave = "pulse"
+lead_glide = false
+forms = {
+"through": 2.0,
+"rondo": 1.0
+}

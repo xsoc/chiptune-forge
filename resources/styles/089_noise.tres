@@ -1,0 +1,41 @@
+[gd_resource type="Resource" script_class="Style" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/style.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "noise"
+display_name = "Noise"
+group = "Chill and ambient"
+description = "Noise: broken beat, long bass notes, 120 to 160 BPM"
+tempo_min = 120
+tempo_max = 160
+beats_per_bar = 4
+swing = 0.0
+drum_pattern = "breakbeat"
+drum_density = 0.9
+bass_patterns = {
+"root_whole": 3.0
+}
+accompaniment = {
+"pad": 3.0,
+"arp": 0.5
+}
+harmony_parts = {
+"counter": 1.0,
+"echo": 1.0
+}
+melody_density = 0.6
+syncopation = 0.2
+progression_weights = {
+"strange": 3.0
+}
+mode_bias = {}
+chord_colour = 0.4
+lead_wave = ""
+bass_wave = "sine"
+lead_glide = false
+forms = {
+"loop": 2.0,
+"through": 1.0
+}

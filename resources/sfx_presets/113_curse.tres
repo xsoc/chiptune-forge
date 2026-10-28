@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="SfxPreset" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/sfx_preset.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "curse"
+display_name = "Curse"
+group = "Magic"
+description = "Curse: shimmering sweep"
+base = {
+"wave": "saw",
+"sustain": 0.3,
+"decay": 0.4,
+"base_freq": 0.4,
+"freq_ramp": -0.2,
+"vib_strength": 0.3,
+"vib_speed": 0.5,
+"pha_offset": 0.2,
+"pha_ramp": -0.1,
+"echo": 0.3,
+"crush": 0.3
+}
+ranges = {
+"base_freq": [-0.1, 0.15],
+"freq_ramp": [-0.15, 0.15],
+"pha_offset": [-0.2, 0.2]
+}
+waves = PackedStringArray("saw")

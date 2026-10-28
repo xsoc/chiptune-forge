@@ -1,0 +1,31 @@
+[gd_resource type="Resource" script_class="Vibe" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/vibe.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "victory_fanfare"
+display_name = "Victory Fanfare"
+group = "Game moments"
+description = "Victory Fanfare: major key, 110 to 130 BPM, driving, rising tunes, short stinger"
+mode_weights = {
+"major": 4.0
+}
+progression_weights = {
+"cadence": 1.0
+}
+chord_colour = 0.2
+bars_per_chord = 1.0
+tempo_min = 110
+tempo_max = 130
+energy = 0.85
+brightness = 0.85
+tension = 0.2
+weirdness = 0.0
+contour = 0.7
+legato = 0.5
+swing = 0.0
+echo = 0.25
+beats_per_bar = 0
+form_hint = "jingle"
+length_hint = 6.0

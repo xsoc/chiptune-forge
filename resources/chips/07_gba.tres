@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="ChipProfile" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/chip_profile.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "gba"
+display_name = "Game Boy Advance"
+chip_name = "DMG + 2 PCM"
+description = "Game Boy channels plus 2 sample channels. Exports for Maxmod."
+phase = 5
+available = false
+stereo = true
+echo = false
+max_voices = 6
+voices = Array[Dictionary]([])
+export_formats = PackedStringArray("mod")

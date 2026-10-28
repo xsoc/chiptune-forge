@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="SfxPreset" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/sfx_preset.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "enemy_die"
+display_name = "Enemy Die"
+group = "Damage and health"
+description = "Enemy Die: falling sweep"
+base = {
+"wave": "square",
+"sustain": 0.15,
+"decay": 0.3,
+"base_freq": 0.55,
+"freq_ramp": -0.3,
+"duty": 0.4,
+"crush": 0.25
+}
+ranges = {
+"base_freq": [-0.1, 0.1],
+"freq_ramp": [-0.05, 0.05],
+"sustain": [-0.1, 0.1]
+}
+waves = PackedStringArray("square", "saw", "sine")

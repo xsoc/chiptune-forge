@@ -1,0 +1,46 @@
+[gd_resource type="Resource" script_class="Style" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/style.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "medieval"
+display_name = "Medieval"
+group = "World and folk"
+description = "Medieval: sparse percussion, root-fifth bass, 90 to 120 BPM"
+tempo_min = 90
+tempo_max = 120
+beats_per_bar = 4
+swing = 0.0
+drum_pattern = "sparse"
+drum_density = 0.5
+bass_patterns = {
+"root_fifth": 3.0
+}
+accompaniment = {
+"broken": 1.0,
+"chord_arp": 1.0,
+"stabs": 1.0
+}
+harmony_parts = {
+"thirds": 2.0,
+"counter": 1.0
+}
+melody_density = 0.55
+syncopation = 0.25
+progression_weights = {
+"modal": 2.0,
+"folk": 1.0
+}
+mode_bias = {
+"dorian": 2.0,
+"mixolydian": 1.0
+}
+chord_colour = 0.0
+lead_wave = "pulse"
+bass_wave = "triangle"
+lead_glide = false
+forms = {
+"aaba": 2.0,
+"verse_chorus": 1.0
+}

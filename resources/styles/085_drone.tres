@@ -1,0 +1,41 @@
+[gd_resource type="Resource" script_class="Style" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/style.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "drone"
+display_name = "Drone"
+group = "Chill and ambient"
+description = "Drone: no drums, pedal bass, 50 to 70 BPM"
+tempo_min = 50
+tempo_max = 70
+beats_per_bar = 4
+swing = 0.0
+drum_pattern = "none"
+drum_density = 0.3
+bass_patterns = {
+"pedal": 2.0,
+"root_whole": 1.0
+}
+accompaniment = {
+"pad": 3.0
+}
+harmony_parts = {
+"counter": 1.0,
+"echo": 1.0
+}
+melody_density = 0.15
+syncopation = 0.2
+progression_weights = {
+"modal": 3.0
+}
+mode_bias = {}
+chord_colour = 0.4
+lead_wave = ""
+bass_wave = "sine"
+lead_glide = false
+forms = {
+"loop": 2.0,
+"through": 1.0
+}

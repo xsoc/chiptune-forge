@@ -1,0 +1,88 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+env:
+  GODOT_VERSION: 4.5.1
+
+jobs:
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+    container:
+      image: barichello/godot-ci:4.5.1
+    steps:
+      - uses: actions/checkout@v4
+      - name: Import
+        run: godot --headless --path . --import
+      - name: Run tests
+        run: |
+          godot --headless --path . -s tests/run_tests.gd 2>&1 | tee test.log
+          status=${PIPESTATUS[0]}
+          if grep -q "SCRIPT ERROR" test.log; then
+            echo "Script errors during the test run"
+            exit 1
+          fi
+          exit $status
+        shell: bash
+
+  export:
+    name: Export ${{ matrix.preset }}
+    needs: test
+    runs-on: ubuntu-latest
+    container:
+      image: barichello/godot-ci:4.5.1
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - preset: Web
+            path: build/web/index.html
+            artifact: chiptune-forge-web
+          - preset: Linux
+            path: build/linux/chiptune-forge.x86_64
+            artifact: chiptune-forge-linux
+          - preset: Windows Desktop
+            path: build/windows/chiptune-forge.exe
+            artifact: chiptune-forge-windows
+          - preset: macOS
+            path: build/macos/chiptune-forge.zip
+            artifact: chiptune-forge-macos
+          - preset: Android
+            path: build/android/chiptune-forge.apk
+            artifact: chiptune-forge-android
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install export templates
+        run: |
+          mkdir -p ~/.local/share/godot/export_templates
+          ln -s /root/.local/share/godot/export_templates/${GODOT_VERSION}.stable \
+            ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable
+      - name: Android signing (debug key)
+        if: matrix.preset == 'Android'
+        run: |
+          echo "GODOT_ANDROID_KEYSTORE_DEBUG_PATH=/root/debug.keystore" >> $GITHUB_ENV
+          echo "GODOT_ANDROID_KEYSTORE_DEBUG_USER=androiddebugkey" >> $GITHUB_ENV
+          echo "GODOT_ANDROID_KEYSTORE_DEBUG_PASSWORD=android" >> $GITHUB_ENV
+          mkdir -p ~/.config/godot
+          cp /root/.config/godot/editor_settings-4*.tres ~/.config/godot/ 2>/dev/null || true
+      - name: Import
+        run: godot --headless --path . --import
+      - name: Export
+        run: |
+          mkdir -p "$(dirname "${{ matrix.path }}")"
+          if [ "${{ matrix.preset }}" = "Android" ]; then
+            godot --headless --path . --export-debug "${{ matrix.preset }}" "${{ matrix.path }}"
+          else
+            godot --headless --path . --export-release "${{ matrix.preset }}" "${{ matrix.path }}"
+          fi
+          test -s "${{ matrix.path }}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: build/
+          if-no-files-found: error

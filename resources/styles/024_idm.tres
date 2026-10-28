@@ -1,0 +1,45 @@
+[gd_resource type="Resource" script_class="Style" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/style.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "idm"
+display_name = "IDM"
+group = "Electronic"
+description = "IDM: broken beat, octave bass, 100 to 130 BPM"
+tempo_min = 100
+tempo_max = 130
+beats_per_bar = 4
+swing = 0.0
+drum_pattern = "breakbeat"
+drum_density = 0.6
+bass_patterns = {
+"octave": 2.0,
+"root_8ths": 1.0
+}
+accompaniment = {
+"arp": 2.0,
+"pad": 1.0,
+"chord_arp": 0.5
+}
+harmony_parts = {
+"echo": 1.0,
+"counter": 1.0
+}
+melody_density = 0.6
+syncopation = 0.7
+progression_weights = {
+"strange": 1.0,
+"modal": 1.0
+}
+mode_bias = {}
+chord_colour = 0.4
+lead_wave = ""
+bass_wave = "saw"
+lead_glide = false
+forms = {
+"build": 2.0,
+"loop": 1.0,
+"verse_chorus": 1.0
+}

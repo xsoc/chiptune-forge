@@ -1,0 +1,42 @@
+[gd_resource type="Resource" script_class="Style" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/style.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "punk"
+display_name = "Punk"
+group = "Rock and metal"
+description = "Punk: fast punk beat, eighth-note bass, 160 to 200 BPM"
+tempo_min = 160
+tempo_max = 200
+beats_per_bar = 4
+swing = 0.0
+drum_pattern = "punk"
+drum_density = 0.6
+bass_patterns = {
+"root_8ths": 3.0,
+"octave": 0.5
+}
+accompaniment = {
+"chord_arp": 2.0,
+"arp": 0.3
+}
+harmony_parts = {
+"counter": 1.0,
+"thirds": 1.0
+}
+melody_density = 0.4
+syncopation = 0.3
+progression_weights = {
+"rock": 2.0,
+"pop": 1.0
+}
+mode_bias = {}
+chord_colour = 0.0
+lead_wave = "pulse"
+bass_wave = "pulse"
+lead_glide = false
+forms = {
+"verse_chorus": 3.0
+}

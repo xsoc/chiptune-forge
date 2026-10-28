@@ -1,0 +1,33 @@
+[gd_resource type="Resource" script_class="Vibe" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/vibe.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "desert"
+display_name = "Desert"
+group = "Places"
+description = "Desert: Hijaz scale, 90 to 115 BPM, steady"
+mode_weights = {
+"hijaz": 3.0,
+"phrygian": 1.0
+}
+progression_weights = {
+"dark": 1.0,
+"modal": 2.0
+}
+chord_colour = 0.2
+bars_per_chord = 1.0
+tempo_min = 90
+tempo_max = 115
+energy = 0.45
+brightness = 0.5
+tension = 0.4
+weirdness = 0.0
+contour = 0.0
+legato = 0.5
+swing = 0.0
+echo = 0.4
+beats_per_bar = 0
+form_hint = ""
+length_hint = 0.0

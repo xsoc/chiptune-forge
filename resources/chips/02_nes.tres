@@ -1,0 +1,32 @@
+[gd_resource type="Resource" script_class="ChipProfile" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/chip_profile.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "nes"
+display_name = "NES / Famicom"
+chip_name = "Ricoh 2A03"
+description = "2 pulse, 1 triangle, 1 noise, 1 DPCM. Exports for the FamiStudio sound engine."
+phase = 3
+available = false
+stereo = false
+echo = false
+max_voices = 5
+voices = Array[Dictionary]([{
+"name": "Pulse 1",
+"waves": ["pulse"]
+}, {
+"name": "Pulse 2",
+"waves": ["pulse"]
+}, {
+"name": "Triangle",
+"waves": ["triangle"]
+}, {
+"name": "Noise",
+"waves": ["noise"]
+}, {
+"name": "DPCM",
+"waves": ["sample"]
+}])
+export_formats = PackedStringArray("asm", "c")

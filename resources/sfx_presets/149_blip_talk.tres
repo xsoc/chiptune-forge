@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="SfxPreset" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/sfx_preset.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "blip_talk"
+display_name = "Blip Talk"
+group = "Creatures and voices"
+description = "Blip Talk: voice blip"
+base = {
+"wave": "square",
+"sustain": 0.03,
+"decay": 0.04,
+"base_freq": 0.45,
+"duty": 0.5
+}
+ranges = {
+"base_freq": [-0.12, 0.12],
+"duty": [-0.3, 0.0]
+}
+waves = PackedStringArray("square", "triangle")

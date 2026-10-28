@@ -1,0 +1,42 @@
+[gd_resource type="Resource" script_class="Style" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/style.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "latin"
+display_name = "Latin"
+group = "World and folk"
+description = "Latin: Latin groove, syncopated bass, 100 to 125 BPM"
+tempo_min = 100
+tempo_max = 125
+beats_per_bar = 4
+swing = 0.0
+drum_pattern = "latin"
+drum_density = 0.5
+bass_patterns = {
+"synco": 2.0,
+"root_fifth": 1.0
+}
+accompaniment = {
+"stabs": 2.0
+}
+harmony_parts = {
+"thirds": 2.0,
+"counter": 1.0
+}
+melody_density = 0.55
+syncopation = 0.25
+progression_weights = {
+"pop": 1.0,
+"jazz": 1.0
+}
+mode_bias = {}
+chord_colour = 0.0
+lead_wave = "pulse"
+bass_wave = "triangle"
+lead_glide = false
+forms = {
+"aaba": 2.0,
+"verse_chorus": 1.0
+}

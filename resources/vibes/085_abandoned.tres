@@ -1,0 +1,35 @@
+[gd_resource type="Resource" script_class="Vibe" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/vibe.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "abandoned"
+display_name = "Abandoned"
+group = "Scary and unsettling"
+description = "Abandoned: diminished, 55 to 75 BPM, calm, lots of echo, detuned and odd"
+mode_weights = {
+"diminished": 1.5,
+"whole_tone": 1.0,
+"phrygian": 1.0,
+"harmonic_minor": 1.0
+}
+progression_weights = {
+"strange": 2.0,
+"dark": 2.0
+}
+chord_colour = 0.0
+bars_per_chord = 2.0
+tempo_min = 55
+tempo_max = 75
+energy = 0.15
+brightness = 0.2
+tension = 0.9
+weirdness = 0.5
+contour = -0.3
+legato = 0.6
+swing = 0.0
+echo = 0.75
+beats_per_bar = 0
+form_hint = ""
+length_hint = 0.0

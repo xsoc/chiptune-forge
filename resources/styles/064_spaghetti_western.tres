@@ -1,0 +1,46 @@
+[gd_resource type="Resource" script_class="Style" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/style.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "spaghetti_western"
+display_name = "Spaghetti Western"
+group = "Orchestral and film"
+description = "Spaghetti Western: train beat, root-fifth bass, 90 to 120 BPM"
+tempo_min = 90
+tempo_max = 120
+beats_per_bar = 4
+swing = 0.0
+drum_pattern = "train"
+drum_density = 0.4
+bass_patterns = {
+"root_fifth": 2.0
+}
+accompaniment = {
+"broken": 1.0,
+"pad": 2.0,
+"arp": 0.5
+}
+harmony_parts = {
+"echo": 2.0
+}
+melody_density = 0.45
+syncopation = 0.15
+progression_weights = {
+"dark": 1.0,
+"epic": 1.0
+}
+mode_bias = {
+"harmonic_minor": 1.0,
+"phrygian": 1.0
+}
+chord_colour = 0.1
+lead_wave = "pulse"
+bass_wave = "triangle"
+lead_glide = false
+forms = {
+"verse_chorus": 1.0,
+"through": 1.0,
+"rondo": 1.0
+}

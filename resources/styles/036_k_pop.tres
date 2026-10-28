@@ -1,0 +1,42 @@
+[gd_resource type="Resource" script_class="Style" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/style.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "k_pop"
+display_name = "K-Pop"
+group = "Pop, soul and hip hop"
+description = "K-Pop: four-on-the-floor kick, octave bass, 110 to 130 BPM"
+tempo_min = 110
+tempo_max = 130
+beats_per_bar = 4
+swing = 0.0
+drum_pattern = "four_floor"
+drum_density = 0.5
+bass_patterns = {
+"octave": 1.0,
+"synco": 1.0
+}
+accompaniment = {
+"stabs": 1.0,
+"arp": 1.0
+}
+harmony_parts = {
+"thirds": 1.0,
+"counter": 1.0
+}
+melody_density = 0.5
+syncopation = 0.35
+progression_weights = {
+"pop": 3.0
+}
+mode_bias = {}
+chord_colour = 0.2
+lead_wave = "pulse"
+bass_wave = "triangle"
+lead_glide = false
+forms = {
+"verse_chorus": 3.0,
+"aaba": 1.0
+}

@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="ChipProfile" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/chip_profile.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "snes"
+display_name = "SNES"
+chip_name = "SPC700 + S-DSP"
+description = "8 sample voices, 64 KB audio RAM, hardware echo. Exports Impulse Tracker for PVSnesLib."
+phase = 4
+available = false
+stereo = true
+echo = true
+max_voices = 8
+voices = Array[Dictionary]([])
+export_formats = PackedStringArray("it")

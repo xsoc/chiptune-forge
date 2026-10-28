@@ -1,0 +1,35 @@
+[gd_resource type="Resource" script_class="Vibe" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/vibe.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "ominous"
+display_name = "Ominous"
+group = "Dark and tense"
+description = "Ominous: minor key, 70 to 100 BPM, steady"
+mode_weights = {
+"minor": 2.0,
+"phrygian": 1.5,
+"harmonic_minor": 1.5
+}
+progression_weights = {
+"dark": 3.0,
+"rock": 0.5,
+"classical": 0.5
+}
+chord_colour = 0.1
+bars_per_chord = 1.0
+tempo_min = 70
+tempo_max = 100
+energy = 0.4
+brightness = 0.15
+tension = 0.7
+weirdness = 0.05
+contour = -0.1
+legato = 0.4
+swing = 0.0
+echo = 0.2
+beats_per_bar = 0
+form_hint = ""
+length_hint = 0.0

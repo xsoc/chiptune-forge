@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="ChipProfile" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/chip_profile.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "gameboy"
+display_name = "Game Boy"
+chip_name = "DMG APU"
+description = "2 pulse (one with sweep), 1 wave (32 x 4-bit), 1 noise. Exports C for GBDK-2020 with hUGEDriver."
+phase = 2
+available = false
+stereo = true
+echo = false
+max_voices = 4
+voices = Array[Dictionary]([{
+"name": "Pulse 1",
+"waves": ["pulse"]
+}, {
+"name": "Pulse 2",
+"waves": ["pulse"]
+}, {
+"name": "Wave",
+"waves": ["wave"]
+}, {
+"name": "Noise",
+"waves": ["noise"]
+}])
+export_formats = PackedStringArray("c")

@@ -1,0 +1,44 @@
+[gd_resource type="Resource" script_class="Style" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/style.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "racing"
+display_name = "Racing"
+group = "Game genres"
+description = "Racing: driving sixteenths, octave bass, 150 to 175 BPM"
+tempo_min = 150
+tempo_max = 175
+beats_per_bar = 4
+swing = 0.0
+drum_pattern = "driving"
+drum_density = 0.55
+bass_patterns = {
+"octave": 2.0
+}
+accompaniment = {
+"arp": 2.0,
+"chord_arp": 1.0,
+"pad": 0.5
+}
+harmony_parts = {
+"echo": 1.0,
+"counter": 1.0,
+"thirds": 0.5
+}
+melody_density = 0.55
+syncopation = 0.35
+progression_weights = {
+"rock": 1.0,
+"pop": 2.0
+}
+mode_bias = {}
+chord_colour = 0.1
+lead_wave = "pulse"
+bass_wave = "triangle"
+lead_glide = false
+forms = {
+"loop": 1.0,
+"verse_chorus": 2.0
+}
