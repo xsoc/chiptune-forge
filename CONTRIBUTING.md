@@ -52,6 +52,11 @@ godot --path . -s tools/screenshot.gd -- 1440 900 1 sfx.png sfx SfxScreen
 Below 600 logical pixels the app uses the phone layout, below 1100 the tablet
 layout, and above that the desktop layout.
 
+The README screenshots in `docs/screenshots/` come from this tool: desktop
+shots at `1440 900 1` and phone shots at `780 1688 2`. Retake them when a
+screen changes noticeably. The folder has a `.gdignore`, so Godot does not
+import the images or ship them in exports.
+
 ## Building
 
 Install the Godot 4.5.1 export templates, then:
