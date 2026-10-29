@@ -26,3 +26,32 @@ ranges = {
 "sustain": [-0.05, 0.05]
 }
 waves = PackedStringArray("square", "saw", "sine")
+variants = Array[Dictionary]([{
+"name": "Phaser",
+"base": {
+"pha_offset": 0.3,
+"pha_ramp": -0.2
+}
+}, {
+"name": "Steep",
+"base": {
+"freq_ramp": -0.4,
+"sustain": 0.105,
+"freq_limit": 0.2
+}
+}, {
+"name": "Thin",
+"base": {
+"hpf_freq": 0.3,
+"duty": 0.6,
+"duty_ramp": 0.3,
+"base_freq": 0.8
+}
+}, {
+"name": "Wobble ray",
+"base": {
+"vib_strength": 0.3,
+"vib_speed": 0.75,
+"freq_ramp": -0.125
+}
+}])

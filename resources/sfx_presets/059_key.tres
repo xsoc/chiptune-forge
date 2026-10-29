@@ -24,3 +24,33 @@ ranges = {
 "decay": [-0.1, 0.1]
 }
 waves = PackedStringArray("square")
+variants = Array[Dictionary]([{
+"name": "Glimmer",
+"base": {
+"vib_strength": 0.08,
+"vib_speed": 0.7,
+"pha_offset": 0.2
+}
+}, {
+"name": "Bright stack",
+"base": {
+"arp_mod": 0.77,
+"arp_speed": 0.8,
+"repeat_speed": 0.55
+}
+}, {
+"name": "Soft bell",
+"base": {
+"wave": "triangle",
+"echo": 0.45,
+"decay": 0.66
+},
+"waves": ["triangle", "sine"]
+}, {
+"name": "Shimmer up",
+"base": {
+"freq_ramp": 0.08,
+"arp_mod": 0.275,
+"duty_ramp": 0.2
+}
+}])

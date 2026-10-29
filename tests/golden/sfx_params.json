@@ -5,7 +5,8 @@
 			"license": "Generated with Chiptune Forge. You own this sound and may use it for any purpose, including commercially, with no royalties or credit required.",
 			"name": "Coin",
 			"preset": "coin",
-			"seed": 1234
+			"seed": 1234,
+			"variant": "Classic"
 		},
 		"params": {
 			"arp_mod": 0.4731,
@@ -27,7 +28,8 @@
 			"license": "Generated with Chiptune Forge. You own this sound and may use it for any purpose, including commercially, with no royalties or credit required.",
 			"name": "Explosion",
 			"preset": "explosion",
-			"seed": 1234
+			"seed": 1234,
+			"variant": "Phased"
 		},
 		"params": {
 			"attack": 0.0,
@@ -35,7 +37,8 @@
 			"decay": 0.4459,
 			"freq_ramp": -0.0182,
 			"noise_seed": 1908570506,
-			"pha_offset": 0.0,
+			"pha_offset": 0.35,
+			"pha_ramp": -0.15,
 			"punch": 0.5629,
 			"sustain": 0.2126,
 			"wave": "noise"
@@ -48,14 +51,16 @@
 			"license": "Generated with Chiptune Forge. You own this sound and may use it for any purpose, including commercially, with no royalties or credit required.",
 			"name": "Jump",
 			"preset": "jump",
-			"seed": 1234
+			"seed": 1234,
+			"variant": "Bouncy"
 		},
 		"params": {
 			"attack": 0.0,
 			"base_freq": 0.5308,
 			"decay": 0.2,
 			"duty": 0.5585,
-			"freq_ramp": 0.2163,
+			"freq_dramp": -0.25,
+			"freq_ramp": 0.2763,
 			"noise_seed": 2017998521,
 			"sustain": 0.1779,
 			"wave": "square"
@@ -68,7 +73,8 @@
 			"license": "Generated with Chiptune Forge. You own this sound and may use it for any purpose, including commercially, with no royalties or credit required.",
 			"name": "Laser",
 			"preset": "laser",
-			"seed": 1234
+			"seed": 1234,
+			"variant": "Phaser"
 		},
 		"params": {
 			"attack": 0.0,
@@ -79,6 +85,8 @@
 			"freq_limit": 0.2,
 			"freq_ramp": -0.1692,
 			"noise_seed": 748116615,
+			"pha_offset": 0.3,
+			"pha_ramp": -0.2,
 			"punch": 0.15,
 			"sustain": 0.1818,
 			"wave": "sine"
@@ -91,16 +99,19 @@
 			"license": "Generated with Chiptune Forge. You own this sound and may use it for any purpose, including commercially, with no royalties or credit required.",
 			"name": "Power Up",
 			"preset": "power_up",
-			"seed": 1234
+			"seed": 1234,
+			"variant": "Vibrato"
 		},
 		"params": {
 			"attack": 0.0,
 			"base_freq": 0.3408,
 			"decay": 0.3,
 			"duty": 0.3,
-			"freq_ramp": 0.173,
+			"freq_ramp": 0.093,
 			"noise_seed": 1503010559,
 			"sustain": 0.2441,
+			"vib_speed": 0.6,
+			"vib_strength": 0.3,
 			"wave": "saw"
 		},
 		"version": 1
@@ -111,14 +122,16 @@
 			"license": "Generated with Chiptune Forge. You own this sound and may use it for any purpose, including commercially, with no royalties or credit required.",
 			"name": "Select",
 			"preset": "select",
-			"seed": 1234
+			"seed": 1234,
+			"variant": "Chirp"
 		},
 		"params": {
 			"attack": 0.0,
 			"base_freq": 0.4558,
 			"decay": 0.12,
 			"duty": 0.4614,
-			"freq_ramp": 0.0,
+			"duty_ramp": 0.2,
+			"freq_ramp": 0.2,
 			"hpf_freq": 0.1,
 			"noise_seed": 2072746633,
 			"sustain": 0.0473,

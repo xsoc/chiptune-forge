@@ -26,3 +26,30 @@ ranges = {
 "sustain": [-0.1, 0.1]
 }
 waves = PackedStringArray("saw", "noise")
+variants = Array[Dictionary]([{
+"name": "Snarl",
+"base": {
+"base_freq": 0.23,
+"vib_speed": 0.6
+}
+}, {
+"name": "Bellow",
+"base": {
+"base_freq": 0.09,
+"sustain": 0.52,
+"freq_ramp": -0.15
+}
+}, {
+"name": "Noisy",
+"base": {
+"wave": "noise",
+"lpf_freq": 0.4
+},
+"waves": ["noise"]
+}, {
+"name": "Rattle",
+"base": {
+"repeat_speed": 0.6,
+"crush": 0.4
+}
+}])

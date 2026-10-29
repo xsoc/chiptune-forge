@@ -24,3 +24,29 @@ ranges = {
 "arp_mod": [-0.1, 0.05]
 }
 waves = PackedStringArray("square", "saw", "triangle")
+variants = Array[Dictionary]([{
+"name": "Sad slide",
+"base": {
+"freq_ramp": -0.08,
+"arp_mod": -0.15
+}
+}, {
+"name": "Wobbly",
+"base": {
+"vib_strength": 0.2,
+"vib_speed": 0.5
+}
+}, {
+"name": "Mellow",
+"base": {
+"wave": "triangle",
+"decay": 0.54
+},
+"waves": ["triangle", "sine"]
+}, {
+"name": "Big drop",
+"base": {
+"arp_mod": -0.4,
+"arp_speed": 0.5
+}
+}])
