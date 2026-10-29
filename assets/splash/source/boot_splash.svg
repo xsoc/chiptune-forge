@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <rect width="1024" height="1024" fill="#0F1014"/>
+  <defs><linearGradient id="gb" x1="0" x2="1"><stop offset="0" stop-color="#F5B942"/><stop offset=".5" stop-color="#F5B942"/><stop offset=".5" stop-color="#52D1C0"/><stop offset="1" stop-color="#52D1C0"/></linearGradient></defs>
+  <path d="M152 420 H232 V340 H312 V420 H352 V300 H432 V420 H472 V380 H512 V420 H552 V320 H592 V420 H632 V350 H712 V420 H752 V300 H792 V420 H872"
+        fill="none" stroke="url(#gb)" stroke-width="16" stroke-linejoin="miter" stroke-linecap="square"/>
+  <line x1="152" y1="460" x2="872" y2="460" stroke="#2C2F3B" stroke-width="2"/>
+  <text x="512" y="575" text-anchor="middle" font-family="Space Grotesk" font-weight="700" font-size="92" fill="#EDEEF2">Chiptune Forge</text>
+  <text x="512" y="640" text-anchor="middle" font-family="JetBrains Mono" font-size="22" letter-spacing="4" fill="#8A8FA3">SEED · GENERATE · EXPORT</text>
+</svg>
