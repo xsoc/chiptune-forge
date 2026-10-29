@@ -20,6 +20,36 @@ runs on phones, desktops and the web, and it exports straight into Godot.
 Everything you make is yours, for any use, with no royalties or credit
 required.
 
+## Screenshots
+
+![Generate screen on desktop: vibe and style pickers, feel and length controls, and the song preview](docs/screenshots/desktop-generate.png)
+
+<table>
+  <tr>
+    <td><img src="docs/screenshots/desktop-layers.png" alt="Layers screen: lock or regenerate each layer and set the adaptive states"></td>
+    <td><img src="docs/screenshots/desktop-sfx.png" alt="Sound FX mode: presets, waveform preview and tweak sliders"></td>
+  </tr>
+  <tr>
+    <td align="center">Layers and adaptive states</td>
+    <td align="center">Sound FX mode</td>
+  </tr>
+  <tr>
+    <td colspan="2"><img src="docs/screenshots/desktop-export.png" alt="Export screen: target, limits check and formats"></td>
+  </tr>
+  <tr>
+    <td colspan="2" align="center">Export</td>
+  </tr>
+</table>
+
+On a phone the same screens stack into one column with navigation at the
+bottom:
+
+<p align="center">
+  <img src="docs/screenshots/phone-generate.png" width="250" alt="Generate screen on a phone">
+  <img src="docs/screenshots/phone-layers.png" width="250" alt="Layers screen on a phone">
+  <img src="docs/screenshots/phone-sfx.png" width="250" alt="Sound FX mode on a phone">
+</p>
+
 ## Running it
 
 Play it in your browser at https://xsoc.github.io/chiptune-forge/ (deployed
