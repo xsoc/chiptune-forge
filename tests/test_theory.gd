@@ -19,3 +19,11 @@ func test_scales_are_sorted_pitch_classes() -> void:
 func test_every_mode_has_a_name() -> void:
 	for mode in MusicTheory.MODE_NAMES:
 		check(MusicTheory.SCALES.has(mode), "%s has a scale" % mode)
+
+
+func test_every_mode_has_a_feeling() -> void:
+	for mode in MusicTheory.MODE_NAMES:
+		check(MusicTheory.MODE_FEELINGS.has(mode), "%s has a feeling" % mode)
+		var words: int = MusicTheory.MODE_FEELINGS.get(mode, "").replace(",", " ").split(" ", false).size()
+		check(words >= 1 and words <= 3, "%s feeling is one to three words" % mode)
+	check_eq(MusicTheory.mode_label("phrygian"), "Phrygian (Dark, menacing)")

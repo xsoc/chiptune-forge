@@ -3,7 +3,7 @@
 	"version": 1,
 	"meta": {
 		"title": "Boss Fight Metal",
-		"engine_version": "1.0.0",
+		"engine_version": "1.1.0",
 		"seed": "boss",
 		"settings": {
 			"vibes": [

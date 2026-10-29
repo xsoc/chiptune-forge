@@ -37,7 +37,26 @@ const MODE_NAMES := {
 	"whole_tone": "Whole tone",
 	"diminished": "Diminished",
 	"hijaz": "Hijaz",
-	"japanese": "In (Japanese)",
+	"japanese": "Japanese In",
+}
+
+## A short feeling for each mode, shown next to its name in the picker so
+## people who don't know the theory can choose by mood.
+const MODE_FEELINGS := {
+	"major": "Bright, happy",
+	"minor": "Sad, serious",
+	"harmonic_minor": "Dramatic",
+	"dorian": "Cool, wistful",
+	"phrygian": "Dark, menacing",
+	"lydian": "Dreamy, magical",
+	"mixolydian": "Bold, carefree",
+	"major_pentatonic": "Sunny, simple",
+	"minor_pentatonic": "Moody, gritty",
+	"blues": "Soulful, swaggering",
+	"whole_tone": "Floaty, unreal",
+	"diminished": "Creepy suspense",
+	"hijaz": "Desert mystery",
+	"japanese": "Ancient, haunting",
 }
 
 ## Whether each scale's tonic chord is minor. Decides which progression book
@@ -72,6 +91,12 @@ const _NUMERALS := {"I": 0, "II": 2, "III": 4, "IV": 5, "V": 7, "VI": 9, "VII": 
 
 static func is_minor_mode(mode: String) -> bool:
 	return MINOR_FEEL.get(mode, false)
+
+
+## Picker label for a mode, such as "Phrygian (Dark, menacing)".
+static func mode_label(mode: String) -> String:
+	var name: String = MODE_NAMES.get(mode, mode)
+	return "%s (%s)" % [name, MODE_FEELINGS[mode]] if MODE_FEELINGS.has(mode) else name
 
 
 static func scale_of(mode: String) -> Array:

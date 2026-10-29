@@ -85,6 +85,29 @@ func test_song_export_zip() -> void:
 	check(zip.size() > 1000 and zip.slice(0, 2).get_string_from_ascii() == "PK", "builds a zip")
 
 
+func test_streamed_wav_matches_one_shot_encode() -> void:
+	var s := SongSettings.new()
+	s.vibes.assign(["happy"])
+	s.style = "platformer"
+	s.seed_text = "stream"
+	s.length_seconds = 12
+	var song := SongGenerator.generate(s)
+	var job := ExportJob.for_song(song, {"prefix": "s", "godot": false, "loops": 2})
+	while not job.done:
+		job.step(50000)
+	var seq := ChipSongSequencer.new(song, ExportJob.MIX_RATE)
+	var loop_begin := seq.get_loop_start_frame()
+	var loop_end := seq.get_loop_end_frame()
+	var total := loop_begin + (loop_end - loop_begin) * 2
+	var frames := PackedVector2Array()
+	while frames.size() < total:
+		frames.append_array(seq.render(mini(ExportJob.BLOCK, total - frames.size())))
+	var expected := ChipAudio.encode_wav_stereo(frames, ExportJob.MIX_RATE, loop_begin, loop_end)
+	var wav: PackedByteArray = job.files.get("audio/s.wav", PackedByteArray())
+	check_eq(wav.size(), expected.size(), "WAV size")
+	check(wav == expected, "streamed WAV matches the one-shot encode")
+
+
 func test_kit_export() -> void:
 	var catalog := Catalog.get_default()
 	var sounds := {

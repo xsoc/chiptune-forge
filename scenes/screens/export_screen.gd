@@ -2,6 +2,9 @@ extends Control
 ## Export flow: 1 target, 2 limits check, 3 formats. Works for the song in
 ## Music mode and for the kit (or the current sound) in Sound FX mode.
 
+## Songs at least this long get a note about WAV size and render time.
+const LONG_SONG_SECONDS := 270.0
+
 var _target := "modern"
 var _job: ExportJob
 
@@ -88,6 +91,10 @@ func _update_report() -> void:
 		lines.append("[color=#52d1c0]Fits.[/color] No limits on this target.")
 		lines.append("Uses %d of 7 channels, stereo and echo." % used)
 		lines.append("Length %d:%02d, loop from %s to %s." % [int(song.get_length_seconds()) / 60, int(song.get_length_seconds()) % 60, _clock(song, song.get_loop_start_step()), _clock(song, song.get_loop_end_step())])
+		var seconds := song.get_length_seconds()
+		if seconds >= LONG_SONG_SECONDS:
+			var mb := seconds * ExportJob.MIX_RATE * 4 / 1048576.0
+			lines.append("Long song: each WAV is about %d MB per loop and can take a few minutes to render, more with stems." % int(mb))
 	elif AppState.mode == "sfx":
 		lines.append("")
 		lines.append("[color=#52d1c0]Fits.[/color] Each sound plays on any voice.")
