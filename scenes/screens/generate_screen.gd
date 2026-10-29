@@ -137,13 +137,18 @@ func _update_enabled() -> void:
 	%Tempo.modulate.a = 0.45 if auto else 1.0
 	%Tempo.get_node("Slider").editable = not auto
 	%Key.disabled = auto
+	var no_vibe := not AppState.can_make_music()
+	for button in [%Generate, %Regenerate, %Save]:
+		button.disabled = no_vibe
+	%SeedField.set_dice_disabled(no_vibe)
+	%SongView.modulate.a = 0.45 if no_vibe else 1.0
 
 
 func _on_changed() -> void:
 	if _loading:
 		return
-	_update_enabled()
 	_store_settings()
+	_update_enabled()
 	AppState.notify_settings_changed()
 	%Debounce.start()
 

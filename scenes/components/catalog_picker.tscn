@@ -54,3 +54,18 @@ unique_name_in_owner = true
 visible = false
 layout_mode = 2
 theme_override_constants/separation = 2
+
+[node name="EmptyHint" type="Label" parent="."]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_type_variation = &"WarningLabel"
+autowrap_mode = 3
+
+[node name="ConfirmRemove" type="ConfirmationDialog" parent="."]
+unique_name_in_owner = true
+title = "Remove?"
+ok_button_text = "Remove"
+dialog_autowrap = true
+
+[connection signal="confirmed" from="ConfirmRemove" to="." method="_on_remove_confirmed"]
