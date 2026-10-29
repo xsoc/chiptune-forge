@@ -16,6 +16,9 @@ config/version="0.1.0"
 run/main_scene="res://scenes/main.tscn"
 config/features=PackedStringArray("4.5", "GL Compatibility")
 config/icon="res://icon.svg"
+boot_splash/bg_color=Color(0.05882353, 0.0627451, 0.078431375, 1)
+boot_splash/image="res://assets/splash/boot_splash.png"
+boot_splash/fullsize=false
 
 [audio]
 

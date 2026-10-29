@@ -2,7 +2,8 @@ class_name CatalogPicker
 extends VBoxContainer
 ## Search, group tabs and a wrap of chips for picking from a long catalogue:
 ## vibes, styles or sound effect presets. Single select, or multi select with
-## a blend strength per pick.
+## a blend strength per pick. With strengths shown, each pick's name is a
+## button that asks before removing it.
 
 signal selection_changed(ids: PackedStringArray)
 signal strengths_changed(strengths: Array[float])
@@ -17,6 +18,9 @@ const ALL_TAB := "All"
 @export var chip_variation := &"Chip"
 @export var slider_variation := &""
 @export var chips_min_height := 180
+## Lets the user remove every pick. [member empty_hint] shows while none is picked.
+@export var allow_empty := false
+@export var empty_hint := ""
 
 var _items: Dictionary = {}
 var _groups := PackedStringArray()
@@ -25,6 +29,7 @@ var _strengths: Array[float] = []
 var _strength_sliders: Array[HSlider] = []
 var _strength_labels: Array[Label] = []
 var _catalog: Catalog
+var _pending_removal := ""
 
 
 func _ready() -> void:
@@ -70,6 +75,31 @@ func get_selected() -> PackedStringArray:
 
 func get_strengths() -> Array[float]:
 	return _strengths
+
+
+## Removes [param id] from the picks, as if its chip was turned off.
+func deselect(id: String) -> void:
+	var index := _selected.find(id)
+	if index < 0 or (_selected.size() == 1 and not allow_empty):
+		return
+	_selected.remove_at(index)
+	_strengths.remove_at(index)
+	_sync_chips()
+	_rebuild_strengths()
+	selection_changed.emit(_selected)
+
+
+## Asks before removing [param id]. Used by the name buttons under the chips.
+func confirm_deselect(id: String) -> void:
+	var item: Resource = _items.get(id)
+	_pending_removal = id
+	%ConfirmRemove.dialog_text = "Remove %s from your %ss?" % [item.display_name if item else id, title.to_lower()]
+	if is_inside_tree():
+		%ConfirmRemove.popup_centered()
+
+
+func _on_remove_confirmed() -> void:
+	deselect(_pending_removal)
 
 
 ## Shows the tab holding [param id] and scrolls it into view.
@@ -125,8 +155,8 @@ func _on_chip_toggled(pressed: bool, id: String) -> void:
 		_selected.append(id)
 		_strengths.append(100.0 if _selected.size() == 1 else 50.0)
 	elif not pressed and _selected.has(id):
-		if _selected.size() == 1:
-			# Always keep one selected.
+		if _selected.size() == 1 and not allow_empty:
+			# Keep one selected.
 			_sync_chips()
 			return
 		var index := _selected.find(id)
@@ -143,16 +173,24 @@ func _rebuild_strengths() -> void:
 	_strength_sliders.clear()
 	_strength_labels.clear()
 	%Strengths.visible = show_strengths and _selected.size() > 0
+	%EmptyHint.text = empty_hint
+	%EmptyHint.visible = allow_empty and empty_hint != "" and _selected.is_empty()
 	if not show_strengths:
 		return
 	for i in _selected.size():
 		var item: Resource = _items.get(_selected[i])
 		var row := HBoxContainer.new()
-		var label := Label.new()
-		label.text = item.display_name if item else _selected[i]
-		label.custom_minimum_size.x = 96
-		label.clip_text = true
-		row.add_child(label)
+		var name_button := Button.new()
+		name_button.text = "%s  ×" % (item.display_name if item else _selected[i])
+		name_button.tooltip_text = "Remove this %s" % title.to_lower()
+		name_button.theme_type_variation = &"FlatButton"
+		name_button.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		name_button.custom_minimum_size = Vector2(96, 32)
+		name_button.clip_text = true
+		name_button.disabled = _selected.size() == 1 and not allow_empty
+		name_button.set_meta("id", _selected[i])
+		name_button.pressed.connect(confirm_deselect.bind(_selected[i]))
+		row.add_child(name_button)
 		var slider := HSlider.new()
 		slider.min_value = 0
 		slider.max_value = 100

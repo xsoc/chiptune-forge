@@ -20,3 +20,35 @@ ranges = {
 "duty": [-0.3, 0.0]
 }
 waves = PackedStringArray("square", "triangle")
+variants = Array[Dictionary]([{
+"name": "Squeaky",
+"base": {
+"base_freq": 0.6,
+"freq_ramp": 0.15
+}
+}, {
+"name": "Murmur",
+"base": {
+"wave": "triangle",
+"base_freq": 0.3,
+"lpf_freq": 0.6
+},
+"waves": ["triangle", "sine"]
+}, {
+"name": "Gibberish",
+"base": {
+"arp_mod": 0.2,
+"arp_speed": 0.8
+},
+"ranges": {
+"arp_mod": [-0.4, 0.0]
+}
+}, {
+"name": "Robotic",
+"base": {
+"wave": "square",
+"duty": 0.7,
+"crush": 0.3
+},
+"waves": ["square"]
+}])

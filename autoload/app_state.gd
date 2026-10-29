@@ -43,8 +43,15 @@ func _ready() -> void:
 	settings.seed_text = str(_fresh_seed())
 
 
+## False while no vibe is picked: there is nothing to make or play until one is.
+func can_make_music() -> bool:
+	return not settings.vibes.is_empty()
+
+
 ## Rolls a new seed and generates a new song from the current settings.
 func generate_new_song() -> void:
+	if not can_make_music():
+		return
 	settings.seed_text = str(_fresh_seed())
 	settings.variations.clear()
 	generate()
@@ -52,12 +59,16 @@ func generate_new_song() -> void:
 
 ## Generates from the current settings and seed.
 func generate() -> void:
+	if not can_make_music():
+		return
 	song = SongGenerator.generate(settings, catalog)
 	song_changed.emit(song)
 
 
 ## Gives every unlocked layer a new variation and keeps the locked ones.
 func regenerate_unlocked() -> void:
+	if not can_make_music():
+		return
 	if song == null:
 		generate()
 		return
@@ -70,7 +81,7 @@ func regenerate_unlocked() -> void:
 
 ## Regenerates a single layer, keeping every other layer as it is.
 func regenerate_layer(layer: String) -> void:
-	if song == null:
+	if song == null or not can_make_music():
 		return
 	settings.variations[layer] = settings.get_variation(layer) + 1
 	var keep := PackedStringArray()

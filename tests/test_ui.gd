@@ -30,6 +30,75 @@ func test_picker_keeps_strength_sliders_for_same_picks() -> void:
 	picker.free()
 
 
+## The name under each pick asks first, then removes it. With allow_empty the
+## last pick can go too.
+func test_picker_name_buttons_remove_picks() -> void:
+	var catalog := Catalog.get_default()
+	var picker: CatalogPicker = CATALOG_PICKER.instantiate()
+	picker.multi_select = true
+	picker.show_strengths = true
+	picker.allow_empty = true
+	picker.empty_hint = "Pick a vibe"
+	Engine.get_main_loop().root.add_child(picker)
+	picker.setup(catalog, catalog.vibes, Catalog.VIBE_GROUPS)
+	var ids := PackedStringArray(catalog.vibes.keys().slice(0, 2))
+	picker.set_selected(ids, [100.0, 50.0] as Array[float])
+	var emitted := []
+	picker.selection_changed.connect(func(picked: PackedStringArray) -> void: emitted.append(picked.duplicate()))
+
+	var buttons := _name_buttons(picker)
+	check_eq(buttons.size(), 2, "one name button per pick")
+	buttons[1].pressed.emit()
+	check_eq(picker.get_selected().size(), 2, "nothing removed before confirming")
+	var dialog: ConfirmationDialog = picker.get_node("%ConfirmRemove")
+	check(dialog.dialog_text.contains(catalog.vibes[ids[1]].display_name), "confirmation names the vibe")
+	dialog.confirmed.emit()
+	check_eq(picker.get_selected(), PackedStringArray([ids[0]]), "second pick removed")
+
+	_name_buttons(picker)[0].pressed.emit()
+	dialog.confirmed.emit()
+	check(picker.get_selected().is_empty(), "last pick removed")
+	check(picker.get_node("%EmptyHint").visible, "hint shown with no picks")
+	check_eq(emitted.size(), 2, "selection_changed per removal")
+	picker.free()
+
+
+## Without allow_empty the last pick stays.
+func test_picker_keeps_last_pick_by_default() -> void:
+	var catalog := Catalog.get_default()
+	var picker: CatalogPicker = CATALOG_PICKER.instantiate()
+	picker.multi_select = true
+	picker.show_strengths = true
+	Engine.get_main_loop().root.add_child(picker)
+	picker.setup(catalog, catalog.vibes, Catalog.VIBE_GROUPS)
+	var id: String = catalog.vibes.keys()[0]
+	picker.set_selected(PackedStringArray([id]))
+	check(_name_buttons(picker)[0].disabled, "last name button disabled")
+	picker.deselect(id)
+	check_eq(picker.get_selected(), PackedStringArray([id]), "last pick kept")
+	picker.free()
+
+
+func test_no_vibe_means_no_music() -> void:
+	var state: Node = Engine.get_main_loop().root.get_node("AppState")
+	var saved: Array[String] = state.settings.vibes.duplicate()
+	var before: ChipSong = state.song
+	state.settings.vibes.clear()
+	check(not state.can_make_music(), "cannot make music without a vibe")
+	state.generate()
+	check(state.song == before, "generate does nothing without a vibe")
+	state.settings.vibes.assign(saved)
+	check(state.can_make_music(), "can make music again")
+
+
+func _name_buttons(picker: CatalogPicker) -> Array:
+	var out := []
+	for row in picker.get_node("%Strengths").get_children():
+		if not row.is_queued_for_deletion():
+			out.append(row.get_child(0))
+	return out
+
+
 func _strength_sliders(picker: CatalogPicker) -> Array:
 	var out := []
 	for row in picker.get_node("%Strengths").get_children():

@@ -3,6 +3,8 @@ name: CI
 on:
   push:
     branches: [main]
+    # Pushing a tag like v0.1.0 also publishes a GitHub Release.
+    tags: ['v*']
   pull_request:
   workflow_dispatch:
 
@@ -62,25 +64,46 @@ jobs:
           mkdir -p ~/.local/share/godot/export_templates
           ln -s /root/.local/share/godot/export_templates/${GODOT_VERSION}.stable \
             ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable
-      - name: Android signing (debug key)
+      - name: Stamp release version
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: bash tools/stamp_version.sh "${GITHUB_REF_NAME}"
+      - name: Android signing
         if: matrix.preset == 'Android'
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_USER: ${{ secrets.ANDROID_KEYSTORE_USER }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
         run: |
           echo "GODOT_ANDROID_KEYSTORE_DEBUG_PATH=/root/debug.keystore" >> $GITHUB_ENV
           echo "GODOT_ANDROID_KEYSTORE_DEBUG_USER=androiddebugkey" >> $GITHUB_ENV
           echo "GODOT_ANDROID_KEYSTORE_DEBUG_PASSWORD=android" >> $GITHUB_ENV
           mkdir -p ~/.config/godot
           cp /root/.config/godot/editor_settings-4*.tres ~/.config/godot/ 2>/dev/null || true
+          # Sign with the release key when the repo has one, else fall back
+          # to the debug key.
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.keystore"
+            echo "GODOT_ANDROID_KEYSTORE_RELEASE_PATH=$RUNNER_TEMP/release.keystore" >> $GITHUB_ENV
+            echo "GODOT_ANDROID_KEYSTORE_RELEASE_USER=$KEYSTORE_USER" >> $GITHUB_ENV
+            echo "GODOT_ANDROID_KEYSTORE_RELEASE_PASSWORD=$KEYSTORE_PASSWORD" >> $GITHUB_ENV
+            echo "ANDROID_SIGNING=release" >> $GITHUB_ENV
+          else
+            echo "ANDROID_SIGNING=debug" >> $GITHUB_ENV
+          fi
       - name: Import
         run: godot --headless --path . --import
       - name: Export
         run: |
           mkdir -p "$(dirname "${{ matrix.path }}")"
-          if [ "${{ matrix.preset }}" = "Android" ]; then
+          if [ "${{ matrix.preset }}" = "Android" ] && [ "$ANDROID_SIGNING" = "debug" ]; then
             godot --headless --path . --export-debug "${{ matrix.preset }}" "${{ matrix.path }}"
           else
             godot --headless --path . --export-release "${{ matrix.preset }}" "${{ matrix.path }}"
           fi
           test -s "${{ matrix.path }}"
+          if [ "${{ matrix.preset }}" = "Android" ]; then
+            echo "$ANDROID_SIGNING" > build/android/signing.txt
+          fi
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact }}
@@ -116,3 +139,50 @@ jobs:
         uses: actions/deploy-pages@v4
         with:
           artifact_name: github-pages-${{ github.run_attempt }}
+
+  release:
+    name: Publish GitHub Release
+    needs: export
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      - name: Package builds
+        run: |
+          set -e
+          v="${GITHUB_REF_NAME#v}"
+          mkdir dist
+          # Artifacts lose the executable bit, so restore it before packing.
+          chmod +x artifacts/chiptune-forge-linux/linux/chiptune-forge.x86_64
+          tar -czf "dist/chiptune-forge-${v}-linux-x86_64.tar.gz" \
+            -C artifacts/chiptune-forge-linux/linux chiptune-forge.x86_64
+          (cd artifacts/chiptune-forge-windows/windows && \
+            zip -q "$GITHUB_WORKSPACE/dist/chiptune-forge-${v}-windows-x86_64.zip" chiptune-forge.exe)
+          cp artifacts/chiptune-forge-macos/macos/chiptune-forge.zip \
+            "dist/chiptune-forge-${v}-macos.zip"
+          cp artifacts/chiptune-forge-android/android/chiptune-forge.apk \
+            "dist/chiptune-forge-${v}-android.apk"
+          (cd artifacts/chiptune-forge-web/web && \
+            zip -qr "$GITHUB_WORKSPACE/dist/chiptune-forge-${v}-web.zip" .)
+          signing=$(cat artifacts/chiptune-forge-android/android/signing.txt)
+          bash tools/release_notes.sh "$v" "$signing" > notes.md
+          ls -l dist
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # A re-run replaces the files on the release it already made.
+          if gh release view "$GITHUB_REF_NAME" > /dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" dist/* --clobber
+            exit 0
+          fi
+          flags=""
+          case "$GITHUB_REF_NAME" in *-*) flags="--prerelease" ;; esac
+          gh release create "$GITHUB_REF_NAME" dist/* \
+            --title "Chiptune Forge ${GITHUB_REF_NAME}" \
+            --notes-file notes.md --verify-tag $flags

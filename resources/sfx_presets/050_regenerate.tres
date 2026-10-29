@@ -24,3 +24,31 @@ ranges = {
 "sustain": [-0.1, 0.1]
 }
 waves = PackedStringArray("triangle")
+variants = Array[Dictionary]([{
+"name": "Stepped",
+"base": {
+"repeat_speed": 0.6,
+"freq_ramp": 0.065
+}
+}, {
+"name": "Vibrato",
+"base": {
+"vib_strength": 0.3,
+"vib_speed": 0.6,
+"freq_ramp": 0.03
+}
+}, {
+"name": "Saw",
+"base": {
+"wave": "saw"
+},
+"waves": ["saw"]
+}, {
+"name": "Arp climb",
+"base": {
+"arp_mod": 0.3,
+"arp_speed": 0.6,
+"repeat_speed": 0.5,
+"freq_ramp": 0.015
+}
+}])

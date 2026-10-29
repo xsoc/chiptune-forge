@@ -19,3 +19,30 @@ ranges = {
 "base_freq": [-0.05, 0.05]
 }
 waves = PackedStringArray("square", "sine", "triangle")
+variants = Array[Dictionary]([{
+"name": "Pure",
+"base": {
+"wave": "sine"
+},
+"waves": ["sine", "triangle"]
+}, {
+"name": "Thin",
+"base": {
+"wave": "square",
+"duty": 0.7,
+"hpf_freq": 0.15
+},
+"waves": ["square"]
+}, {
+"name": "Blip up",
+"base": {
+"arp_mod": 0.35,
+"arp_speed": 0.8
+}
+}, {
+"name": "Echo",
+"base": {
+"echo": 0.3,
+"echo_delay": 0.1
+}
+}])
