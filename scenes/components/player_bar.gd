@@ -33,6 +33,12 @@ func set_playing(playing: bool) -> void:
 	%Play.tooltip_text = "Stop" if playing else "Play"
 
 
+func set_play_enabled(enabled: bool) -> void:
+	%Play.disabled = not enabled
+	%Position.editable = enabled
+	%Play.tooltip_text = "Play" if enabled else "Pick a vibe to play music"
+
+
 func set_time(seconds: float, length: float) -> void:
 	if _dragging:
 		return
