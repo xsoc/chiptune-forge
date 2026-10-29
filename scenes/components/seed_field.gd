@@ -16,3 +16,7 @@ func _ready() -> void:
 
 func set_seed_text(text: String) -> void:
 	%Edit.text = text
+
+
+func set_dice_disabled(disabled: bool) -> void:
+	%Dice.disabled = disabled

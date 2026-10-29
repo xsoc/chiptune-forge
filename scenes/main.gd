@@ -28,6 +28,7 @@ func _ready() -> void:
 	%SfxMode.pressed.connect(func() -> void: AppState.mode = "sfx")
 	AppState.mode_changed.connect(_on_mode_changed)
 	AppState.song_changed.connect(_on_song_changed)
+	AppState.settings_changed.connect(_on_settings_changed)
 
 	%PlayerBar.play_toggled.connect(_on_play_toggled)
 	%PlayerBar.seek_requested.connect(_on_seek_fraction)
@@ -45,6 +46,7 @@ func _ready() -> void:
 			%SoundPrompt.visible = false)
 
 	_on_mode_changed(AppState.mode)
+	_on_settings_changed()
 	if AppState.song == null:
 		AppState.generate()
 
@@ -157,10 +159,18 @@ func _on_song_changed(song: ChipSong) -> void:
 		AudioService.play_song(song, fmod(step, maxf(song.get_length_steps(), 1)))
 
 
+## With no vibe picked there is no music: stop it and turn off Play.
+func _on_settings_changed() -> void:
+	var can_play := AppState.can_make_music()
+	%PlayerBar.set_play_enabled(can_play)
+	if not can_play and AudioService.is_playing():
+		AudioService.stop_song()
+
+
 func _on_play_toggled() -> void:
 	if AudioService.is_playing():
 		AudioService.stop_song()
-	elif AppState.song:
+	elif AppState.song and AppState.can_make_music():
 		AudioService.music.loop = %PlayerBar.is_loop_on()
 		AudioService.play_song(AppState.song)
 
@@ -171,7 +181,7 @@ func _on_seek_fraction(fraction: float) -> void:
 
 
 func _play_from_step(step: float) -> void:
-	if AppState.song:
+	if AppState.song and AppState.can_make_music():
 		# Snap to the beat so playback starts cleanly.
 		var spb := AppState.song.get_steps_per_beat()
 		AudioService.play_song(AppState.song, floorf(step / spb) * spb)
