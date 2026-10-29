@@ -26,3 +26,32 @@ ranges = {
 "pha_offset": [-0.2, 0.2]
 }
 waves = PackedStringArray("square", "sine", "saw")
+variants = Array[Dictionary]([{
+"name": "Arpeggio",
+"base": {
+"arp_mod": 0.3,
+"arp_speed": 0.7,
+"repeat_speed": 0.6
+}
+}, {
+"name": "Deep",
+"base": {
+"base_freq": 0.14,
+"lpf_freq": 0.6,
+"echo": 0.45
+}
+}, {
+"name": "Sparkly",
+"base": {
+"wave": "sine",
+"base_freq": 0.35
+},
+"waves": ["sine", "triangle"]
+}, {
+"name": "Warped",
+"base": {
+"vib_strength": 0.5,
+"vib_speed": 0.3,
+"pha_ramp": 0.25
+}
+}])

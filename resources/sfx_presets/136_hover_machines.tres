@@ -23,3 +23,34 @@ ranges = {
 "vib_strength": [-0.1, 0.1]
 }
 waves = PackedStringArray("triangle")
+variants = Array[Dictionary]([{
+"name": "Fast warble",
+"base": {
+"vib_speed": 0.85,
+"vib_strength": 0.2
+}
+}, {
+"name": "Two-tone",
+"base": {
+"arp_mod": 0.25,
+"arp_speed": 0.6,
+"repeat_speed": 0.4,
+"vib_strength": 0.0
+},
+"ranges": {
+"vib_strength": [0.0, 0.0]
+}
+}, {
+"name": "Sweeping",
+"base": {
+"freq_ramp": 0.05,
+"repeat_speed": 0.5
+}
+}, {
+"name": "Hollow",
+"base": {
+"wave": "triangle",
+"lpf_freq": 0.6
+},
+"waves": ["triangle", "sine"]
+}])

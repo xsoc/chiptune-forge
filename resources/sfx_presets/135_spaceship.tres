@@ -27,3 +27,29 @@ ranges = {
 "sustain": [-0.15, 0.15]
 }
 waves = PackedStringArray("saw")
+variants = Array[Dictionary]([{
+"name": "Throbbing",
+"base": {
+"vib_strength": 0.35,
+"vib_speed": 0.4
+}
+}, {
+"name": "Accelerating",
+"base": {
+"freq_ramp": 0.01,
+"freq_dramp": 0.25
+}
+}, {
+"name": "Swirling",
+"base": {
+"pha_offset": 0.4,
+"pha_ramp": -0.3
+}
+}, {
+"name": "Stepped",
+"base": {
+"arp_mod": 0.15,
+"arp_speed": 0.6,
+"repeat_speed": 0.5
+}
+}])

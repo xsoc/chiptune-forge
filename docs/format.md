@@ -53,7 +53,7 @@ for a stepped, NES-style triangle), `short` (short-period noise) and `echo`
 {
   "format": "chipforge-sfx",
   "version": 1,
-  "meta": {"name": "Coin", "preset": "coin", "seed": 1234, "license": "..."},
+  "meta": {"name": "Coin", "preset": "coin", "seed": 1234, "variant": "Classic", "license": "..."},
   "params": {"wave": "square", "base_freq": 0.55, "sustain": 0.07, "decay": 0.33}
 }
 ```
@@ -65,6 +65,10 @@ for a stepped, NES-style triangle), `short` (short-period noise) and `echo`
 `noise_seed` so noise renders identically everywhere. An optional `layer2`
 at the top level holds a second parameter set mixed on top, for sounds such as explosions
 with a thump under the noise.
+
+`meta.variant` names the preset baseline the seed picked ("Classic" for the
+preset's base, or one of its `variants`, such as "No arpeggio"). It is
+informational: `params` alone defines the sound.
 
 ## `.chipkit` (format `chipforge-kit`, version 1)
 

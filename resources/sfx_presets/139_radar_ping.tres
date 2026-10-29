@@ -22,3 +22,33 @@ ranges = {
 "decay": [-0.1, 0.1]
 }
 waves = PackedStringArray("sine", "triangle")
+variants = Array[Dictionary]([{
+"name": "Two-chime",
+"base": {
+"arp_mod": 0.3,
+"arp_speed": 0.75
+}
+}, {
+"name": "Glassy",
+"base": {
+"wave": "triangle",
+"base_freq": 0.77,
+"punch": 0.7,
+"decay": 0.48
+},
+"waves": ["triangle"]
+}, {
+"name": "Warble",
+"base": {
+"vib_strength": 0.1,
+"vib_speed": 0.65
+}
+}, {
+"name": "Square bell",
+"base": {
+"wave": "square",
+"duty": 0.5,
+"lpf_freq": 0.6
+},
+"waves": ["square"]
+}])

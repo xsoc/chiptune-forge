@@ -23,3 +23,32 @@ ranges = {
 "lpf_freq": [-0.15, 0.15]
 }
 waves = PackedStringArray("noise")
+variants = Array[Dictionary]([{
+"name": "Low thud",
+"base": {
+"base_freq": 0.12,
+"lpf_freq": 0.4,
+"decay": 0.192
+}
+}, {
+"name": "Knock",
+"base": {
+"wave": "triangle",
+"freq_ramp": -0.3,
+"punch": 0.8
+},
+"waves": ["triangle", "sine"]
+}, {
+"name": "Crisp",
+"base": {
+"hpf_freq": 0.3,
+"lpf_freq": 0.8,
+"decay": 0.112
+}
+}, {
+"name": "Dusty",
+"base": {
+"crush": 0.35,
+"lpf_freq": 0.65
+}
+}])
