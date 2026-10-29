@@ -22,6 +22,8 @@ var _items: Dictionary = {}
 var _groups := PackedStringArray()
 var _selected := PackedStringArray()
 var _strengths: Array[float] = []
+var _strength_sliders: Array[HSlider] = []
+var _strength_labels: Array[Label] = []
 var _catalog: Catalog
 
 
@@ -47,12 +49,19 @@ func setup(catalog: Catalog, items: Dictionary, groups: PackedStringArray) -> vo
 
 
 func set_selected(ids: PackedStringArray, strengths: Array[float] = []) -> void:
+	var same_ids := ids == _selected
 	_selected = ids.duplicate()
 	_strengths = strengths.duplicate()
 	while _strengths.size() < _selected.size():
 		_strengths.append(100.0)
 	_sync_chips()
-	_rebuild_strengths()
+	# Rebuilding would free a slider the user may be dragging right now.
+	if same_ids and _strength_sliders.size() == _selected.size():
+		for i in _strength_sliders.size():
+			_strength_sliders[i].set_value_no_signal(_strengths[i])
+			_strength_labels[i].text = "%d" % _strengths[i]
+	else:
+		_rebuild_strengths()
 
 
 func get_selected() -> PackedStringArray:
@@ -131,6 +140,8 @@ func _on_chip_toggled(pressed: bool, id: String) -> void:
 func _rebuild_strengths() -> void:
 	for child in %Strengths.get_children():
 		child.queue_free()
+	_strength_sliders.clear()
+	_strength_labels.clear()
 	%Strengths.visible = show_strengths and _selected.size() > 0
 	if not show_strengths:
 		return
@@ -155,10 +166,12 @@ func _rebuild_strengths() -> void:
 			slider.theme_type_variation = slider_variation
 		slider.value_changed.connect(_on_strength_changed.bind(i))
 		row.add_child(slider)
+		_strength_sliders.append(slider)
 		var value := Label.new()
 		value.theme_type_variation = &"MonoLabel"
 		value.text = "%d" % _strengths[i]
 		value.custom_minimum_size.x = 30
+		_strength_labels.append(value)
 		slider.value_changed.connect(func(v: float) -> void: value.text = "%d" % v)
 		row.add_child(value)
 		%Strengths.add_child(row)
