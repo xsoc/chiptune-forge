@@ -38,6 +38,20 @@ func test_json_round_trip() -> void:
 	check_eq(ChipSong.validate(song.data), "", "validates")
 
 
+func test_long_songs_reach_their_length() -> void:
+	for seconds in [300.0, 600.0, 900.0]:
+		for tempo in [60, 0, 240]:
+			for form in ["verse_chorus", "rondo", "aaba", "loop"]:
+				var s := _settings("happy", "platformer", "long")
+				s.length_seconds = seconds
+				s.tempo = tempo
+				s.form = form
+				var song := SongGenerator.generate(s)
+				var label := "%ds at %d BPM, %s" % [seconds, tempo, form]
+				check_eq(ChipSong.validate(song.data), "", label)
+				check_near(song.get_length_seconds(), seconds, seconds * 0.15, label + " length")
+
+
 func test_constraints_across_many_songs() -> void:
 	var catalog := Catalog.get_default()
 	var vibes := catalog.vibes.keys()

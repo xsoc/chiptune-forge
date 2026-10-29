@@ -7,8 +7,12 @@ extends RefCounted
 ## then sound design. The same settings and seed always give the same song.
 
 ## Bump when a change alters the output for existing seeds.
-const ENGINE_VERSION := "1.0.0"
+const ENGINE_VERSION := "1.1.0"
 const LICENSE := "Generated with Chiptune Forge. You own this music and may use it for any purpose, including commercially, with no royalties or credit required."
+
+## Most main sections a song can have. Enough for 15 minutes of 16-bar
+## sections at the fastest tempo.
+const MAX_SECTIONS := 64
 
 const FORM_TEMPLATES := {
 	"loop": ["A", "A"],
@@ -193,10 +197,15 @@ static func build_form(ctx: GenContext) -> void:
 	if template.size() > max_sections:
 		template = template.slice(0, max_sections)
 	var section_bars := clampi(int(roundf(body_bars / float(template.size()) / 4.0)) * 4, 4, 16)
-	# Long songs repeat the form rather than stretching sections past 16 bars.
+	# Long songs repeat the form rather than stretching sections past 16 bars,
+	# then add the start of the form again to get close to the asked length.
 	var base := template.duplicate()
-	while (template.size() + base.size()) * section_bars <= body_bars + section_bars / 2 and template.size() < 16:
+	while (template.size() + base.size()) * section_bars <= body_bars + section_bars / 2 and template.size() + base.size() <= MAX_SECTIONS:
 		template.append_array(base)
+	var extra := 0
+	while (template.size() + 1) * section_bars <= body_bars + section_bars / 2 and template.size() < MAX_SECTIONS:
+		template.append(base[extra % base.size()])
+		extra += 1
 
 	var curve := s.energy_curve
 	var count := template.size()

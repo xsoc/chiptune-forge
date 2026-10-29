@@ -14,12 +14,14 @@ var status := ""
 
 var _tasks: Array[Callable] = []
 var _task_index := 0
-# The render in progress. Frames live in a member, not a dictionary, so
-# appending never copies the whole buffer.
+# The render in progress. Each block is written straight into the finished
+# WAV bytes, so a long song never holds its float frames in memory.
 var _r_path := ""
 var _r_seq: ChipSongSequencer
 var _r_total := 0
-var _r_frames := PackedVector2Array()
+var _r_written := 0
+var _r_bytes := PackedByteArray()
+var _r_header := 0
 var _r_fraction := 0.0
 
 
@@ -125,30 +127,60 @@ func build_zip() -> PackedByteArray:
 func _queue_render(song: ChipSong, path: String, loops: int, muted: Array) -> void:
 	_tasks.append(func() -> bool:
 		if _r_path != path:
-			_r_seq = ChipSongSequencer.new(song, MIX_RATE)
-			for c in muted:
-				_r_seq.set_channel_muted(c, true)
-			_r_total = _r_seq.get_loop_start_frame() + (_r_seq.get_loop_end_frame() - _r_seq.get_loop_start_frame()) * maxi(loops, 1)
-			if not _r_seq.looping:
-				_r_total = _r_seq.get_length_frames() + int(1.5 * MIX_RATE)
-			_r_seq.seek_step(0)
-			_r_path = path
-			_r_frames = PackedVector2Array()
-			_r_fraction = 0.0
-			status = "Rendering %s" % path.get_file()
-		var chunk := _r_seq.render(mini(BLOCK, _r_total - _r_frames.size()))
-		_r_frames.append_array(chunk)
-		_r_fraction = _r_frames.size() / float(maxi(_r_total, 1))
-		if _r_frames.size() < _r_total and not chunk.is_empty():
+			_start_render(song, path, loops, muted)
+		var chunk := _r_seq.render(mini(BLOCK, _r_total - _r_written))
+		ChipAudio.write_pcm16_stereo(chunk, _r_bytes, _r_header + _r_written * 4)
+		_r_written += chunk.size()
+		_r_fraction = _r_written / float(maxi(_r_total, 1))
+		if _r_written < _r_total and not chunk.is_empty():
 			return false
-		var loop_begin := _r_seq.get_loop_start_frame() if _r_seq.looping else -1
-		var loop_end := _r_seq.get_loop_end_frame() if _r_seq.looping else -1
-		files[path] = ChipAudio.encode_wav_stereo(_r_frames, MIX_RATE, loop_begin, loop_end)
-		_r_path = ""
-		_r_seq = null
-		_r_frames = PackedVector2Array()
-		_r_fraction = 0.0
+		files[path] = _finish_render()
 		return true)
+
+
+func _start_render(song: ChipSong, path: String, loops: int, muted: Array) -> void:
+	_r_seq = ChipSongSequencer.new(song, MIX_RATE)
+	for c in muted:
+		_r_seq.set_channel_muted(c, true)
+	_r_total = _r_seq.get_loop_start_frame() + (_r_seq.get_loop_end_frame() - _r_seq.get_loop_start_frame()) * maxi(loops, 1)
+	if not _r_seq.looping:
+		_r_total = _r_seq.get_length_frames() + int(1.5 * MIX_RATE)
+	_r_seq.seek_step(0)
+	_r_path = path
+	_r_written = 0
+	_r_fraction = 0.0
+	_r_bytes = _wav_header(_r_total)
+	_r_header = _r_bytes.size()
+	_r_bytes.resize(_r_header + _r_total * 4)
+	status = "Rendering %s" % path.get_file()
+
+
+func _finish_render() -> PackedByteArray:
+	var bytes := _r_bytes
+	if _r_written < _r_total:
+		# The sequencer ran out early: trim the data and fix the sizes.
+		bytes.resize(_r_header + _r_written * 4)
+		var header := _wav_header(_r_written)
+		for i in header.size():
+			bytes[i] = header[i]
+	bytes.append_array(ChipAudio.wav_loop_chunk(MIX_RATE, _loop_begin(), _loop_end()))
+	_r_path = ""
+	_r_seq = null
+	_r_bytes = PackedByteArray()
+	_r_fraction = 0.0
+	return bytes
+
+
+func _wav_header(frames: int) -> PackedByteArray:
+	return ChipAudio.wav_header(frames * 4, 2, MIX_RATE, _loop_begin(), _loop_end())
+
+
+func _loop_begin() -> int:
+	return _r_seq.get_loop_start_frame() if _r_seq.looping else -1
+
+
+func _loop_end() -> int:
+	return _r_seq.get_loop_end_frame() if _r_seq.looping else -1
 
 
 func _add_plugin(base: String) -> void:

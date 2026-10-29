@@ -8,7 +8,7 @@ extends Control
 
 signal seek_requested(step: float)
 
-const LENGTHS := [30, 60, 90, 120]
+const LENGTHS := [30, 60, 90, 120, 300, 600, 900]
 
 var _loading := false
 
@@ -57,7 +57,7 @@ func _fill_options() -> void:
 	%Mode.clear()
 	%Mode.add_item("Mode: auto")
 	for mode in MusicTheory.MODE_NAMES:
-		%Mode.add_item(MusicTheory.MODE_NAMES[mode])
+		%Mode.add_item(MusicTheory.mode_label(mode))
 		%Mode.set_item_metadata(%Mode.item_count - 1, mode)
 	%Form.clear()
 	var form_names := {"auto": "Form: style picks", "loop": "Loop (A A)", "verse_chorus": "Verse-chorus", "aaba": "AABA",

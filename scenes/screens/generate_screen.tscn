@@ -116,7 +116,7 @@ max_value = 220.0
 value = 120.0
 value_format = "%d BPM"
 
-[node name="KeyRow" type="HBoxContainer" parent="Scroll/Margin/Columns/ControlsCard/Controls"]
+[node name="KeyRow" type="VBoxContainer" parent="Scroll/Margin/Columns/ControlsCard/Controls"]
 layout_mode = 2
 
 [node name="Key" type="OptionButton" parent="Scroll/Margin/Columns/ControlsCard/Controls/KeyRow"]
@@ -152,7 +152,7 @@ custom_minimum_size = Vector2(0, 40)
 layout_mode = 2
 tooltip_text = "Length in seconds"
 min_value = 4.0
-max_value = 300.0
+max_value = 900.0
 value = 60.0
 suffix = "s"
 
