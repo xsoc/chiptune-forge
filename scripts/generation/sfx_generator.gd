@@ -29,12 +29,36 @@ const SIGNED := ["freq_ramp", "freq_dramp", "duty_ramp", "arp_mod", "lpf_ramp", 
 static func roll(preset: SfxPreset, seed_value: int) -> Dictionary:
 	var params := preset.base.duplicate()
 	if seed_value != 0:
+		var ranges := preset.ranges.duplicate()
+		var waves := preset.waves
+		var variant := variant_index(preset, seed_value)
+		if variant > 0:
+			var v: Dictionary = preset.variants[variant - 1]
+			params.merge(v.get("base", {}), true)
+			ranges.merge(v.get("ranges", {}), true)
+			if v.has("waves"):
+				waves = PackedStringArray(v["waves"])
 		var rng := Pcg32.for_stream(seed_value, "sfx:" + preset.id)
-		_apply_ranges(params, preset.ranges, rng)
-		if preset.waves.size() > 1:
-			params["wave"] = preset.waves[rng.range_int(0, preset.waves.size() - 1)]
+		_apply_ranges(params, ranges, rng)
+		if waves.size() > 1:
+			params["wave"] = waves[rng.range_int(0, waves.size() - 1)]
 		params["noise_seed"] = rng.range_int(1, 0x7FFFFFFF)
 	return _clamp_all(params)
+
+
+## Which baseline [param seed_value] uses: 0 for the preset's base, or 1 and
+## up for its [member SfxPreset.variants]. It has its own stream, so a seed
+## that lands on the base sounds the same as before variants existed.
+static func variant_index(preset: SfxPreset, seed_value: int) -> int:
+	if seed_value == 0 or preset.variants.is_empty():
+		return 0
+	return Pcg32.for_stream(seed_value, "sfxv:" + preset.id).range_int(0, preset.variants.size())
+
+
+## The name of the baseline [param seed_value] uses, such as "No arpeggio".
+static func variant_name(preset: SfxPreset, seed_value: int) -> String:
+	var variant := variant_index(preset, seed_value)
+	return "Classic" if variant == 0 else str(preset.variants[variant - 1].get("name", "Variant %d" % variant))
 
 
 static func roll_layer2(preset: SfxPreset, seed_value: int) -> Dictionary:
@@ -98,6 +122,7 @@ static func make_sfx(preset: SfxPreset, seed_value: int, tweaks := {}) -> ChipSf
 	var sfx := ChipSfx.from_params(params, preset.display_name, roll_layer2(preset, seed_value))
 	sfx.data["meta"]["preset"] = preset.id
 	sfx.data["meta"]["seed"] = seed_value
+	sfx.data["meta"]["variant"] = variant_name(preset, seed_value)
 	sfx.data["meta"]["license"] = SongGenerator.LICENSE.replace("music", "sound")
 	return sfx
 

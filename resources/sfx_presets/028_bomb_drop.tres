@@ -22,3 +22,30 @@ ranges = {
 "sustain": [-0.1, 0.1]
 }
 waves = PackedStringArray("sine")
+variants = Array[Dictionary]([{
+"name": "Steppy",
+"base": {
+"arp_mod": -0.3,
+"arp_speed": 0.6,
+"repeat_speed": 0.55
+}
+}, {
+"name": "Wobbly",
+"base": {
+"vib_strength": 0.3,
+"vib_speed": 0.55
+}
+}, {
+"name": "Curving",
+"base": {
+"freq_ramp": -0.072,
+"freq_dramp": -0.2
+}
+}, {
+"name": "Gritty",
+"base": {
+"wave": "saw",
+"crush": 0.3
+},
+"waves": ["saw", "square"]
+}])

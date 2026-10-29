@@ -22,3 +22,36 @@ ranges = {
 "repeat_speed": [-0.08, 0.08]
 }
 waves = PackedStringArray("square", "saw")
+variants = Array[Dictionary]([{
+"name": "Slow pulse",
+"base": {
+"repeat_speed": 0.47,
+"lpf_freq": 0.6
+}
+}, {
+"name": "Falling",
+"base": {
+"freq_ramp": -0.15,
+"repeat_speed": 0.0
+},
+"ranges": {
+"repeat_speed": [0.0, 0.0]
+}
+}, {
+"name": "Gritty",
+"base": {
+"wave": "saw",
+"crush": 0.4
+},
+"waves": ["saw"]
+}, {
+"name": "Wobbly",
+"base": {
+"vib_strength": 0.4,
+"vib_speed": 0.75,
+"repeat_speed": 0.0
+},
+"ranges": {
+"repeat_speed": [0.0, 0.0]
+}
+}])

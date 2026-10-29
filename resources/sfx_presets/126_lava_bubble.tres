@@ -24,3 +24,33 @@ ranges = {
 "repeat_speed": [-0.15, 0.1]
 }
 waves = PackedStringArray("sine")
+variants = Array[Dictionary]([{
+"name": "Trill",
+"base": {
+"vib_strength": 0.4,
+"vib_speed": 0.85
+}
+}, {
+"name": "Reversed",
+"base": {
+"freq_ramp": -0.4,
+"freq_limit": 0.0
+},
+"ranges": {
+"freq_ramp": [-0.1, 0.5]
+}
+}, {
+"name": "Two-note",
+"base": {
+"arp_mod": 0.3,
+"arp_speed": 0.75
+}
+}, {
+"name": "Squeaky",
+"base": {
+"wave": "square",
+"base_freq": 0.4,
+"duty": 0.6
+},
+"waves": ["square"]
+}])

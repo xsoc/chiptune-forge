@@ -26,3 +26,29 @@ ranges = {
 "decay": [-0.1, 0.15]
 }
 waves = PackedStringArray("noise")
+variants = Array[Dictionary]([{
+"name": "Rolling",
+"base": {
+"repeat_speed": 0.45,
+"freq_ramp": -0.25
+}
+}, {
+"name": "Rising roar",
+"base": {
+"freq_ramp": 0.1,
+"base_freq": 0.064
+}
+}, {
+"name": "Phased",
+"base": {
+"pha_offset": 0.35,
+"pha_ramp": -0.15
+}
+}, {
+"name": "Crackle",
+"base": {
+"crush": 0.4,
+"vib_strength": 0.4,
+"vib_speed": 0.6
+}
+}])

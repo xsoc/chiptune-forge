@@ -100,7 +100,11 @@ func _on_sfx_changed(sfx: ChipSfx) -> void:
 	var preset := AppState.get_sfx_preset()
 	%Name.text = sfx.get_sound_name()
 	%PresetPicker.set_selected(PackedStringArray([AppState.sfx_preset_id]))
-	%Note.text = "%s · %s. Modern chiptune plays it on any voice, with no limits." % [SfxGenerator.c_id(sfx.get_sound_name()), preset.description.get_slice(": ", 1) if preset else "custom"]
+	var kind := preset.description.get_slice(": ", 1) if preset else "custom"
+	var variant := str(sfx.data.get("meta", {}).get("variant", ""))
+	if not variant.is_empty() and variant != "Classic":
+		kind += " (%s)" % variant.to_lower()
+	%Note.text = "%s · %s. Modern chiptune plays it on any voice, with no limits." % [SfxGenerator.c_id(sfx.get_sound_name()), kind]
 	%Waveform.set_samples(sfx.render(22050), 22050)
 	var params := ChipSfxSynth.with_defaults(sfx.data.get("params", {}))
 	for key in _advanced_rows:
