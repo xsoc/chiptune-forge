@@ -2,13 +2,14 @@ class_name CatalogPicker
 extends VBoxContainer
 ## Search, group tabs and a wrap of chips for picking from a long catalogue:
 ## vibes, styles or sound effect presets. Single select, or multi select with
-## a blend strength per pick. With strengths shown, each pick's name is a
+## a blend strength per pick. With strengths shown, each pick has an X
 ## button that asks before removing it.
 
 signal selection_changed(ids: PackedStringArray)
 signal strengths_changed(strengths: Array[float])
 
 const ALL_TAB := "All"
+const CLOSE_ICON := preload("res://assets/ui/icon_close.svg")
 
 @export var title := "Vibe"
 @export var hint := ""
@@ -180,17 +181,23 @@ func _rebuild_strengths() -> void:
 	for i in _selected.size():
 		var item: Resource = _items.get(_selected[i])
 		var row := HBoxContainer.new()
-		var name_button := Button.new()
-		name_button.text = "%s  ×" % (item.display_name if item else _selected[i])
-		name_button.tooltip_text = "Remove this %s" % title.to_lower()
-		name_button.theme_type_variation = &"FlatButton"
-		name_button.alignment = HORIZONTAL_ALIGNMENT_LEFT
-		name_button.custom_minimum_size = Vector2(96, 32)
-		name_button.clip_text = true
-		name_button.disabled = _selected.size() == 1 and not allow_empty
-		name_button.set_meta("id", _selected[i])
-		name_button.pressed.connect(confirm_deselect.bind(_selected[i]))
-		row.add_child(name_button)
+		var item_name: String = item.display_name if item else _selected[i]
+		var remove := Button.new()
+		remove.icon = CLOSE_ICON
+		remove.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		remove.add_theme_constant_override("icon_max_width", 18)
+		remove.custom_minimum_size = Vector2(36, 36)
+		remove.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		remove.tooltip_text = "Remove %s" % item_name
+		remove.disabled = _selected.size() == 1 and not allow_empty
+		remove.set_meta("remove", _selected[i])
+		remove.pressed.connect(confirm_deselect.bind(_selected[i]))
+		row.add_child(remove)
+		var label := Label.new()
+		label.text = item_name
+		label.custom_minimum_size.x = 96
+		label.clip_text = true
+		row.add_child(label)
 		var slider := HSlider.new()
 		slider.min_value = 0
 		slider.max_value = 100
