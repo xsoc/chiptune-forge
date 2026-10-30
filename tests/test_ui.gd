@@ -30,7 +30,7 @@ func test_picker_keeps_strength_sliders_for_same_picks() -> void:
 	picker.free()
 
 
-## The name under each pick asks first, then removes it. With allow_empty the
+## The X button by each pick asks first, then removes it. With allow_empty the
 ## last pick can go too.
 func test_picker_name_buttons_remove_picks() -> void:
 	var catalog := Catalog.get_default()
@@ -47,7 +47,7 @@ func test_picker_name_buttons_remove_picks() -> void:
 	picker.selection_changed.connect(func(picked: PackedStringArray) -> void: emitted.append(picked.duplicate()))
 
 	var buttons := _name_buttons(picker)
-	check_eq(buttons.size(), 2, "one name button per pick")
+	check_eq(buttons.size(), 2, "one X button per pick")
 	buttons[1].pressed.emit()
 	check_eq(picker.get_selected().size(), 2, "nothing removed before confirming")
 	var dialog: ConfirmationDialog = picker.get_node("%ConfirmRemove")
@@ -73,7 +73,7 @@ func test_picker_keeps_last_pick_by_default() -> void:
 	picker.setup(catalog, catalog.vibes, Catalog.VIBE_GROUPS)
 	var id: String = catalog.vibes.keys()[0]
 	picker.set_selected(PackedStringArray([id]))
-	check(_name_buttons(picker)[0].disabled, "last name button disabled")
+	check(_name_buttons(picker)[0].disabled, "last X button disabled")
 	picker.deselect(id)
 	check_eq(picker.get_selected(), PackedStringArray([id]), "last pick kept")
 	picker.free()
@@ -94,8 +94,11 @@ func test_no_vibe_means_no_music() -> void:
 func _name_buttons(picker: CatalogPicker) -> Array:
 	var out := []
 	for row in picker.get_node("%Strengths").get_children():
-		if not row.is_queued_for_deletion():
-			out.append(row.get_child(0))
+		if row.is_queued_for_deletion():
+			continue
+		for child in row.get_children():
+			if child is Button and child.has_meta("remove"):
+				out.append(child)
 	return out
 
 
