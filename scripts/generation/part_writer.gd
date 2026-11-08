@@ -231,7 +231,7 @@ static func _pad(ctx: GenContext, i: int, kind: String, e: float, _rng: Pcg32) -
 					on = beat_pos == 0 and abs_step % ctx.steps_per_bar != 0
 				if on:
 					for pitch in voicing:
-						ctx.add_note(i, GenContext.Channel.PAD, abs_step, 2 if ctx.beats_per_bar == 3 else 1, pitch + 5, 86)
+						ctx.add_note(i, GenContext.Channel.PAD, abs_step, 2 if ctx.beats_per_bar == 3 else 1, pitch, 86)
 				step += 1
 		else:
 			var velocity := 70 if e < 0.3 else 82
@@ -307,7 +307,14 @@ static func _bass(ctx: GenContext, i: int, e: float, rng: Pcg32) -> void:
 					if step == 0:
 						pitch = root
 					elif step + beat >= length:
-						pitch = next_root + (1 if rng.chance(0.5) else -1)
+						# Approach the next root from the scale note above or below.
+						var below := MusicTheory.snap_to_scale(next_root - 1, ctx.key, ctx.mode)
+						var above := next_root + 1
+						while not MusicTheory.in_scale(above, ctx.key, ctx.mode):
+							above += 1
+						pitch = above if rng.chance(0.5) else below
+						if pitch == next_root:
+							pitch = root
 					else:
 						var options: Array = [root + int(intervals[1]), fifth, root + 12]
 						for p in scale:
@@ -324,16 +331,16 @@ static func _bass(ctx: GenContext, i: int, e: float, rng: Pcg32) -> void:
 					n += 1
 			"synco":
 				var hits := [[0, 3, 0], [3, 2, 0], [6, 2, 12], [10, 2, 0], [12, 2, 0], [14, 2, 12]]
-				_bar_figure(ctx, i, start, length, root, hits)
+				_bar_figure(ctx, i, start, length, root, fifth - root, hits)
 			"reggae":
 				var hits := [[0, 3, 0], [6, 2, 7], [8, 2, 0], [11, 3, 12]]
-				_bar_figure(ctx, i, start, length, root, hits)
+				_bar_figure(ctx, i, start, length, root, fifth - root, hits)
 			"halftime":
 				var hits := [[0, 6, 0], [7, 3, 0], [10, 6, -12]]
-				_bar_figure(ctx, i, start, length, root, hits)
+				_bar_figure(ctx, i, start, length, root, fifth - root, hits)
 			"dnb":
 				var hits := [[0, 6, 0], [10, 4, 0], [14, 2, 12]]
-				_bar_figure(ctx, i, start, length, root, hits)
+				_bar_figure(ctx, i, start, length, root, fifth - root, hits)
 			"waltz":
 				for step in range(0, length, ctx.steps_per_bar):
 					ctx.add_note(i, GenContext.Channel.BASS, start + step, beat, root, 104)
@@ -346,7 +353,9 @@ static func _bass(ctx: GenContext, i: int, e: float, rng: Pcg32) -> void:
 
 
 ## Repeats a one-bar figure of [step, length, interval] hits across a chord.
-static func _bar_figure(ctx: GenContext, i: int, start: int, length: int, root: int, hits: Array) -> void:
+## A 7 in a hit means the chord's own fifth, which is not a perfect fifth on
+## diminished or augmented chords.
+static func _bar_figure(ctx: GenContext, i: int, start: int, length: int, root: int, fifth: int, hits: Array) -> void:
 	var scale := float(ctx.steps_per_bar) / 16.0
 	var bar := 0
 	while bar < length:
@@ -355,6 +364,9 @@ static func _bar_figure(ctx: GenContext, i: int, start: int, length: int, root: 
 			if step >= length:
 				continue
 			var dur := maxi(1, mini(int(roundf(int(hit[1]) * scale)), length - step))
-			var pitch := maxi(root + int(hit[2]), 28)
+			var interval := fifth if int(hit[2]) == 7 else int(hit[2])
+			var pitch := root + interval
+			if pitch < 28:
+				pitch += 12
 			ctx.add_note(i, GenContext.Channel.BASS, start + step, dur, pitch, 104 if hit[0] == 0 else 90)
 		bar += ctx.steps_per_bar

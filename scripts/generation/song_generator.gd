@@ -7,7 +7,7 @@ extends RefCounted
 ## then sound design. The same settings and seed always give the same song.
 
 ## Bump when a change alters the output for existing seeds.
-const ENGINE_VERSION := "1.1.0"
+const ENGINE_VERSION := "1.2.0"
 const LICENSE := "Generated with Chiptune Forge. You own this music and may use it for any purpose, including commercially, with no royalties or credit required."
 
 ## Most main sections a song can have. Enough for 15 minutes of 16-bar
@@ -323,7 +323,11 @@ static func _lay_chords(ctx: GenContext, progression: Array, chord_steps: int, t
 		var quality: String = parsed["quality"]
 		if quality in ["maj", "min"] and rng.chance(colour * 0.6):
 			quality = MusicTheory.colour_chord(quality, rng)
-		var root := posmod(ctx.key + int(parsed["root"]), 12)
+		var fitted := MusicTheory.fit_chord(ctx.key + int(parsed["root"]), quality, ctx.key, ctx.mode)
+		var root: int = fitted["root"]
+		if fitted["quality"] != quality or root != posmod(ctx.key + int(parsed["root"]), 12):
+			quality = fitted["quality"]
+			numeral = MusicTheory.numeral_for(root - ctx.key, quality)
 		var length := mini(chord_steps, total - step)
 		chords.append({
 			"start": step,

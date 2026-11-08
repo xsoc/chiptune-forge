@@ -168,6 +168,103 @@ static func parse_numeral(numeral: String) -> Dictionary:
 	return {"root": posmod(root, 12), "quality": quality}
 
 
+## Whether pitch class [param pc] belongs to the scale of [param key] and
+## [param mode].
+static func in_scale(pc: int, key: int, mode: String) -> bool:
+	return scale_of(mode).has(posmod(pc - key, 12))
+
+
+## Pitch classes of the scale of [param key] and [param mode].
+static func scale_classes(key: int, mode: String) -> PackedInt32Array:
+	var out := PackedInt32Array()
+	for degree in scale_of(mode):
+		out.append(posmod(key + int(degree), 12))
+	return out
+
+
+## The scale pitch nearest to [param pitch]. Ties go downwards.
+static func snap_to_scale(pitch: int, key: int, mode: String) -> int:
+	return nearest_in_classes(pitch, scale_classes(key, mode))
+
+
+## Order in which [method fit_chord] tries other chord qualities. Plain
+## triads first, so a chord that has to change stays simple.
+const _FIT_ORDER: PackedStringArray = [
+	"maj", "min", "sus4", "sus2", "dim", "aug", "5",
+	"maj7", "min7", "dom7", "hdim7", "dim7", "add9", "madd9", "maj6", "min6",
+]
+const _BASE_TRIAD := {
+	"maj7": "maj", "dom7": "maj", "add9": "maj", "maj6": "maj",
+	"min7": "min", "madd9": "min", "min6": "min", "hdim7": "dim", "dim7": "dim",
+}
+
+
+## Bends a chord so every note is in the scale of [param key] and
+## [param mode]. The progression books are written for major and natural
+## minor, so borrowed chords (bVII in major, V in minor) and every chord in
+## modes such as Lydian, Whole tone or the pentatonics would otherwise clash
+## with the melody. Keeps the chord if it already fits; otherwise keeps the
+## root and picks the closest quality that fits, sharing as many notes with
+## the original as it can. Moves the root to the nearest scale note only when
+## nothing fits on it. Returns [code]{root, quality}[/code].
+static func fit_chord(root_pc: int, quality: String, key: int, mode: String) -> Dictionary:
+	var original := chord_pitch_classes(root_pc, quality)
+	if _all_in_scale(original, key, mode):
+		return {"root": posmod(root_pc, 12), "quality": quality}
+	var candidates: Array = [quality]
+	if _BASE_TRIAD.has(quality):
+		candidates.append(_BASE_TRIAD[quality])
+	for q in _FIT_ORDER:
+		if not candidates.has(q):
+			candidates.append(q)
+	for distance in 7:
+		var best := ""
+		var best_root := 0
+		var best_shared := -1
+		for root in [root_pc - distance, root_pc + distance]:
+			if not in_scale(root, key, mode):
+				continue
+			for q in candidates:
+				var pcs := chord_pitch_classes(root, q)
+				if not _all_in_scale(pcs, key, mode):
+					continue
+				var shared := 0
+				for pc in pcs:
+					if original.has(pc):
+						shared += 1
+				if shared > best_shared:
+					best = q
+					best_root = root
+					best_shared = shared
+		if best != "":
+			return {"root": posmod(best_root, 12), "quality": best}
+	return {"root": posmod(key, 12), "quality": "5"}
+
+
+static func _all_in_scale(pcs: PackedInt32Array, key: int, mode: String) -> bool:
+	for pc in pcs:
+		if not in_scale(pc, key, mode):
+			return false
+	return true
+
+
+const _NUMERAL_ROOTS: PackedStringArray = ["I", "bII", "II", "bIII", "III", "IV", "bV", "V", "bVI", "VI", "bVII", "VII"]
+const _NUMERAL_SUFFIX := {
+	"maj": "", "min": "", "dim": "o", "aug": "+", "sus2": "sus2", "sus4": "sus4",
+	"maj7": "maj7", "min7": "7", "dom7": "7", "hdim7": "h7", "dim7": "o7",
+	"add9": "add9", "madd9": "add9", "maj6": "6", "min6": "6", "5": "5",
+}
+
+
+## The Roman numeral for a chord [param offset] semitones above the key, the
+## inverse of [method parse_numeral].
+static func numeral_for(offset: int, quality: String) -> String:
+	var text := _NUMERAL_ROOTS[posmod(offset, 12)]
+	if quality in ["min", "min7", "madd9", "min6", "dim", "hdim7", "dim7"]:
+		text = text.to_lower()
+	return text + str(_NUMERAL_SUFFIX.get(quality, ""))
+
+
 ## Adds a seventh, sixth or ninth to a triad. Leaves other chords alone.
 static func colour_chord(quality: String, rng: Pcg32) -> String:
 	match quality:

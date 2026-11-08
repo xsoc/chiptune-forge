@@ -270,6 +270,8 @@ static func _jingle(ctx: GenContext, section_index: int, rng: Pcg32) -> void:
 	var unit := 2 if steps >= 16 else 1
 	if rng.chance(0.3):
 		line.insert(2, root + 5)
+	for j in line.size():
+		line[j] = MusicTheory.snap_to_scale(line[j], ctx.key, ctx.mode)
 	var step := 0
 	for pitch in line:
 		ctx.add_note(section_index, GenContext.Channel.LEAD, step, unit, pitch, 104)
