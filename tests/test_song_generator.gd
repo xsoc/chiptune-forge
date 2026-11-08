@@ -115,3 +115,43 @@ func _channel_notes(song: ChipSong, channel: int) -> String:
 		var pattern_id := int(section["patterns"][channel])
 		parts.append(song.data["patterns"][pattern_id]["notes"] if pattern_id >= 0 else [])
 	return JSON.stringify(parts)
+
+
+## Every pitched note (and every chord-arp offset) must belong to the chosen
+## key and mode, for every mode in the picker and every melodic channel.
+func test_notes_stay_in_key() -> void:
+	var catalog := Catalog.get_default()
+	var vibes := catalog.vibes.keys()
+	var styles := catalog.styles.keys()
+	var rng := Pcg32.for_stream(7, "test:in_key")
+	for mode in MusicTheory.SCALES:
+		var scale := MusicTheory.scale_of(mode)
+		var bad := 0
+		var total := 0
+		var example := ""
+		for i in 6:
+			var s := _settings(rng.pick(vibes), rng.pick(styles), "key%d" % i)
+			s.mode = mode
+			s.key = rng.range_int(0, 11)
+			s.intensity = rng.range_float(0.0, 100.0)
+			s.complexity = rng.range_float(0.0, 100.0)
+			var song := SongGenerator.generate(s, catalog)
+			for section in song.data["sections"]:
+				var ids: Array = section["patterns"]
+				for channel in GenContext.Channel.DRUMS:
+					var pattern_id := int(ids[channel])
+					if pattern_id < 0:
+						continue
+					for note in song.data["patterns"][pattern_id]["notes"]:
+						var pitches: Array = [int(note[2])]
+						if note.size() > 5 and note[5] is Array:
+							for offset in note[5]:
+								pitches.append(int(note[2]) + int(offset))
+						for pitch in pitches:
+							total += 1
+							if not scale.has(posmod(pitch - s.key, 12)):
+								bad += 1
+								if example == "":
+									example = "%s + %s, %s, %s: %s" % [s.vibes[0], s.style, MusicTheory.key_name(s.key, mode), GenContext.CHANNEL_NAMES[channel], MusicTheory.note_name(pitch)]
+		check(total > 0, "%s made no notes" % mode)
+		check_eq(bad, 0, "%s: %d of %d notes out of key, e.g. %s" % [mode, bad, total, example])
