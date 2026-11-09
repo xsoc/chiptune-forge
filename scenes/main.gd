@@ -23,6 +23,7 @@ func _ready() -> void:
 	_ui_scale = _detect_ui_scale()
 	get_tree().root.size_changed.connect(_on_window_resized)
 	_on_window_resized()
+	%BuildLabel.text = BuildInfo.label(layout == Layout.PHONE)
 
 	%MusicMode.pressed.connect(func() -> void: AppState.mode = "music")
 	%SfxMode.pressed.connect(func() -> void: AppState.mode = "sfx")
@@ -106,6 +107,7 @@ func _apply_layout() -> void:
 	%TopNav.visible = not phone
 	%BottomNav.visible = phone
 	%AppName.text = "Forge" if phone else "Chiptune Forge"
+	%BuildLabel.text = BuildInfo.label(phone)
 	%SfxMode.text = "SFX" if phone else "Sound FX"
 	%PlayerBar.set_compact(phone)
 
