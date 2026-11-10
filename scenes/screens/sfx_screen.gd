@@ -84,6 +84,9 @@ func _ready() -> void:
 		_advanced_rows[spec[0]] = row
 
 	AppState.sfx_changed.connect(_on_sfx_changed)
+	AppState.target_changed.connect(func(_t: String) -> void:
+		if AppState.sfx:
+			_on_sfx_changed(AppState.sfx))
 	AppState.kit_changed.connect(_update_kit_button)
 	if AppState.sfx == null:
 		AppState.select_sfx_preset(AppState.sfx_preset_id)
@@ -104,7 +107,8 @@ func _on_sfx_changed(sfx: ChipSfx) -> void:
 	var variant := str(sfx.data.get("meta", {}).get("variant", ""))
 	if not variant.is_empty() and variant != "Classic":
 		kind += " (%s)" % variant.to_lower()
-	%Note.text = "%s · %s. Modern chiptune plays it on any voice, with no limits." % [SfxGenerator.c_id(sfx.get_sound_name()), kind]
+	var where := "The Game Boy plays it on one of its four channels." if AppState.target == "gameboy" else "Modern chiptune plays it on any voice, with no limits."
+	%Note.text = "%s · %s. %s" % [SfxGenerator.c_id(sfx.get_sound_name()), kind, where]
 	%Waveform.set_samples(sfx.render(22050), 22050)
 	var params := ChipSfxSynth.with_defaults(sfx.data.get("params", {}))
 	for key in _advanced_rows:
