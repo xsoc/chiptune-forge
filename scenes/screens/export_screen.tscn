@@ -72,6 +72,40 @@ bbcode_enabled = true
 fit_content = true
 scroll_active = false
 
+[node name="GbOptions" type="VBoxContainer" parent="Scroll/Margin/Columns/LimitsCard/Limits"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+
+[node name="SfxRow" type="HBoxContainer" parent="Scroll/Margin/Columns/LimitsCard/Limits/GbOptions"]
+layout_mode = 2
+
+[node name="SfxLabel" type="Label" parent="Scroll/Margin/Columns/LimitsCard/Limits/GbOptions/SfxRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Channel for sound effects"
+autowrap_mode = 3
+
+[node name="SfxChannel" type="OptionButton" parent="Scroll/Margin/Columns/LimitsCard/Limits/GbOptions/SfxRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(150, 40)
+layout_mode = 2
+tooltip_text = "Sound effects interrupt this channel's music while they play. The export marks it as the one that is safe to interrupt."
+selected = 0
+item_count = 3
+popup/item_0/text = "None"
+popup/item_0/id = -1
+popup/item_1/text = "Pulse 2"
+popup/item_1/id = 1
+popup/item_2/text = "Noise"
+popup/item_2/id = 3
+
+[node name="SfxFree" type="CheckBox" parent="Scroll/Margin/Columns/LimitsCard/Limits/GbOptions"]
+unique_name_in_owner = true
+layout_mode = 2
+disabled = true
+text = "Keep that channel free of music"
+
 [node name="FormatsCard" type="PanelContainer" parent="Scroll/Margin/Columns"]
 layout_mode = 2
 theme_type_variation = &"Card"
@@ -88,6 +122,15 @@ text = "3  FORMATS"
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"MutedLabel"
+autowrap_mode = 3
+
+[node name="Console" type="CheckBox" parent="Scroll/Margin/Columns/FormatsCard/Formats"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+disabled = true
+button_pressed = true
+text = "Game Boy: C project for GBDK-2020 and hUGEDriver"
 autowrap_mode = 3
 
 [node name="Godot" type="CheckBox" parent="Scroll/Margin/Columns/FormatsCard/Formats"]

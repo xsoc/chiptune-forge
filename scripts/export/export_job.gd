@@ -18,6 +18,7 @@ var _task_index := 0
 # WAV bytes, so a long song never holds its float frames in memory.
 var _r_path := ""
 var _r_seq: ChipSongSequencer
+var _r_gb: GbSong
 var _r_total := 0
 var _r_written := 0
 var _r_bytes := PackedByteArray()
@@ -51,6 +52,76 @@ static func for_song(song: ChipSong, options: Dictionary) -> ExportJob:
 				job._queue_render(song, "audio/stems/%s_%s.wav" % [prefix, layer.to_lower()], loops, muted)
 	job._tasks.append(func() -> bool:
 		job.files["README.txt"] = job._song_readme(song, prefix, options).to_utf8_buffer()
+		return true)
+	return job
+
+
+## Export for a song arranged for the Game Boy: a GBDK-2020 project with the
+## song as hUGEDriver C data, plus optional WAV (rendered through the emulated
+## sound chip) and MIDI of the arranged parts. Options: prefix, wav, loops,
+## midi.
+static func for_gameboy_song(gb: GbSong, options: Dictionary) -> ExportJob:
+	var job := ExportJob.new()
+	var song := gb.source
+	var prefix := sanitize(str(options.get("prefix", gb.title)))
+	var meta: Dictionary = song.data.get("meta", {})
+	var credit := "Made with Chiptune Forge. Seed %s. %s" % [meta.get("seed", ""), meta.get("license", "")]
+	job._tasks.append(func() -> bool:
+		var symbol := GbCWriter.song_symbol(prefix)
+		var project := GbCWriter.song_project(gb, symbol, gb.title, credit)
+		for path in project:
+			job.files["gameboy/" + path] = project[path]
+		return true)
+	if bool(options.get("midi", false)):
+		job._tasks.append(func() -> bool:
+			job.files["midi/%s.mid" % prefix] = MidiWriter.encode(song)
+			return true)
+	if bool(options.get("wav", true)):
+		job._r_gb = gb
+		job._queue_render(song, "audio/%s.wav" % prefix, int(options.get("loops", 1)), [])
+	job._tasks.append(func() -> bool:
+		job.files["README.txt"] = job._gameboy_readme(gb, prefix, options).to_utf8_buffer()
+		return true)
+	return job
+
+
+## Export for sound effects on the Game Boy: a GBDK-2020 project with the
+## sounds as cf_sfx data, plus WAVs of how each one sounds on the console.
+static func for_gameboy_sfx(sounds: Dictionary, kit_name: String, options: Dictionary) -> ExportJob:
+	var job := ExportJob.new()
+	var prefix := sanitize(kit_name)
+	var converted: Array = []
+	var ids := sounds.keys()
+	ids.sort()
+	for id in ids:
+		converted.append(GbSfx.from_sfx(sounds[id], sanitize(str(id))))
+	job._tasks.append(func() -> bool:
+		var project := GbCWriter.sfx_project(converted, prefix, kit_name)
+		for path in project:
+			job.files["gameboy/" + path] = project[path]
+		return true)
+	if bool(options.get("wav", true)):
+		for gb_sfx in converted:
+			job._tasks.append(func() -> bool:
+				job.files["audio/%s.wav" % gb_sfx.name] = ChipAudio.encode_wav_mono(gb_sfx.render(MIX_RATE), MIX_RATE)
+				return true)
+	job._tasks.append(func() -> bool:
+		var lines: Array[String] = [
+			"Sound kit for the Game Boy: %s" % prefix,
+			"Made with Chiptune Forge. You own these sounds and may use them for any purpose, including commercially.",
+			"",
+			"gameboy/  A GBDK-2020 project: the sounds, the cf_sfx player and an example ROM.",
+			"          See gameboy/README.txt to build it and use the sounds in your game.",
+			"audio/    One WAV per sound, as the Game Boy plays it.",
+			"",
+			"Sounds:",
+		]
+		for gb_sfx in converted:
+			var text := "  %s  (%s, %s, %d frames)" % [gb_sfx.name, GbCWriter.sfx_symbol(gb_sfx.name), "Pulse 2" if gb_sfx.channel == GbSfx.PULSE else "Noise", gb_sfx.frame_count()]
+			if not gb_sfx.notes.is_empty():
+				text += ": " + ", ".join(gb_sfx.notes)
+			lines.append(text)
+		job.files["README.txt"] = "\n".join(lines).to_utf8_buffer()
 		return true)
 	return job
 
@@ -139,7 +210,10 @@ func _queue_render(song: ChipSong, path: String, loops: int, muted: Array) -> vo
 
 
 func _start_render(song: ChipSong, path: String, loops: int, muted: Array) -> void:
-	_r_seq = ChipSongSequencer.new(song, MIX_RATE)
+	if _r_gb:
+		_r_seq = GbSequencer.new(_r_gb, MIX_RATE)
+	else:
+		_r_seq = ChipSongSequencer.new(song, MIX_RATE)
 	for c in muted:
 		_r_seq.set_channel_muted(c, true)
 	_r_total = _r_seq.get_loop_start_frame() + (_r_seq.get_loop_end_frame() - _r_seq.get_loop_start_frame()) * maxi(loops, 1)
@@ -217,6 +291,24 @@ func _song_readme(song: ChipSong, prefix: String, options: Dictionary) -> String
 		"        Adaptive music: $Music.set_state(\"combat\") or $Music.intensity = 0.72.",
 		"audio/  WAV, 44.1 kHz, 16-bit. Looping songs carry loop points in the smpl chunk.",
 		"midi/   One track per chip channel, drums on channel 10." if bool(options.get("midi", false)) else "",
+	])
+
+
+func _gameboy_readme(gb: GbSong, prefix: String, options: Dictionary) -> String:
+	var meta: Dictionary = gb.source.data.get("meta", {})
+	return "\n".join([
+		"%s, arranged for the Game Boy" % gb.title,
+		"Made with Chiptune Forge. Seed %s, %s, %d BPM on the console." % [meta.get("seed", ""), meta.get("key", ""), int(gb.get_bpm())],
+		"",
+		str(meta.get("license", "")),
+		"",
+		"gameboy/  A GBDK-2020 project: the song as hUGEDriver data, an example main.c and a Makefile",
+		"          that builds a ROM. See gameboy/README.txt.",
+		"audio/    WAV, 44.1 kHz, 16-bit, rendered through an emulated Game Boy sound chip." if bool(options.get("wav", true)) else "",
+		"midi/     The four arranged parts, one track each." if bool(options.get("midi", false)) else "",
+		"",
+		"Arrangement:",
+		"\n".join(Array(gb.report).map(func(line: String) -> String: return "  " + line)),
 	])
 
 

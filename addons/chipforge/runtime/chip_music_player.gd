@@ -51,6 +51,10 @@ const LEVELS := {"off": 0.0, "low": 0.35, "mid": 0.65, "full": 1.0}
 ## Render the whole song once into a looping stream instead of synthesising
 ## it live. Uses more memory and disables adaptive layers.
 @export var prerender := false
+## Optional: builds the sequencer instead of a [ChipSongSequencer]. Called
+## with the song and mix rate; must return a [ChipSongSequencer] (or a
+## subclass, such as one that emulates a console's sound chip).
+var sequencer_factory: Callable
 
 var _player: AudioStreamPlayer
 var _playback: AudioStreamGeneratorPlayback
@@ -88,8 +92,11 @@ func play(from_step := 0.0) -> void:
 		return
 	stop()
 	var rate := web_mix_rate if OS.has_feature("web") else mix_rate
-	_sequencer = ChipSongSequencer.new(song, rate)
-	_sequencer.looping = loop and bool(song.data.get("timing", {}).get("loop", true))
+	if sequencer_factory.is_valid():
+		_sequencer = sequencer_factory.call(song, rate)
+	else:
+		_sequencer = ChipSongSequencer.new(song, rate)
+	_sequencer.looping = loop and _sequencer.looping and bool(song.data.get("timing", {}).get("loop", true))
 	_sequencer.seek_step(from_step)
 	if prerender:
 		var frames := _sequencer.render_all(1)
