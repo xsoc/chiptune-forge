@@ -1,4 +1,4 @@
-[gd_scene load_steps=10 format=3]
+[gd_scene load_steps=11 format=3]
 
 [ext_resource type="Script" path="res://scenes/screens/sfx_screen.gd" id="1"]
 [ext_resource type="Script" path="res://scripts/ui/responsive_columns.gd" id="2"]
@@ -9,6 +9,7 @@
 [ext_resource type="Texture2D" path="res://assets/ui/icon_mutate.svg" id="7"]
 [ext_resource type="Texture2D" path="res://assets/ui/icon_sparkle.svg" id="8"]
 [ext_resource type="Texture2D" path="res://assets/ui/icon_plus.svg" id="9"]
+[ext_resource type="PackedScene" path="res://scenes/components/target_picker.tscn" id="10"]
 
 [node name="SfxScreen" type="Control"]
 layout_mode = 3
@@ -37,7 +38,17 @@ theme_override_constants/margin_top = 16
 theme_override_constants/margin_right = 16
 theme_override_constants/margin_bottom = 16
 
-[node name="Columns" type="Container" parent="Scroll/Margin"]
+[node name="Stack" type="VBoxContainer" parent="Scroll/Margin"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 16
+
+[node name="TargetPicker" parent="Scroll/Margin/Stack" instance=ExtResource("10")]
+unique_name_in_owner = true
+layout_mode = 2
+chip_variation = &"SfxChip"
+
+[node name="Columns" type="Container" parent="Scroll/Margin/Stack"]
 layout_mode = 2
 size_flags_vertical = 3
 script = ExtResource("2")
@@ -46,11 +57,11 @@ column_weights = {
 3: [1.2, 1.0, 1.0]
 }
 
-[node name="PresetsCard" type="PanelContainer" parent="Scroll/Margin/Columns"]
+[node name="PresetsCard" type="PanelContainer" parent="Scroll/Margin/Stack/Columns"]
 layout_mode = 2
 theme_type_variation = &"Card"
 
-[node name="PresetPicker" parent="Scroll/Margin/Columns/PresetsCard" instance=ExtResource("3")]
+[node name="PresetPicker" parent="Scroll/Margin/Stack/Columns/PresetsCard" instance=ExtResource("3")]
 unique_name_in_owner = true
 layout_mode = 2
 title = "Preset"
@@ -58,34 +69,34 @@ hint = "Tap to hear a new take"
 chip_variation = &"SfxChip"
 chips_min_height = 300
 
-[node name="SoundCard" type="PanelContainer" parent="Scroll/Margin/Columns"]
+[node name="SoundCard" type="PanelContainer" parent="Scroll/Margin/Stack/Columns"]
 layout_mode = 2
 theme_type_variation = &"Card"
 
-[node name="Sound" type="VBoxContainer" parent="Scroll/Margin/Columns/SoundCard"]
+[node name="Sound" type="VBoxContainer" parent="Scroll/Margin/Stack/Columns/SoundCard"]
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="Name" type="Label" parent="Scroll/Margin/Columns/SoundCard/Sound"]
+[node name="Name" type="Label" parent="Scroll/Margin/Stack/Columns/SoundCard/Sound"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"BigTitleLabel"
 text = "Coin"
 
-[node name="Note" type="Label" parent="Scroll/Margin/Columns/SoundCard/Sound"]
+[node name="Note" type="Label" parent="Scroll/Margin/Stack/Columns/SoundCard/Sound"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"MutedLabel"
 text = "Modern chiptune: plays on any voice, no limits."
 autowrap_mode = 3
 
-[node name="Waveform" type="Control" parent="Scroll/Margin/Columns/SoundCard/Sound"]
+[node name="Waveform" type="Control" parent="Scroll/Margin/Stack/Columns/SoundCard/Sound"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 110)
 layout_mode = 2
 script = ExtResource("4")
 
-[node name="Play" type="Button" parent="Scroll/Margin/Columns/SoundCard/Sound"]
+[node name="Play" type="Button" parent="Scroll/Margin/Stack/Columns/SoundCard/Sound"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 52)
 layout_mode = 2
@@ -93,43 +104,43 @@ theme_type_variation = &"SfxPrimaryButton"
 text = "Play"
 icon = ExtResource("5")
 
-[node name="Actions" type="HFlowContainer" parent="Scroll/Margin/Columns/SoundCard/Sound"]
+[node name="Actions" type="HFlowContainer" parent="Scroll/Margin/Stack/Columns/SoundCard/Sound"]
 layout_mode = 2
 
-[node name="NewVariation" type="Button" parent="Scroll/Margin/Columns/SoundCard/Sound/Actions"]
+[node name="NewVariation" type="Button" parent="Scroll/Margin/Stack/Columns/SoundCard/Sound/Actions"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
 text = "New variation"
 icon = ExtResource("6")
 
-[node name="Mutate" type="Button" parent="Scroll/Margin/Columns/SoundCard/Sound/Actions"]
+[node name="Mutate" type="Button" parent="Scroll/Margin/Stack/Columns/SoundCard/Sound/Actions"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
 text = "Mutate a little"
 icon = ExtResource("7")
 
-[node name="Surprise" type="Button" parent="Scroll/Margin/Columns/SoundCard/Sound/Actions"]
+[node name="Surprise" type="Button" parent="Scroll/Margin/Stack/Columns/SoundCard/Sound/Actions"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
 text = "Surprise me"
 icon = ExtResource("8")
 
-[node name="RecentLabel" type="Label" parent="Scroll/Margin/Columns/SoundCard/Sound"]
+[node name="RecentLabel" type="Label" parent="Scroll/Margin/Stack/Columns/SoundCard/Sound"]
 layout_mode = 2
 theme_type_variation = &"SectionLabel"
 text = "RECENT VARIATIONS"
 
-[node name="Recent" type="HFlowContainer" parent="Scroll/Margin/Columns/SoundCard/Sound"]
+[node name="Recent" type="HFlowContainer" parent="Scroll/Margin/Stack/Columns/SoundCard/Sound"]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="Keep" type="HBoxContainer" parent="Scroll/Margin/Columns/SoundCard/Sound"]
+[node name="Keep" type="HBoxContainer" parent="Scroll/Margin/Stack/Columns/SoundCard/Sound"]
 layout_mode = 2
 
-[node name="AddToKit" type="Button" parent="Scroll/Margin/Columns/SoundCard/Sound/Keep"]
+[node name="AddToKit" type="Button" parent="Scroll/Margin/Stack/Columns/SoundCard/Sound/Keep"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
@@ -137,32 +148,32 @@ size_flags_horizontal = 3
 text = "Add to kit"
 icon = ExtResource("9")
 
-[node name="Save" type="Button" parent="Scroll/Margin/Columns/SoundCard/Sound/Keep"]
+[node name="Save" type="Button" parent="Scroll/Margin/Stack/Columns/SoundCard/Sound/Keep"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Save to library"
 
-[node name="TweakCard" type="PanelContainer" parent="Scroll/Margin/Columns"]
+[node name="TweakCard" type="PanelContainer" parent="Scroll/Margin/Stack/Columns"]
 layout_mode = 2
 theme_type_variation = &"Card"
 
-[node name="Tweak" type="VBoxContainer" parent="Scroll/Margin/Columns/TweakCard"]
+[node name="Tweak" type="VBoxContainer" parent="Scroll/Margin/Stack/Columns/TweakCard"]
 layout_mode = 2
 
-[node name="Tabs" type="TabBar" parent="Scroll/Margin/Columns/TweakCard/Tweak"]
+[node name="Tabs" type="TabBar" parent="Scroll/Margin/Stack/Columns/TweakCard/Tweak"]
 unique_name_in_owner = true
 layout_mode = 2
 tab_count = 2
 tab_0/title = "Simple"
 tab_1/title = "Advanced"
 
-[node name="Simple" type="VBoxContainer" parent="Scroll/Margin/Columns/TweakCard/Tweak"]
+[node name="Simple" type="VBoxContainer" parent="Scroll/Margin/Stack/Columns/TweakCard/Tweak"]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="Reset" type="Button" parent="Scroll/Margin/Columns/TweakCard/Tweak/Simple"]
+[node name="Reset" type="Button" parent="Scroll/Margin/Stack/Columns/TweakCard/Tweak/Simple"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 40)
 layout_mode = 2
@@ -170,20 +181,20 @@ size_flags_horizontal = 0
 theme_type_variation = &"FlatButton"
 text = "Reset sliders"
 
-[node name="Advanced" type="VBoxContainer" parent="Scroll/Margin/Columns/TweakCard/Tweak"]
+[node name="Advanced" type="VBoxContainer" parent="Scroll/Margin/Stack/Columns/TweakCard/Tweak"]
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
 
-[node name="WaveRow" type="HBoxContainer" parent="Scroll/Margin/Columns/TweakCard/Tweak/Advanced"]
+[node name="WaveRow" type="HBoxContainer" parent="Scroll/Margin/Stack/Columns/TweakCard/Tweak/Advanced"]
 layout_mode = 2
 
-[node name="WaveLabel" type="Label" parent="Scroll/Margin/Columns/TweakCard/Tweak/Advanced/WaveRow"]
+[node name="WaveLabel" type="Label" parent="Scroll/Margin/Stack/Columns/TweakCard/Tweak/Advanced/WaveRow"]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Wave"
 
-[node name="Wave" type="OptionButton" parent="Scroll/Margin/Columns/TweakCard/Tweak/Advanced/WaveRow"]
+[node name="Wave" type="OptionButton" parent="Scroll/Margin/Stack/Columns/TweakCard/Tweak/Advanced/WaveRow"]
 clip_text = true
 fit_to_longest_item = false
 unique_name_in_owner = true

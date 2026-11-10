@@ -1,6 +1,7 @@
 extends "res://tests/test_case.gd"
 
 const CATALOG_PICKER := preload("res://scenes/components/catalog_picker.tscn")
+const TARGET_PICKER := preload("res://scenes/components/target_picker.tscn")
 
 
 ## Setting the same picks again (as the Generate screen does after every
@@ -111,3 +112,27 @@ func _strength_sliders(picker: CatalogPicker) -> Array:
 			if child is HSlider:
 				out.append(child)
 	return out
+
+
+## The target picker at the top of Music and Sound FX offers only the targets
+## that work today, and picking one sets the shared target that the Export
+## screen and every preview follow.
+func test_target_picker_sets_shared_target() -> void:
+	var before: String = AppState.target
+	if AppState.catalog == null:
+		AppState.catalog = Catalog.get_default()
+	var picker: TargetPicker = TARGET_PICKER.instantiate()
+	Engine.get_main_loop().root.add_child(picker)
+	picker._build()
+	var buttons: Array = picker.get_node("%Buttons").get_children()
+	var names: Array[String] = []
+	for button: Button in buttons:
+		names.append(button.text)
+	check_eq(names, ["Modern chiptune", "Game Boy"] as Array[String], "available targets only, in order")
+	buttons[1].pressed.emit()
+	check_eq(AppState.target, "gameboy", "picking Game Boy sets the target")
+	AppState.set_target("modern")
+	picker.refresh()
+	check(buttons[0].button_pressed and not buttons[1].button_pressed, "buttons follow the target")
+	AppState.set_target(before)
+	picker.free()
