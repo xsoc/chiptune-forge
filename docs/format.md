@@ -83,3 +83,33 @@ informational: `params` alone defines the sound.
 
 `id` is what `ChipSfxPlayer.play()` takes. Console exports use the upper-case
 form, `SFX_JUMP`.
+
+## Game Boy export
+
+Game Boy exports are not a Chiptune Forge format: they are C source for
+[GBDK-2020](https://github.com/gbdk-2020/gbdk-2020), laid out the way
+hUGETracker's "GBDK .c" export lays it out, so they work with any game that
+already uses [hUGEDriver](https://github.com/SuperDisk/hUGEDriver).
+
+A song export's `gameboy/` folder holds:
+
+| File | What it is |
+|---|---|
+| `src/song_<name>.c` | Patterns (`DN(note, instrument, effect)` rows, at most 64 per pattern), orders, instruments and waves, and the `hUGESong_t` descriptor. |
+| `src/song_<name>.h` | `extern const hUGESong_t song_<name>;` plus `SONG_<NAME>_TMA` and `_TAC` (the timer settings that give the song's tempo) and `SONG_<NAME>_SFX_CHANNEL` (the channel sound effects may interrupt, as `HT_CH2` or `HT_CH4`, or `-1`). |
+| `src/main.c` | An example that plays the song from the timer interrupt. |
+| `src/cf_sfx.c`, `cf_sfx.h` | The sound effect player, when a channel is reserved. |
+| `hUGEDriver/` | The driver source and, in release builds, `lib/hUGEDriver.lib` prebuilt for GBDK. |
+| `Makefile`, `README.txt` | Build with `make GBDK_HOME=/path/to/gbdk`. |
+
+The driver runs from the timer rather than VBlank, so the tempo can match the
+song's BPM closely (within about 1%). Each row of the arranged song is one
+16th-note step.
+
+Sound kit exports hold `src/<kit>.c` and `.h` with one `cf_sfx_t` per sound
+(`SFX_JUMP` and so on), the `cf_sfx` player and an example ROM that plays
+each sound. A sound is one register update per frame on Pulse 2 or the noise
+channel: three bytes per frame (volume, retrigger flag and duty; then the
+period, or the NR43 value for noise). Call `cf_sfx_play(&SFX_JUMP)` to start
+one and `cf_sfx_update()` once a frame. While a sound plays, `cf_sfx` mutes
+that channel in hUGEDriver and unmutes it when the sound ends.

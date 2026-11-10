@@ -12,7 +12,14 @@ MIT-compatible: no GPL or LGPL code, in the app or in the plugin.
 | JetBrains Mono | `assets/fonts/JetBrainsMono.ttf` | SIL OFL 1.1 | `assets/fonts/JetBrainsMono-OFL.txt` |
 | sfxr (Tomas Pettersson) | Model for `addons/chipforge/runtime/chip_sfx_synth.gd` | MIT | Reimplemented in GDScript from the published algorithm; no sfxr source is bundled. |
 | PCG32 (Melissa O'Neill) | `scripts/generation/pcg32.gd` | Apache 2.0 or MIT | Reimplemented from the paper and reference output; no PCG source is bundled. |
+| hUGEDriver (Nick Faro and contributors) | `assets/gameboy/hUGEDriver/`, bundled in Game Boy exports; modelled in `scripts/targets/gameboy/huge_player.gd` | Public domain | https://github.com/SuperDisk/hUGEDriver. Includes its `tools/rgb2sdas.py`. |
+| hardware.inc (gbdev) | `assets/gameboy/hUGEDriver/include/hardware.inc` | CC0 | https://github.com/gbdev/hardware.inc |
 | PolyBLEP oscillator method | `addons/chipforge/runtime/chip_voice.gd` | Public technique | No code copied. |
+
+Game Boy ROMs are built with GBDK-2020 and RGBDS, which users install
+themselves and CI downloads; neither is bundled. Exported Game Boy projects
+link hUGEDriver, which is public domain, so a game built from them carries no
+licence obligations from it.
 
 The icons in `assets/ui/` and `addons/chipforge/icons/` were drawn for this
 project and are MIT licensed with the rest of the code.

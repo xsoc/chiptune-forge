@@ -14,6 +14,11 @@ runs on phones, desktops and the web, and it exports straight into Godot.
   Tension, Combat, Boss) that the Godot plugin can fade between by intensity.
 - **Exports.** `.chipsong`, `.chipsfx` and `.chipkit` JSON for the Godot
   plugin, WAV with loop points (or one WAV per layer), and MIDI.
+- **Game Boy target.** Pick the Game Boy on the Export screen and the song is
+  arranged for its four channels, previews play through an emulated Game Boy
+  sound chip, and the export is a GBDK-2020 project (C data for hUGEDriver,
+  an example `main.c` and a Makefile) that builds into a ROM. Sound effects
+  convert too, with a small player that shares a channel with the music.
 - **Seeds.** The same settings and seed always give the same song, on every
   platform.
 
@@ -93,15 +98,24 @@ described in [docs/format.md](docs/format.md).
 | `scenes/` | One scene per screen and per reusable control. |
 | `scripts/generation/` | The generators. Plain `RefCounted` code with no scene dependencies. |
 | `scripts/export/` | WAV, MIDI and zip export. |
+| `scripts/targets/gameboy/` | Game Boy target: sound chip emulation, hUGEDriver player, arranger, SFX conversion and C writer. |
+| `assets/gameboy/hUGEDriver/` | The vendored hUGEDriver source bundled with Game Boy exports. |
 | `resources/` | Vibes, styles, SFX presets and chip profiles as `.tres` files, plus the theme. |
 | `tests/` | Unit and golden-file tests. |
-| `tools/` | Theme builder and screenshot tool. |
+| `tools/` | Theme builder, screenshot tool, and the Game Boy build and emulator checks CI runs. |
 
 ## Roadmap
 
-Phase 1 (this release) is modern chiptune with no hardware limits. Next come
-the console targets from the plan: Game Boy, then NES and Master System, with
-exports that fit each chip's channels.
+Phase 1 is modern chiptune with no hardware limits. Phase 2 adds the Game Boy:
+an arranger that fits songs to its four channels, an emulated sound chip for
+previews, and C export for GBDK-2020 and hUGEDriver. CI builds example ROMs
+from the export and checks that they play in the PyBoy emulator. NES and
+Master System come next.
+
+To build a Game Boy export yourself, unzip it, install
+[GBDK-2020](https://github.com/gbdk-2020/gbdk-2020) and run
+`make GBDK_HOME=/path/to/gbdk` in the `gameboy/` folder. The README inside
+explains how to use the song and sounds in your own game.
 
 ## Licence
 

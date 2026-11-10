@@ -9,6 +9,8 @@ signal sfx_changed(sfx: ChipSfx)
 signal kit_changed
 signal library_changed
 signal mode_changed(mode: String)
+## The export target changed, or its options did. Previews follow it.
+signal target_changed(target: String)
 
 const LIBRARY_PATH := "user://library.json"
 const MAX_RECENT := 8
@@ -32,6 +34,14 @@ var sfx: ChipSfx
 var sfx_recent: Array = []
 var kit := ChipSfxKit.new()
 
+## Export target id from the catalog: "modern" or "gameboy".
+var target := "modern"
+## Game Boy arranger options: sfx_channel (-1 none, 1 Pulse 2, 3 noise) and
+## sfx_free (keep that channel free of music).
+var gameboy_options := {"sfx_channel": -1, "sfx_free": false}
+var _gb_song: GbSong
+var _gb_key := []
+
 ## Saved entries: {kind, name, favourite, created, settings | sfx}.
 var library: Array = []
 
@@ -44,6 +54,30 @@ func _ready() -> void:
 
 
 ## False while no vibe is picked: there is nothing to make or play until one is.
+func set_target(id: String) -> void:
+	if id != target:
+		target = id
+		target_changed.emit(id)
+
+
+func set_gameboy_option(key: String, value: Variant) -> void:
+	if gameboy_options.get(key) != value:
+		gameboy_options[key] = value
+		target_changed.emit(target)
+
+
+## The current song arranged for the Game Boy, cached until the song or the
+## options change. Null when there is no song.
+func get_gameboy_song() -> GbSong:
+	if song == null:
+		return null
+	var key := [song.get_instance_id(), song.to_json().hash(), gameboy_options.hash()]
+	if _gb_song == null or key != _gb_key:
+		_gb_song = GbArranger.arrange(song, gameboy_options)
+		_gb_key = key
+	return _gb_song
+
+
 func can_make_music() -> bool:
 	return not settings.vibes.is_empty()
 

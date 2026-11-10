@@ -5,7 +5,6 @@ extends Control
 ## Songs at least this long get a note about WAV size and render time.
 const LONG_SONG_SECONDS := 270.0
 
-var _target := "modern"
 var _job: ExportJob
 
 
@@ -18,6 +17,12 @@ func _ready() -> void:
 	AppState.mode_changed.connect(func(_m: String) -> void: refresh())
 	AppState.song_changed.connect(func(_s: ChipSong) -> void: refresh())
 	AppState.kit_changed.connect(refresh)
+	AppState.target_changed.connect(func(_t: String) -> void: refresh())
+	%SfxChannel.item_selected.connect(func(index: int) -> void:
+		var channel: int = %SfxChannel.get_item_id(index)
+		%SfxFree.disabled = channel < 0
+		AppState.set_gameboy_option("sfx_channel", channel))
+	%SfxFree.toggled.connect(func(on: bool) -> void: AppState.set_gameboy_option("sfx_free", on))
 	visibility_changed.connect(func() -> void:
 		if visible:
 			refresh())
@@ -26,22 +31,36 @@ func _ready() -> void:
 
 func refresh() -> void:
 	var music := AppState.mode == "music"
+	var gameboy := AppState.target == "gameboy"
 	%Export.theme_type_variation = &"PrimaryButton" if music else &"SfxPrimaryButton"
 	%Midi.visible = music
 	%WavOptions.visible = music and %Wav.button_pressed
+	%Stems.visible = not gameboy
+	%Console.visible = gameboy
+	%Godot.visible = not gameboy
+	%Plugin.visible = not gameboy
+	%GbOptions.visible = gameboy and music
+	for button in %Targets.get_children():
+		if button is Button:
+			button.set_pressed_no_signal(button.get_meta("target", "") == AppState.target)
 	if music:
 		var song: ChipSong = AppState.song
 		%What.text = "Exporting the current song." if song else "Generate a song first."
 		%Prefix.placeholder_text = ExportJob.sanitize(song.get_title()) if song else "song"
 		%Godot.text = "Godot: .chipsong for the Chiptune Forge plugin"
 		%Wav.text = "Audio: WAV, 44.1 kHz, loop points included"
+		if gameboy:
+			%Wav.text = "Audio: WAV of the Game Boy version, loop points included"
+			%Midi.text = "MIDI: the four Game Boy parts"
+		else:
+			%Midi.text = "MIDI: one track per channel"
 		%Export.disabled = song == null
 	else:
 		var count := AppState.kit.sounds.size()
 		%What.text = "Exporting the kit (%d sounds)." % count if count > 0 else "The kit is empty, so this exports the current sound."
 		%Prefix.placeholder_text = ExportJob.sanitize(AppState.kit.kit_name)
 		%Godot.text = "Godot: .chipkit and .chipsfx for the plugin"
-		%Wav.text = "Audio: one WAV per sound"
+		%Wav.text = "Audio: one WAV per sound, as the Game Boy plays it" if gameboy else "Audio: one WAV per sound"
 		%Export.disabled = AppState.sfx == null and count == 0
 	_update_report()
 
@@ -64,24 +83,25 @@ func _build_targets() -> void:
 		button.disabled = not chip.available
 		if not chip.available:
 			button.text += "  (phase %d)" % chip.phase
-		button.button_pressed = id == _target
-		button.pressed.connect(func() -> void:
-			_target = id
-			_update_report())
+		button.button_pressed = id == AppState.target
+		button.set_meta("target", id)
+		button.pressed.connect(func() -> void: AppState.set_target(id))
 		%Targets.add_child(button)
 	var more := Label.new()
-	more.text = "Console targets follow the project plan: Game Boy next, then NES and Master System."
+	more.text = "With the Game Boy picked, previews play through an emulated Game Boy sound chip. NES and Master System come next."
 	more.theme_type_variation = &"MutedLabel"
 	more.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	%Targets.add_child(more)
 
 
 func _update_report() -> void:
-	var chip: ChipProfile = AppState.catalog.chips.get(_target)
+	var chip: ChipProfile = AppState.catalog.chips.get(AppState.target)
 	var lines: Array[String] = []
 	if chip:
 		lines.append("[b]%s[/b]: %s" % [chip.display_name, chip.description])
-	if AppState.mode == "music" and AppState.song:
+	if AppState.target == "gameboy":
+		lines.append_array(_gameboy_report())
+	elif AppState.mode == "music" and AppState.song:
 		var song: ChipSong = AppState.song
 		var used := 0
 		for c in song.data["channels"].size():
@@ -99,6 +119,41 @@ func _update_report() -> void:
 		lines.append("")
 		lines.append("[color=#52d1c0]Fits.[/color] Each sound plays on any voice.")
 	%Report.text = "\n".join(lines)
+
+
+func _gameboy_report() -> Array[String]:
+	var lines: Array[String] = [""]
+	if AppState.mode == "music":
+		var gb := AppState.get_gameboy_song()
+		if gb == null:
+			return lines
+		var size := gb.data_size()
+		if size <= GbSong.BANK_BYTES:
+			lines.append("[color=#52d1c0]Fits[/color] after arranging for 4 channels.")
+		else:
+			lines.append("[color=#f0a050]Too big for one ROM bank.[/color] Shorten the song or pick fewer sections.")
+		for line in gb.report:
+			lines.append("•  " + line)
+		return lines
+	var sounds := _sounds()
+	lines.append("[color=#52d1c0]Fits.[/color] Each sound plays on one channel, one register update per frame.")
+	var ids := sounds.keys()
+	ids.sort()
+	for id in ids:
+		var gb_sfx := GbSfx.from_sfx(sounds[id], str(id))
+		var text := "•  %s: %s, %.2f s" % [id, "Pulse 2" if gb_sfx.channel == GbSfx.PULSE else "Noise", gb_sfx.frame_count() / GbSfx.FRAME_HZ]
+		if not gb_sfx.notes.is_empty():
+			text += " (%s)" % ", ".join(gb_sfx.notes)
+		lines.append(text)
+	lines.append("Sounds play over the music by pausing that channel's part, so reserve the channel your sounds use when you export the song.")
+	return lines
+
+
+func _sounds() -> Dictionary:
+	var sounds: Dictionary = AppState.kit.sounds.duplicate()
+	if sounds.is_empty() and AppState.sfx:
+		sounds[ExportJob.sanitize(AppState.sfx.get_sound_name())] = AppState.sfx
+	return sounds
 
 
 func _channel_has_notes(song: ChipSong, channel: int) -> bool:
@@ -125,15 +180,14 @@ func _on_export() -> void:
 		"stems": %Stems.button_pressed,
 		"midi": %Midi.button_pressed,
 	}
+	var gameboy := AppState.target == "gameboy"
 	if AppState.mode == "music":
 		if AppState.song == null:
 			return
-		_job = ExportJob.for_song(AppState.song, options)
+		_job = ExportJob.for_gameboy_song(AppState.get_gameboy_song(), options) if gameboy else ExportJob.for_song(AppState.song, options)
 	else:
-		var sounds: Dictionary = AppState.kit.sounds.duplicate()
-		if sounds.is_empty() and AppState.sfx:
-			sounds[ExportJob.sanitize(AppState.sfx.get_sound_name())] = AppState.sfx
-		_job = ExportJob.for_sfx(sounds, prefix, options)
+		var sounds := _sounds()
+		_job = ExportJob.for_gameboy_sfx(sounds, prefix, options) if gameboy else ExportJob.for_sfx(sounds, prefix, options)
 	%Export.disabled = true
 	%Progress.visible = true
 	%Progress.value = 0.0
