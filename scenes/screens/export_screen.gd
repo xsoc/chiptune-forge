@@ -40,6 +40,9 @@ func refresh() -> void:
 	%Godot.visible = not gameboy
 	%Plugin.visible = not gameboy
 	%GbOptions.visible = gameboy and music
+	for button in %Targets.get_children():
+		if button is Button:
+			button.set_pressed_no_signal(button.get_meta("target", "") == AppState.target)
 	if music:
 		var song: ChipSong = AppState.song
 		%What.text = "Exporting the current song." if song else "Generate a song first."
@@ -81,6 +84,7 @@ func _build_targets() -> void:
 		if not chip.available:
 			button.text += "  (phase %d)" % chip.phase
 		button.button_pressed = id == AppState.target
+		button.set_meta("target", id)
 		button.pressed.connect(func() -> void: AppState.set_target(id))
 		%Targets.add_child(button)
 	var more := Label.new()

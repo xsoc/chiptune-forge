@@ -32,9 +32,65 @@ jobs:
           exit $status
         shell: bash
 
+  gameboy:
+    name: Game Boy ROMs
+    runs-on: ubuntu-latest
+    env:
+      RGBDS_VERSION: 0.6.1
+      GBDK_VERSION: 4.4.0
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Godot, RGBDS, GBDK and PyBoy
+        run: |
+          set -e
+          mkdir -p "$RUNNER_TEMP/tools/rgbds"
+          cd "$RUNNER_TEMP/tools"
+          curl -sSLo godot.zip "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+          unzip -q godot.zip && mv "Godot_v${GODOT_VERSION}-stable_linux.x86_64" godot
+          # rgb2sdas, which turns hUGEDriver into a GBDK library, reads the
+          # object format of RGBDS 0.6.
+          curl -sSL "https://github.com/gbdev/rgbds/releases/download/v${RGBDS_VERSION}/rgbds-${RGBDS_VERSION}-linux-x86_64.tar.xz" | tar -xJ -C rgbds
+          curl -sSL "https://github.com/gbdk-2020/gbdk-2020/releases/download/${GBDK_VERSION}/gbdk-linux64.tar.gz" | tar -xz
+          echo "$RUNNER_TEMP/tools" >> $GITHUB_PATH
+          echo "$RUNNER_TEMP/tools/rgbds" >> $GITHUB_PATH
+          echo "GBDK_HOME=$RUNNER_TEMP/tools/gbdk" >> $GITHUB_ENV
+          pip install --quiet pyboy numpy
+      - name: Build hUGEDriver
+        run: bash tools/build_hugedriver.sh "$GBDK_HOME"
+      - name: Export example projects
+        run: |
+          godot --headless --path . --import < /dev/null
+          godot --headless --path . -s tools/gb_examples.gd -- "$PWD/gb_examples" < /dev/null
+      - name: Build ROMs
+        run: |
+          set -e
+          for dir in gb_examples/*/; do
+            make -C "$dir" GBDK_HOME="$GBDK_HOME"
+          done
+          ls -l gb_examples/*/*.gb
+      - name: Play ROMs in an emulator
+        run: |
+          set -e
+          for rom in gb_examples/song_*/*.gb; do
+            python3 tools/gb_smoke.py "$rom" 8
+          done
+          # The kit example plays the chosen sound on A.
+          python3 tools/gb_smoke.py gb_examples/kit/*.gb 5 a,down,a,down,a
+      - uses: actions/upload-artifact@v4
+        with:
+          name: hugedriver-lib
+          path: assets/gameboy/hUGEDriver/lib/
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gameboy-example-roms
+          path: |
+            gb_examples/*/*.gb
+            gb_examples/*/src/
+
   export:
     name: Export ${{ matrix.preset }}
-    needs: test
+    needs: [test, gameboy]
     runs-on: ubuntu-latest
     container:
       image: barichello/godot-ci:4.5.1
@@ -68,6 +124,11 @@ jobs:
       # bigger number. It shows in the app's header.
       - name: Stamp build number
         run: bash tools/stamp_build.sh "${GITHUB_RUN_NUMBER}"
+      # Bundled with Game Boy exports, so users only need GBDK to build.
+      - uses: actions/download-artifact@v4
+        with:
+          name: hugedriver-lib
+          path: assets/gameboy/hUGEDriver/lib
       - name: Stamp release version
         if: startsWith(github.ref, 'refs/tags/v')
         run: bash tools/stamp_version.sh "${GITHUB_REF_NAME}"
