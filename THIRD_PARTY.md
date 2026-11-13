@@ -16,6 +16,8 @@ MIT-compatible: no GPL or LGPL code, in the app or in the plugin.
 | hardware.inc (gbdev) | `assets/gameboy/hUGEDriver/include/hardware.inc` | CC0 | https://github.com/gbdev/hardware.inc |
 | FamiStudio (Mathieu Gauthier) | Model for `scripts/targets/nes/nes_player.gd` and `famistudio_writer.gd` | MIT | https://github.com/BleuBleu/FamiStudio. The text project format, NTSC note table, volume table and noise mapping were reimplemented from its documented behaviour; no FamiStudio code is bundled. |
 | 2A03 mixer formulas (nesdev wiki) | `scripts/targets/nes/nes_apu.gd` | Public technique | No code copied. |
+| PSGlib (sverx) | Data format written by `scripts/targets/sms/psg_writer.gd`; modelled in `sms_player.gd` | BSD 3-clause | https://github.com/sverx/PSGlib. The format was reimplemented from its converter's documented behaviour; no PSGlib code is bundled. CI builds its tools to check the exports. |
+| SN76489 behaviour (SMS Power! documentation) | `scripts/targets/sms/sms_psg.gd` | Public technique | No code copied. |
 | PolyBLEP oscillator method | `addons/chipforge/runtime/chip_voice.gd` | Public technique | No code copied. |
 
 Game Boy ROMs are built with GBDK-2020 and RGBDS, which users install
@@ -26,6 +28,10 @@ licence obligations from it.
 NES exports are FamiStudio projects. FamiStudio, which users install
 themselves and CI downloads, is MIT licensed, and so is its sound engine, so
 a game built from an export carries only the MIT notice of that engine.
+
+Master System exports are PSGlib data. PSGlib, which users get with
+devkitSMS or from its own repository, plays it; the data itself carries no
+licence terms from PSGlib.
 
 The icons in `assets/ui/` and `addons/chipforge/icons/` were drawn for this
 project and are MIT licensed with the rest of the code.

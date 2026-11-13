@@ -53,7 +53,14 @@ func play_sfx(sound: ChipSfx) -> void:
 		return
 	if AppState.is_console_target():
 		var rate := 32000 if OS.has_feature("web") else 44100
-		var samples := NesSfx.from_sfx(sound).render(rate) if AppState.target == "nes" else GbSfx.from_sfx(sound).render(rate)
+		var samples: PackedFloat32Array
+		match AppState.target:
+			"nes":
+				samples = NesSfx.from_sfx(sound).render(rate)
+			"sms":
+				samples = SmsSfx.from_sfx(sound).render(rate)
+			_:
+				samples = GbSfx.from_sfx(sound).render(rate)
 		gb_sfx.stream = ChipAudio.mono_to_stream(samples, rate)
 		gb_sfx.play()
 	else:
@@ -73,6 +80,10 @@ func _make_sequencer(song: ChipSong, rate: int) -> ChipSongSequencer:
 		var nes := AppState.get_nes_song()
 		if nes:
 			return NesSequencer.new(nes, rate, song.data["channels"].size())
+	if AppState.target == "sms" and song == AppState.song:
+		var sms := AppState.get_sms_song()
+		if sms:
+			return SmsSequencer.new(sms, rate, song.data["channels"].size())
 	return ChipSongSequencer.new(song, rate)
 
 

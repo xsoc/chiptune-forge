@@ -10,8 +10,10 @@ extends ChipSongSequencer
 ## each one follows the NES channel playing that part at the time.
 
 var nes: NesSong
-var apu: NesApu
-var driver: NesPlayer
+## The emulated chip and the driver playing it ([NesApu] and [NesPlayer]
+## here; subclasses swap in other hardware through [method _make_chip]).
+var apu
+var driver
 
 var _frame_samples := 735.0
 var _until_frame := 0.0
@@ -26,9 +28,8 @@ var _off := PackedByteArray()
 func _init(nes_song: NesSong, rate := 44100, source_channels := 7) -> void:
 	nes = nes_song
 	super(nes_song.source, rate)
-	apu = NesApu.new(float(rate))
-	driver = NesPlayer.new(nes, apu)
-	_frame_samples = rate / NesApu.FRAME_HZ
+	_make_chip(rate)
+	_frame_samples = rate / nes.frame_hz
 	_gain.resize(source_channels)
 	_gain.fill(1.0)
 	_target.resize(source_channels)
@@ -44,6 +45,16 @@ func _init(nes_song: NesSong, rate := 44100, source_channels := 7) -> void:
 	if not nes.looping:
 		_loop_start_frame = 0
 	looping = nes.looping
+
+
+func _make_chip(rate: int) -> void:
+	apu = NesApu.new(float(rate))
+	driver = NesPlayer.new(nes, apu)
+
+
+## Brings the chip's output up to the level of the other targets.
+func _output_gain() -> float:
+	return 3.2
 
 
 func get_channel_count() -> int:
@@ -102,7 +113,7 @@ func render(count: int) -> PackedVector2Array:
 			position += n
 	var out := PackedVector2Array()
 	out.resize(count)
-	var gain := master_gain * 3.2
+	var gain := master_gain * _output_gain()
 	for i in count:
 		var s := _soft_clip(_mono[i] * gain)
 		out[i] = Vector2(s, s)
@@ -113,7 +124,7 @@ func _driver_frame() -> void:
 	if finished:
 		return
 	if driver.frame == 0:
-		var row := driver.row
+		var row: int = driver.row
 		if driver.finished or (not looping and row < _song_row):
 			finished = true
 			events.append([EventType.FINISHED, 0])

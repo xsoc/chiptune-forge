@@ -22,10 +22,11 @@ theme_type_variation = &"SectionLabel"
 text = "TARGET"
 vertical_alignment = 1
 
-[node name="Buttons" type="HBoxContainer" parent="Rows/Top"]
+[node name="Buttons" type="HFlowContainer" parent="Rows"]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_constants/separation = 8
+theme_override_constants/h_separation = 8
+theme_override_constants/v_separation = 8
 
 [node name="Hint" type="Label" parent="Rows"]
 unique_name_in_owner = true

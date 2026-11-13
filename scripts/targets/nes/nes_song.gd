@@ -32,6 +32,8 @@ const MAX_PATTERN_ROWS := 64
 const MAX_ENVELOPE := 255
 
 var title := "song"
+## Video frames per second: the rate the sound driver runs at.
+var frame_hz := NesApu.FRAME_HZ
 ## The arrangement as a four-channel [ChipSong]: its timing, sections, cues
 ## and notes. Used for the timeline and for MIDI export.
 var source: ChipSong
@@ -59,6 +61,9 @@ var arpeggios: Array = []
 var feeds: Array = []
 ## What the arranger changed to fit the chip, one line each.
 var report: PackedStringArray = []
+## The arranger's tallies behind [member report] (parts promoted, moved or
+## dropped), so other targets built on this arrangement can report too.
+var stats: Dictionary = {}
 
 
 ## Frames per row on average.
@@ -70,7 +75,7 @@ func frames_per_row() -> float:
 
 
 func get_bpm() -> float:
-	return NesApu.FRAME_HZ / frames_per_row() * 60.0 / maxf(steps_per_beat, 1)
+	return frame_hz / frames_per_row() * 60.0 / maxf(steps_per_beat, 1)
 
 
 ## Frames from the start of the song to the start of [param row].
@@ -92,9 +97,9 @@ func frames_in_row(row: int) -> int:
 
 ## The groove for a tempo. Returns {groove, bpm}. Grooves of 1, 2 or 4 rows
 ## divide any bar, so every pattern starts at the same point in the groove.
-static func choose_groove(bpm: float, steps_per_beat: int) -> Dictionary:
+static func choose_groove(bpm: float, steps_per_beat: int, frame_rate := NesApu.FRAME_HZ) -> Dictionary:
 	var rows_per_second := bpm * steps_per_beat / 60.0
-	var wanted := NesApu.FRAME_HZ / maxf(rows_per_second, 0.1)
+	var wanted := frame_rate / maxf(rows_per_second, 0.1)
 	var base := clampi(int(floor(wanted)), 2, 30)
 	var best := PackedInt32Array([base])
 	var best_error := INF
@@ -112,7 +117,7 @@ static func choose_groove(bpm: float, steps_per_beat: int) -> Dictionary:
 	var total := 0
 	for f in best:
 		total += f
-	var actual := NesApu.FRAME_HZ / (float(total) / best.size()) * 60.0 / maxf(steps_per_beat, 1)
+	var actual := frame_rate / (float(total) / best.size()) * 60.0 / maxf(steps_per_beat, 1)
 	return {"groove": best, "bpm": actual}
 
 

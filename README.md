@@ -24,6 +24,12 @@ runs on phones, desktops and the web, and it exports straight into Godot.
   chip, and the export is a [FamiStudio](https://famistudio.org) project that
   FamiStudio turns into data for its sound engine, an NSF or a ROM. Sound
   effects export as a FamiStudio sound effect project.
+- **Master System / Game Gear target.** Pick the Master System and the song
+  is arranged for the SN76489's three squares and noise, previews play
+  through an emulated SN76489, and the export is
+  [PSGlib](https://github.com/sverx/PSGlib) data (a `.psg` file and a C
+  array for devkitSMS) plus a VGM. Sound effects export as PSGlib sound
+  effects that play over the music.
 - **Seeds.** The same settings and seed always give the same song, on every
   platform.
 
@@ -105,10 +111,11 @@ described in [docs/format.md](docs/format.md).
 | `scripts/export/` | WAV, MIDI and zip export. |
 | `scripts/targets/gameboy/` | Game Boy target: sound chip emulation, hUGEDriver player, arranger, SFX conversion and C writer. |
 | `scripts/targets/nes/` | NES target: 2A03 emulation, a player that follows FamiStudio's sound engine, arranger, SFX conversion and the FamiStudio text writer. |
+| `scripts/targets/sms/` | Master System target: SN76489 emulation, a player that writes PSGlib's register stream, arranger (built on the NES one), SFX conversion and the PSGlib, C and VGM writer. |
 | `assets/gameboy/hUGEDriver/` | The vendored hUGEDriver source bundled with Game Boy exports. |
 | `resources/` | Vibes, styles, SFX presets and chip profiles as `.tres` files, plus the theme. |
 | `tests/` | Unit and golden-file tests. |
-| `tools/` | Theme builder, screenshot tool, and the Game Boy and NES checks CI runs. |
+| `tools/` | Theme builder, screenshot tool, and the Game Boy, NES and Master System checks CI runs. |
 
 ## Roadmap
 
@@ -119,7 +126,10 @@ from the export and checks that they play in the PyBoy emulator. Phase 3
 adds the NES: the same arranger approach for its four melodic channels, an
 emulated 2A03, and FamiStudio project export. CI opens the exported projects
 in FamiStudio and has it write sound engine data, NSF, ROM and WAV files from
-them. The Master System comes next.
+them. Then the Master System and Game Gear: the SN76489, exported as PSGlib
+data. CI checks the data against PSGlib's own tools (vgm2psg, psgcomp and
+psgdecomp) and compiles the C arrays with SDCC. Phase 4 brings the 16-bit
+consoles, and the last phase gives the modern synth several new engines.
 
 To build a Game Boy export yourself, unzip it, install
 [GBDK-2020](https://github.com/gbdk-2020/gbdk-2020) and run
@@ -129,6 +139,10 @@ explains how to use the song and sounds in your own game.
 To use an NES export, unzip it, open `nes/<name>.txt` in FamiStudio
 (File > Import) and export from there, or use FamiStudio's command line as
 `nes/README.txt` shows.
+
+To use a Master System export, unzip it and add `sms/<name>_psg.c` to a
+devkitSMS project (or `incbin` `sms/<name>.psg` in assembly), then call
+`PSGPlay` once and `PSGFrame` every frame; `sms/README.txt` has the details.
 
 ## Licence
 

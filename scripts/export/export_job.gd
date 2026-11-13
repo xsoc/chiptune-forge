@@ -153,6 +153,89 @@ static func for_nes_sfx(sounds: Dictionary, kit_name: String, options: Dictionar
 	return job
 
 
+## Export for a song arranged for the Master System and Game Gear: PSGlib
+## data (as a .psg file and as a C array for devkitSMS) and a VGM file, plus
+## optional WAV (rendered through the emulated SN76489) and MIDI of the
+## arranged parts. Options: prefix, wav, loops, midi.
+static func for_sms_song(sms: SmsSong, options: Dictionary) -> ExportJob:
+	var job := ExportJob.new()
+	var song := sms.source
+	var prefix := sanitize(str(options.get("prefix", sms.title)))
+	var meta: Dictionary = song.data.get("meta", {})
+	var credit := "%s. Made with Chiptune Forge. Seed %s. %s" % [sms.title, meta.get("seed", ""), meta.get("license", "")]
+	job._tasks.append(func() -> bool:
+		var recorded := PsgWriter.record(sms)
+		var psg := PsgWriter.encode(recorded)
+		var blobs := {PsgWriter.symbol(prefix) + "_psg": psg}
+		job.files["sms/%s.psg" % prefix] = psg
+		job.files["sms/%s.vgm" % prefix] = PsgWriter.vgm_bytes(recorded)
+		job.files["sms/%s_psg.c" % prefix] = PsgWriter.c_source(blobs, "%s_psg.h" % prefix, credit).to_utf8_buffer()
+		job.files["sms/%s_psg.h" % prefix] = PsgWriter.c_header(blobs, PsgWriter.symbol(prefix).to_upper() + "_PSG_H", credit).to_utf8_buffer()
+		job.files["sms/README.txt"] = PsgWriter.readme("song", prefix).to_utf8_buffer()
+		return true)
+	if bool(options.get("midi", false)):
+		job._tasks.append(func() -> bool:
+			job.files["midi/%s.mid" % prefix] = MidiWriter.encode(song)
+			return true)
+	if bool(options.get("wav", true)):
+		job._r_nes = sms
+		job._queue_render(song, "audio/%s.wav" % prefix, int(options.get("loops", 1)), [])
+	job._tasks.append(func() -> bool:
+		job.files["README.txt"] = job._sms_readme(sms, prefix, options).to_utf8_buffer()
+		return true)
+	return job
+
+
+## Export for sound effects on the Master System and Game Gear: one PSGlib
+## file and one VGM per sound, the sounds as C arrays, and WAVs of how each
+## one sounds on the console.
+static func for_sms_sfx(sounds: Dictionary, kit_name: String, options: Dictionary) -> ExportJob:
+	var job := ExportJob.new()
+	var prefix := sanitize(kit_name)
+	var converted: Array = []
+	var ids := sounds.keys()
+	ids.sort()
+	for id in ids:
+		converted.append(SmsSfx.from_sfx(sounds[id], sanitize(str(id))))
+	job._tasks.append(func() -> bool:
+		var blobs := {}
+		for sms_sfx: SmsSfx in converted:
+			var recorded := PsgWriter.record(sms_sfx.to_song(), 1 << sms_sfx.channel)
+			var psg := PsgWriter.encode(recorded)
+			job.files["sms/%s.psg" % sms_sfx.name] = psg
+			job.files["sms/%s.vgm" % sms_sfx.name] = PsgWriter.vgm_bytes(recorded)
+			blobs[PsgWriter.symbol(sms_sfx.name) + "_psg"] = psg
+		var comment := "%s: sound effects made with Chiptune Forge" % kit_name
+		job.files["sms/%s.c" % prefix] = PsgWriter.c_source(blobs, "%s.h" % prefix, comment).to_utf8_buffer()
+		job.files["sms/%s.h" % prefix] = PsgWriter.c_header(blobs, PsgWriter.symbol(prefix).to_upper() + "_H", comment).to_utf8_buffer()
+		job.files["sms/README.txt"] = PsgWriter.readme("sfx", prefix, converted).to_utf8_buffer()
+		return true)
+	if bool(options.get("wav", true)):
+		for sms_sfx in converted:
+			job._tasks.append(func() -> bool:
+				job.files["audio/%s.wav" % sms_sfx.name] = ChipAudio.encode_wav_mono(sms_sfx.render(MIX_RATE), MIX_RATE)
+				return true)
+	job._tasks.append(func() -> bool:
+		var lines: Array[String] = [
+			"Sound kit for the Master System and Game Gear: %s" % prefix,
+			"Made with Chiptune Forge. You own these sounds and may use them for any purpose, including commercially.",
+			"",
+			"sms/    PSGlib data for each sound (.psg and as C arrays) and a VGM of each.",
+			"        See sms/README.txt to play them over your music.",
+			"audio/  One WAV per sound, as the Master System plays it.",
+			"",
+			"Sounds:",
+		]
+		for sms_sfx: SmsSfx in converted:
+			var text := "  %s  (%s, %d frames)" % [sms_sfx.name, "Square 3" if sms_sfx.channel == SmsSong.SQUARE3 else "Noise", sms_sfx.frame_count()]
+			if not sms_sfx.notes.is_empty():
+				text += ": " + ", ".join(sms_sfx.notes)
+			lines.append(text)
+		job.files["README.txt"] = "\n".join(lines).to_utf8_buffer()
+		return true)
+	return job
+
+
 ## Export for sound effects on the Game Boy: a GBDK-2020 project with the
 ## sounds as cf_sfx data, plus WAVs of how each one sounds on the console.
 static func for_gameboy_sfx(sounds: Dictionary, kit_name: String, options: Dictionary) -> ExportJob:
@@ -280,6 +363,8 @@ func _queue_render(song: ChipSong, path: String, loops: int, muted: Array) -> vo
 func _start_render(song: ChipSong, path: String, loops: int, muted: Array) -> void:
 	if _r_gb:
 		_r_seq = GbSequencer.new(_r_gb, MIX_RATE)
+	elif _r_nes is SmsSong:
+		_r_seq = SmsSequencer.new(_r_nes, MIX_RATE)
 	elif _r_nes:
 		_r_seq = NesSequencer.new(_r_nes, MIX_RATE)
 	else:
@@ -397,6 +482,24 @@ func _nes_readme(nes: NesSong, prefix: String, options: Dictionary) -> String:
 		"",
 		"Arrangement:",
 		"\n".join(Array(nes.report).map(func(line: String) -> String: return "  " + line)),
+	])
+
+
+func _sms_readme(sms: SmsSong, prefix: String, options: Dictionary) -> String:
+	var meta: Dictionary = sms.source.data.get("meta", {})
+	return "\n".join([
+		"%s, arranged for the Master System and Game Gear" % sms.title,
+		"Made with Chiptune Forge. Seed %s, %s, %d BPM on the console." % [meta.get("seed", ""), meta.get("key", ""), int(sms.get_bpm())],
+		"",
+		str(meta.get("license", "")),
+		"",
+		"sms/     %s.psg, PSGlib data, also as a C array for devkitSMS, and %s.vgm." % [prefix, prefix],
+		"         See sms/README.txt to play it in your game.",
+		"audio/   WAV, 44.1 kHz, 16-bit, rendered through an emulated SN76489." if bool(options.get("wav", true)) else "",
+		"midi/    The four arranged parts, one track each." if bool(options.get("midi", false)) else "",
+		"",
+		"Arrangement:",
+		"\n".join(Array(sms.report).map(func(line: String) -> String: return "  " + line)),
 	])
 
 

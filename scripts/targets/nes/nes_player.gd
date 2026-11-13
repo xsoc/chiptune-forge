@@ -11,7 +11,9 @@ extends RefCounted
 ## channel's pitch and mode work as in the engine.
 
 var song: NesSong
-var apu: NesApu
+## The sound chip the driver writes: a [NesApu] here, another chip in
+## subclasses that play the same song data on other hardware.
+var apu
 ## Current row and the frame within it.
 var row := 0
 var frame := 0
@@ -24,7 +26,7 @@ var _stops: Array = [{}, {}, {}, {}]
 var _ch: Array[_Channel] = []
 
 
-func _init(nes_song: NesSong, nes_apu: NesApu) -> void:
+func _init(nes_song: NesSong, nes_apu: Variant) -> void:
 	song = nes_song
 	apu = nes_apu
 	for c in 4:
@@ -48,11 +50,7 @@ func _index_notes() -> void:
 
 ## Starts playback at [param from_row] with every channel silent.
 func start(from_row := 0) -> void:
-	apu.reset()
-	apu.write(NesApu.STATUS, 0x0F)
-	# Sweep units off with the negate flag set, so they never mute low notes.
-	apu.write(NesApu.PULSE1_SWEEP, 0x08)
-	apu.write(NesApu.PULSE2_SWEEP, 0x08)
+	_reset_chip()
 	for ch in _ch:
 		ch.clear()
 	row = clampi(from_row, 0, maxi(song.row_count - 1, 0))
@@ -73,6 +71,14 @@ func start(from_row := 0) -> void:
 				var frames := song.frames_before(row) - song.frames_before(s)
 				for f in mini(frames, 300):
 					_ch[c].advance()
+
+
+func _reset_chip() -> void:
+	apu.reset()
+	apu.write(NesApu.STATUS, 0x0F)
+	# Sweep units off with the negate flag set, so they never mute low notes.
+	apu.write(NesApu.PULSE1_SWEEP, 0x08)
+	apu.write(NesApu.PULSE2_SWEEP, 0x08)
 
 
 ## Runs one frame of the engine: reads the row on its first frame, then

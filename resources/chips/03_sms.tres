@@ -7,9 +7,9 @@ script = ExtResource("1")
 id = "sms"
 display_name = "Master System / Game Gear"
 chip_name = "SN76489"
-description = "3 square, 1 noise. Exports PSGlib data for devkitSMS."
+description = "3 square, 1 noise. Exports PSGlib data (.psg and C for devkitSMS) and VGM."
 phase = 3
-available = false
+available = true
 stereo = false
 echo = false
 max_voices = 4
@@ -26,4 +26,4 @@ voices = Array[Dictionary]([{
 "name": "Noise",
 "waves": ["noise"]
 }])
-export_formats = PackedStringArray("c")
+export_formats = PackedStringArray("psglib", "c", "vgm")

@@ -104,6 +104,7 @@ static func arrange(song: ChipSong) -> NesSong:
 	for c in 4:
 		nes.notes[c] = _to_notes(events[c], row)
 	nes.source = _build_source(nes, song, per_section, speed)
+	nes.stats = stats
 	_write_report(nes, song, stats, speed)
 	return nes
 
