@@ -107,7 +107,11 @@ func _on_sfx_changed(sfx: ChipSfx) -> void:
 	var variant := str(sfx.data.get("meta", {}).get("variant", ""))
 	if not variant.is_empty() and variant != "Classic":
 		kind += " (%s)" % variant.to_lower()
-	var where := "The Game Boy plays it on one of its four channels." if AppState.target == "gameboy" else "Modern chiptune plays it on any voice, with no limits."
+	var where := "Modern chiptune plays it on any voice, with no limits."
+	if AppState.target == "gameboy":
+		where = "The Game Boy plays it on one of its four channels."
+	elif AppState.target == "nes":
+		where = "The NES plays it on Pulse 2 or the noise channel."
 	%Note.text = "%s · %s. %s" % [SfxGenerator.c_id(sfx.get_sound_name()), kind, where]
 	%Waveform.set_samples(sfx.render(22050), 22050)
 	var params := ChipSfxSynth.with_defaults(sfx.data.get("params", {}))

@@ -128,9 +128,13 @@ func test_target_picker_sets_shared_target() -> void:
 	var names: Array[String] = []
 	for button: Button in buttons:
 		names.append(button.text)
-	check_eq(names, ["Modern chiptune", "Game Boy"] as Array[String], "available targets only, in order")
+	check_eq(names, ["Modern chiptune", "Game Boy", "NES / Famicom"] as Array[String], "available targets only, in order")
 	buttons[1].pressed.emit()
 	check_eq(AppState.target, "gameboy", "picking Game Boy sets the target")
+	buttons[2].pressed.emit()
+	check_eq(AppState.target, "nes", "picking NES sets the target")
+	picker.refresh()
+	check(picker.get_node("%Hint").text.contains("NES"), "hint names the NES")
 	AppState.set_target("modern")
 	picker.refresh()
 	check(buttons[0].button_pressed and not buttons[1].button_pressed, "buttons follow the target")

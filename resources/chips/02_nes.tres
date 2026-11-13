@@ -7,9 +7,9 @@ script = ExtResource("1")
 id = "nes"
 display_name = "NES / Famicom"
 chip_name = "Ricoh 2A03"
-description = "2 pulse, 1 triangle, 1 noise, 1 DPCM. Exports for the FamiStudio sound engine."
+description = "2 pulse, 1 triangle, 1 noise, 1 DPCM. Exports FamiStudio projects for its sound engine, NSF or a ROM."
 phase = 3
-available = false
+available = true
 stereo = false
 echo = false
 max_voices = 5
@@ -29,4 +29,4 @@ voices = Array[Dictionary]([{
 "name": "DPCM",
 "waves": ["sample"]
 }])
-export_formats = PackedStringArray("asm", "c")
+export_formats = PackedStringArray("famistudio")

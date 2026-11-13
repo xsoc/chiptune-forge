@@ -19,6 +19,7 @@ var _task_index := 0
 var _r_path := ""
 var _r_seq: ChipSongSequencer
 var _r_gb: GbSong
+var _r_nes: NesSong
 var _r_total := 0
 var _r_written := 0
 var _r_bytes := PackedByteArray()
@@ -81,6 +82,73 @@ static func for_gameboy_song(gb: GbSong, options: Dictionary) -> ExportJob:
 		job._queue_render(song, "audio/%s.wav" % prefix, int(options.get("loops", 1)), [])
 	job._tasks.append(func() -> bool:
 		job.files["README.txt"] = job._gameboy_readme(gb, prefix, options).to_utf8_buffer()
+		return true)
+	return job
+
+
+## Export for a song arranged for the NES: a FamiStudio text project (which
+## FamiStudio exports for its sound engine, as NSF or as a ROM), plus
+## optional WAV (rendered through the emulated 2A03) and MIDI of the arranged
+## parts. Options: prefix, wav, loops, midi.
+static func for_nes_song(nes: NesSong, options: Dictionary) -> ExportJob:
+	var job := ExportJob.new()
+	var song := nes.source
+	var prefix := sanitize(str(options.get("prefix", nes.title)))
+	var meta: Dictionary = song.data.get("meta", {})
+	var credit := "Made with Chiptune Forge. Seed %s. %s" % [meta.get("seed", ""), meta.get("license", "")]
+	job._tasks.append(func() -> bool:
+		job.files["nes/%s.txt" % prefix] = FamiStudioWriter.song_project(nes, nes.title, credit).to_utf8_buffer()
+		job.files["nes/README.txt"] = FamiStudioWriter.readme("song", "%s.txt" % prefix).to_utf8_buffer()
+		return true)
+	if bool(options.get("midi", false)):
+		job._tasks.append(func() -> bool:
+			job.files["midi/%s.mid" % prefix] = MidiWriter.encode(song)
+			return true)
+	if bool(options.get("wav", true)):
+		job._r_nes = nes
+		job._queue_render(song, "audio/%s.wav" % prefix, int(options.get("loops", 1)), [])
+	job._tasks.append(func() -> bool:
+		job.files["README.txt"] = job._nes_readme(nes, prefix, options).to_utf8_buffer()
+		return true)
+	return job
+
+
+## Export for sound effects on the NES: a FamiStudio text project with one
+## song per sound, plus WAVs of how each one sounds on the console.
+static func for_nes_sfx(sounds: Dictionary, kit_name: String, options: Dictionary) -> ExportJob:
+	var job := ExportJob.new()
+	var prefix := sanitize(kit_name)
+	var converted: Array = []
+	var ids := sounds.keys()
+	ids.sort()
+	for id in ids:
+		converted.append(NesSfx.from_sfx(sounds[id], sanitize(str(id))))
+	job._tasks.append(func() -> bool:
+		job.files["nes/%s.txt" % prefix] = FamiStudioWriter.sfx_project(converted, kit_name).to_utf8_buffer()
+		job.files["nes/README.txt"] = FamiStudioWriter.readme("sfx", "%s.txt" % prefix).to_utf8_buffer()
+		return true)
+	if bool(options.get("wav", true)):
+		for nes_sfx in converted:
+			job._tasks.append(func() -> bool:
+				job.files["audio/%s.wav" % nes_sfx.name] = ChipAudio.encode_wav_mono(nes_sfx.render(MIX_RATE), MIX_RATE)
+				return true)
+	job._tasks.append(func() -> bool:
+		var lines: Array[String] = [
+			"Sound kit for the NES: %s" % prefix,
+			"Made with Chiptune Forge. You own these sounds and may use them for any purpose, including commercially.",
+			"",
+			"nes/    A FamiStudio project with one song per sound. See nes/README.txt to export",
+			"        the sounds for FamiStudio's sound engine.",
+			"audio/  One WAV per sound, as the NES plays it.",
+			"",
+			"Sounds:",
+		]
+		for nes_sfx in converted:
+			var text := "  %s  (%s, %d frames)" % [nes_sfx.name, "Pulse 2" if nes_sfx.channel == NesSong.PULSE2 else "Noise", nes_sfx.frame_count()]
+			if not nes_sfx.notes.is_empty():
+				text += ": " + ", ".join(nes_sfx.notes)
+			lines.append(text)
+		job.files["README.txt"] = "\n".join(lines).to_utf8_buffer()
 		return true)
 	return job
 
@@ -212,6 +280,8 @@ func _queue_render(song: ChipSong, path: String, loops: int, muted: Array) -> vo
 func _start_render(song: ChipSong, path: String, loops: int, muted: Array) -> void:
 	if _r_gb:
 		_r_seq = GbSequencer.new(_r_gb, MIX_RATE)
+	elif _r_nes:
+		_r_seq = NesSequencer.new(_r_nes, MIX_RATE)
 	else:
 		_r_seq = ChipSongSequencer.new(song, MIX_RATE)
 	for c in muted:
@@ -309,6 +379,24 @@ func _gameboy_readme(gb: GbSong, prefix: String, options: Dictionary) -> String:
 		"",
 		"Arrangement:",
 		"\n".join(Array(gb.report).map(func(line: String) -> String: return "  " + line)),
+	])
+
+
+func _nes_readme(nes: NesSong, prefix: String, options: Dictionary) -> String:
+	var meta: Dictionary = nes.source.data.get("meta", {})
+	return "\n".join([
+		"%s, arranged for the NES" % nes.title,
+		"Made with Chiptune Forge. Seed %s, %s, %d BPM on the console." % [meta.get("seed", ""), meta.get("key", ""), int(nes.get_bpm())],
+		"",
+		str(meta.get("license", "")),
+		"",
+		"nes/     %s.txt, a FamiStudio project. Open it in FamiStudio (File > Import) to" % prefix,
+		"         export it for FamiStudio's sound engine, as NSF or as a ROM. See nes/README.txt.",
+		"audio/   WAV, 44.1 kHz, 16-bit, rendered through an emulated NES sound chip." if bool(options.get("wav", true)) else "",
+		"midi/    The four arranged parts, one track each." if bool(options.get("midi", false)) else "",
+		"",
+		"Arrangement:",
+		"\n".join(Array(nes.report).map(func(line: String) -> String: return "  " + line)),
 	])
 
 

@@ -84,6 +84,28 @@ informational: `params` alone defines the sound.
 `id` is what `ChipSfxPlayer.play()` takes. Console exports use the upper-case
 form, `SFX_JUMP`.
 
+## NES export
+
+NES exports are not a Chiptune Forge format either: they are
+[FamiStudio](https://famistudio.org) text projects, the format FamiStudio's
+File > Export > FamiStudio Text writes and File > Import reads. They are
+written without a version attribute, so any current FamiStudio opens them.
+
+A song export's `nes/<name>.txt` holds one song on the four 2A03 channels
+(Square1, Square2, Triangle, Noise; DPCM is left empty) in FamiStudio's tempo
+mode. One row is one 16th-note step; the groove (for example `7-6`) is the
+number of video frames each row lasts, chosen to match the song's BPM within
+about 2%. Patterns break at sections and every bar. Instruments use volume,
+arpeggio, pitch and duty envelopes only; chords play as looping arpeggios;
+drums are noise instruments with short envelopes. Every note on the pulse and
+noise channels sets its volume, since FamiStudio's volume column is sticky.
+
+A sound kit export's `nes/<kit>.txt` holds one song per sound, each a single
+note of an instrument whose envelopes carry the sound frame by frame (volume,
+semitone offset from the first note, and duty or noise mode) at one frame
+per row. FamiStudio's sound effect export turns these into data for
+`famistudio_sfx_play`.
+
 ## Game Boy export
 
 Game Boy exports are not a Chiptune Forge format: they are C source for

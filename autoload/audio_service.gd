@@ -1,13 +1,15 @@
 extends Node
 ## Preview playback for the app: one music player and one SFX player. When
-## the export target is the Game Boy, both play through the emulated Game Boy
-## sound chip instead, so the preview is what the console will play.
+## the export target is a console (Game Boy or NES), both play through that
+## console's emulated sound chip instead, so the preview is what the console
+## will play.
 
 signal playback_started
 signal playback_stopped
 
 var music: ChipMusicPlayer
 var sfx: ChipSfxPlayer
+## Plays console sound effects, rendered through the emulated chip.
 var gb_sfx: AudioStreamPlayer
 ## Web browsers block audio until the user taps. The UI shows a prompt and
 ## sets this once the user has.
@@ -49,9 +51,9 @@ func is_playing() -> bool:
 func play_sfx(sound: ChipSfx) -> void:
 	if sound == null:
 		return
-	if AppState.target == "gameboy":
+	if AppState.is_console_target():
 		var rate := 32000 if OS.has_feature("web") else 44100
-		var samples := GbSfx.from_sfx(sound).render(rate)
+		var samples := NesSfx.from_sfx(sound).render(rate) if AppState.target == "nes" else GbSfx.from_sfx(sound).render(rate)
 		gb_sfx.stream = ChipAudio.mono_to_stream(samples, rate)
 		gb_sfx.play()
 	else:
@@ -67,6 +69,10 @@ func _make_sequencer(song: ChipSong, rate: int) -> ChipSongSequencer:
 		var gb := AppState.get_gameboy_song()
 		if gb:
 			return GbSequencer.new(gb, rate, song.data["channels"].size())
+	if AppState.target == "nes" and song == AppState.song:
+		var nes := AppState.get_nes_song()
+		if nes:
+			return NesSequencer.new(nes, rate, song.data["channels"].size())
 	return ChipSongSequencer.new(song, rate)
 
 

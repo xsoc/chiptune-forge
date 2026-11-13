@@ -32,13 +32,16 @@ func _ready() -> void:
 func refresh() -> void:
 	var music := AppState.mode == "music"
 	var gameboy := AppState.target == "gameboy"
+	var nes := AppState.target == "nes"
+	var console := gameboy or nes
 	%Export.theme_type_variation = &"PrimaryButton" if music else &"SfxPrimaryButton"
 	%Midi.visible = music
 	%WavOptions.visible = music and %Wav.button_pressed
-	%Stems.visible = not gameboy
-	%Console.visible = gameboy
-	%Godot.visible = not gameboy
-	%Plugin.visible = not gameboy
+	%Stems.visible = not console
+	%Console.visible = console
+	%Console.text = "NES: FamiStudio project (for its sound engine, NSF or ROM)" if nes else "Game Boy: C project for GBDK-2020 and hUGEDriver"
+	%Godot.visible = not console
+	%Plugin.visible = not console
 	%GbOptions.visible = gameboy and music
 	for button in %Targets.get_children():
 		if button is Button:
@@ -52,6 +55,9 @@ func refresh() -> void:
 		if gameboy:
 			%Wav.text = "Audio: WAV of the Game Boy version, loop points included"
 			%Midi.text = "MIDI: the four Game Boy parts"
+		elif nes:
+			%Wav.text = "Audio: WAV of the NES version, loop points included"
+			%Midi.text = "MIDI: the four NES parts"
 		else:
 			%Midi.text = "MIDI: one track per channel"
 		%Export.disabled = song == null
@@ -60,7 +66,9 @@ func refresh() -> void:
 		%What.text = "Exporting the kit (%d sounds)." % count if count > 0 else "The kit is empty, so this exports the current sound."
 		%Prefix.placeholder_text = ExportJob.sanitize(AppState.kit.kit_name)
 		%Godot.text = "Godot: .chipkit and .chipsfx for the plugin"
-		%Wav.text = "Audio: one WAV per sound, as the Game Boy plays it" if gameboy else "Audio: one WAV per sound"
+		%Wav.text = "Audio: one WAV per sound"
+		if console:
+			%Wav.text = "Audio: one WAV per sound, as the %s plays it" % ("NES" if nes else "Game Boy")
 		%Export.disabled = AppState.sfx == null and count == 0
 	_update_report()
 
@@ -88,7 +96,7 @@ func _build_targets() -> void:
 		button.pressed.connect(func() -> void: AppState.set_target(id))
 		%Targets.add_child(button)
 	var more := Label.new()
-	more.text = "With the Game Boy picked, previews play through an emulated Game Boy sound chip. NES and Master System come next."
+	more.text = "With the Game Boy or the NES picked, previews play through that console's emulated sound chip. Master System comes next."
 	more.theme_type_variation = &"MutedLabel"
 	more.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	%Targets.add_child(more)
@@ -101,6 +109,8 @@ func _update_report() -> void:
 		lines.append("[b]%s[/b]: %s" % [chip.display_name, chip.description])
 	if AppState.target == "gameboy":
 		lines.append_array(_gameboy_report())
+	elif AppState.target == "nes":
+		lines.append_array(_nes_report())
 	elif AppState.mode == "music" and AppState.song:
 		var song: ChipSong = AppState.song
 		var used := 0
@@ -149,6 +159,33 @@ func _gameboy_report() -> Array[String]:
 	return lines
 
 
+func _nes_report() -> Array[String]:
+	var lines: Array[String] = [""]
+	if AppState.mode == "music":
+		var nes := AppState.get_nes_song()
+		if nes == null:
+			return lines
+		if nes.pattern_chunks().size() <= NesSong.MAX_PATTERNS:
+			lines.append("[color=#52d1c0]Fits[/color] after arranging for 4 channels.")
+		else:
+			lines.append("[color=#f0a050]Too long for one FamiStudio song.[/color] Shorten the song or pick fewer sections.")
+		for line in nes.report:
+			lines.append("•  " + line)
+		return lines
+	var sounds := _sounds()
+	lines.append("[color=#52d1c0]Fits.[/color] Each sound is one FamiStudio instrument, its envelopes updated once per frame.")
+	var ids := sounds.keys()
+	ids.sort()
+	for id in ids:
+		var nes_sfx := NesSfx.from_sfx(sounds[id], str(id))
+		var text := "•  %s: %s, %.2f s" % [id, "Pulse 2" if nes_sfx.channel == NesSong.PULSE2 else "Noise", nes_sfx.frame_count() / NesApu.FRAME_HZ]
+		if not nes_sfx.notes.is_empty():
+			text += " (%s)" % ", ".join(nes_sfx.notes)
+		lines.append(text)
+	lines.append("FamiStudio's engine plays sounds over the music and gives the channel back when they end.")
+	return lines
+
+
 func _sounds() -> Dictionary:
 	var sounds: Dictionary = AppState.kit.sounds.duplicate()
 	if sounds.is_empty() and AppState.sfx:
@@ -180,14 +217,25 @@ func _on_export() -> void:
 		"stems": %Stems.button_pressed,
 		"midi": %Midi.button_pressed,
 	}
-	var gameboy := AppState.target == "gameboy"
 	if AppState.mode == "music":
 		if AppState.song == null:
 			return
-		_job = ExportJob.for_gameboy_song(AppState.get_gameboy_song(), options) if gameboy else ExportJob.for_song(AppState.song, options)
+		match AppState.target:
+			"gameboy":
+				_job = ExportJob.for_gameboy_song(AppState.get_gameboy_song(), options)
+			"nes":
+				_job = ExportJob.for_nes_song(AppState.get_nes_song(), options)
+			_:
+				_job = ExportJob.for_song(AppState.song, options)
 	else:
 		var sounds := _sounds()
-		_job = ExportJob.for_gameboy_sfx(sounds, prefix, options) if gameboy else ExportJob.for_sfx(sounds, prefix, options)
+		match AppState.target:
+			"gameboy":
+				_job = ExportJob.for_gameboy_sfx(sounds, prefix, options)
+			"nes":
+				_job = ExportJob.for_nes_sfx(sounds, prefix, options)
+			_:
+				_job = ExportJob.for_sfx(sounds, prefix, options)
 	%Export.disabled = true
 	%Progress.visible = true
 	%Progress.value = 0.0
