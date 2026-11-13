@@ -34,7 +34,7 @@ var sfx: ChipSfx
 var sfx_recent: Array = []
 var kit := ChipSfxKit.new()
 
-## Export target id from the catalog: "modern", "gameboy" or "nes".
+## Export target id from the catalog: "modern", "gameboy", "nes" or "sms".
 var target := "modern"
 ## Game Boy arranger options: sfx_channel (-1 none, 1 Pulse 2, 3 noise) and
 ## sfx_free (keep that channel free of music).
@@ -43,6 +43,8 @@ var _gb_song: GbSong
 var _gb_key := []
 var _nes_song: NesSong
 var _nes_key := []
+var _sms_song: SmsSong
+var _sms_key := []
 
 ## Saved entries: {kind, name, favourite, created, settings | sfx}.
 var library: Array = []
@@ -92,10 +94,22 @@ func get_nes_song() -> NesSong:
 	return _nes_song
 
 
+## The current song arranged for the Master System, cached until the song
+## changes. Null when there is no song.
+func get_sms_song() -> SmsSong:
+	if song == null:
+		return null
+	var key := [song.get_instance_id(), song.to_json().hash()]
+	if _sms_song == null or key != _sms_key:
+		_sms_song = SmsArranger.arrange(song)
+		_sms_key = key
+	return _sms_song
+
+
 ## True when previews play through an emulated console instead of the
 ## modern synth.
 func is_console_target() -> bool:
-	return target == "gameboy" or target == "nes"
+	return target in ["gameboy", "nes", "sms"]
 
 
 func can_make_music() -> bool:

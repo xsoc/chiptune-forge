@@ -24,6 +24,8 @@ func refresh() -> void:
 		%Hint.text = "Previews play through an emulated Game Boy sound chip: 2 pulse, 1 wave, 1 noise."
 	elif AppState.target == "nes":
 		%Hint.text = "Previews play through an emulated NES sound chip: 2 pulse, 1 triangle, 1 noise."
+	elif AppState.target == "sms":
+		%Hint.text = "Previews play through an emulated Master System sound chip: 3 square, 1 noise."
 	else:
 		%Hint.text = "Plays on any voice, with no limits."
 	%Hint.text += _later

@@ -106,6 +106,38 @@ semitone offset from the first note, and duty or noise mode) at one frame
 per row. FamiStudio's sound effect export turns these into data for
 `famistudio_sfx_play`.
 
+## Master System export
+
+Master System and Game Gear exports are [PSGlib](https://github.com/sverx/PSGlib)
+data, the format PSGlib's `PSGPlay` and `PSGSFXPlay` read (in devkitSMS and in
+the Z80 assembly version alike). The data is a stream of SN76489 port writes:
+
+| Bytes | Meaning |
+|---|---|
+| `$80`-`$FF` | A latch byte, written to the chip as it is. |
+| `$40`-`$7F` | A data byte for the last latched register (bit 6 is set and ignored by the chip). |
+| `$38`-`$3F` | Wait 1 to 8 frames. |
+| `$01` | Loop point. |
+| `$00` | End of data. |
+
+The data is uncompressed (PSGlib's `psgcomp` compresses it). Each frame
+writes only the registers that changed, in the order PSGlib's `vgm2psg`
+writes them (for each tone channel its period then its volume, then the
+noise). At the loop point every register is written again, so the loop
+sounds the same however the song ended.
+
+A song export's `sms/` folder holds `<name>.psg`, the same bytes as a C array
+in `<name>_psg.c` and `<name>_psg.h` (`<name>_psg` and `<name>_psg_size`), and
+`<name>.vgm`, a VGM 1.50 file of the same register writes at 60 frames a
+second. Square 1 plays the lead, Square 2 the accompaniment, Square 3 the bass
+(the chip's lowest note is A2, so bass lines usually move up an octave) and
+the noise channel the drums on its three fixed rates.
+
+A sound kit export's `sms/` folder holds one `.psg` and one `.vgm` per sound,
+and all of them as C arrays in `<kit>.c` and `<kit>.h`. Each sound writes only
+its own channel: Square 3 (`SFX_CHANNEL2` in PSGlib) for tonal sounds, the
+noise channel (`SFX_CHANNEL3`) for noisy ones.
+
 ## Game Boy export
 
 Game Boy exports are not a Chiptune Forge format: they are C source for

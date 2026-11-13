@@ -144,9 +144,67 @@ jobs:
           name: nes-examples
           path: nes_examples/
 
+  sms:
+    name: Master System data with PSGlib's tools
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: sverx/PSGlib
+          path: psglib
+      - name: Install Godot, SDCC and PSGlib's tools
+        run: |
+          set -e
+          mkdir -p "$RUNNER_TEMP/tools"
+          cd "$RUNNER_TEMP/tools"
+          curl -sSLo godot.zip "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+          unzip -q godot.zip && mv "Godot_v${GODOT_VERSION}-stable_linux.x86_64" godot
+          sudo apt-get update -qq && sudo apt-get install -y -qq sdcc zlib1g-dev > /dev/null
+          src="$GITHUB_WORKSPACE/psglib/tools/src"
+          gcc -O2 -o vgm2psg "$src/vgm2psg.c" -lz
+          gcc -O2 -o psgcomp "$src/psgcomp.c"
+          gcc -O2 -o psgdecomp "$src/psgdecomp.c"
+          echo "$RUNNER_TEMP/tools" >> $GITHUB_PATH
+          sdcc --version | head -1
+      - name: Export example data
+        run: |
+          godot --headless --path . --import < /dev/null
+          godot --headless --path . -s tools/sms_examples.gd -- "$PWD/sms_examples" < /dev/null
+      - name: Check it with PSGlib's tools and SDCC
+        run: |
+          set -e
+          cd sms_examples
+          for psg in song_*.psg sfx_*.psg; do
+            name="${psg%.psg}"
+            # PSGlib's own converter, from our VGM of the same song, must
+            # give the same chip registers on every frame.
+            channels=""
+            case "$name" in sfx_*) channels="${name##*_ch}" ;; esac
+            vgm2psg "$name.vgm" "$name.vgm2psg.psg" $channels
+            # Compressed and decompressed again, it must come back byte for byte.
+            psgcomp "$psg" "$name.comp.psg"
+            psgdecomp "$name.comp.psg" "$name.decomp.psg"
+            cmp "$psg" "$name.decomp.psg"
+            python3 ../tools/sms_check.py "$psg" "$name.vgm2psg.psg" "$name.decomp.psg"
+          done
+          for c in *_psg.c; do
+            sdcc -mz80 -c "$c" -o "${c%.c}.rel"
+            [ -s "${c%.c}.rel" ] || { echo "SDCC did not compile $c"; exit 1; }
+          done
+          for wav in *_preview.wav; do
+            python3 ../tools/nes_check.py "$wav" 4
+          done
+          ls -l
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: sms-examples
+          path: sms_examples/
+
   export:
     name: Export ${{ matrix.preset }}
-    needs: [test, gameboy, nes]
+    needs: [test, gameboy, nes, sms]
     runs-on: ubuntu-latest
     container:
       image: barichello/godot-ci:4.5.1

@@ -6,6 +6,8 @@ extends Control
 const LONG_SONG_SECONDS := 270.0
 
 var _job: ExportJob
+# PSGlib data size per Master System arrangement, for the report.
+var _psg_sizes := {}
 
 
 func _ready() -> void:
@@ -33,13 +35,18 @@ func refresh() -> void:
 	var music := AppState.mode == "music"
 	var gameboy := AppState.target == "gameboy"
 	var nes := AppState.target == "nes"
-	var console := gameboy or nes
+	var sms := AppState.target == "sms"
+	var console := gameboy or nes or sms
 	%Export.theme_type_variation = &"PrimaryButton" if music else &"SfxPrimaryButton"
 	%Midi.visible = music
 	%WavOptions.visible = music and %Wav.button_pressed
 	%Stems.visible = not console
 	%Console.visible = console
-	%Console.text = "NES: FamiStudio project (for its sound engine, NSF or ROM)" if nes else "Game Boy: C project for GBDK-2020 and hUGEDriver"
+	%Console.text = "Game Boy: C project for GBDK-2020 and hUGEDriver"
+	if nes:
+		%Console.text = "NES: FamiStudio project (for its sound engine, NSF or ROM)"
+	elif sms:
+		%Console.text = "Master System: PSGlib data for devkitSMS, and VGM"
 	%Godot.visible = not console
 	%Plugin.visible = not console
 	%GbOptions.visible = gameboy and music
@@ -58,6 +65,9 @@ func refresh() -> void:
 		elif nes:
 			%Wav.text = "Audio: WAV of the NES version, loop points included"
 			%Midi.text = "MIDI: the four NES parts"
+		elif sms:
+			%Wav.text = "Audio: WAV of the SMS version, loop points included"
+			%Midi.text = "MIDI: the four Master System parts"
 		else:
 			%Midi.text = "MIDI: one track per channel"
 		%Export.disabled = song == null
@@ -68,7 +78,7 @@ func refresh() -> void:
 		%Godot.text = "Godot: .chipkit and .chipsfx for the plugin"
 		%Wav.text = "Audio: one WAV per sound"
 		if console:
-			%Wav.text = "Audio: one WAV per sound, as the %s plays it" % ("NES" if nes else "Game Boy")
+			%Wav.text = "Audio: one WAV per sound, as the %s plays it" % ("NES" if nes else "Master System" if sms else "Game Boy")
 		%Export.disabled = AppState.sfx == null and count == 0
 	_update_report()
 
@@ -96,7 +106,7 @@ func _build_targets() -> void:
 		button.pressed.connect(func() -> void: AppState.set_target(id))
 		%Targets.add_child(button)
 	var more := Label.new()
-	more.text = "With the Game Boy or the NES picked, previews play through that console's emulated sound chip. Master System comes next."
+	more.text = "With a console picked, previews play through that console's emulated sound chip."
 	more.theme_type_variation = &"MutedLabel"
 	more.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	%Targets.add_child(more)
@@ -111,6 +121,8 @@ func _update_report() -> void:
 		lines.append_array(_gameboy_report())
 	elif AppState.target == "nes":
 		lines.append_array(_nes_report())
+	elif AppState.target == "sms":
+		lines.append_array(_sms_report())
 	elif AppState.mode == "music" and AppState.song:
 		var song: ChipSong = AppState.song
 		var used := 0
@@ -186,6 +198,37 @@ func _nes_report() -> Array[String]:
 	return lines
 
 
+func _sms_report() -> Array[String]:
+	var lines: Array[String] = [""]
+	if AppState.mode == "music":
+		var sms := AppState.get_sms_song()
+		if sms == null:
+			return lines
+		var key := sms.get_instance_id()
+		if not _psg_sizes.has(key):
+			_psg_sizes = {key: PsgWriter.song_bytes(sms).size()}
+		var size: int = _psg_sizes[key]
+		if size <= 16384:
+			lines.append("[color=#52d1c0]Fits[/color] after arranging for 4 channels: %.1f KB of PSGlib data, in one ROM bank." % (size / 1024.0))
+		else:
+			lines.append("[color=#f0a050]%.1f KB of PSGlib data, more than one 16 KB ROM bank.[/color] Compress it with PSGlib's psgcomp (about half the size) or build PSGlib with PSGLIB_MULTIBANK." % (size / 1024.0))
+		for line in sms.report:
+			lines.append("•  " + line)
+		return lines
+	var sounds := _sounds()
+	lines.append("[color=#52d1c0]Fits.[/color] Each sound is PSGlib data on one channel, one register update per frame.")
+	var ids := sounds.keys()
+	ids.sort()
+	for id in ids:
+		var sms_sfx := SmsSfx.from_sfx(sounds[id], str(id))
+		var text := "•  %s: %s, %.2f s" % [id, "Square 3" if sms_sfx.channel == SmsSong.SQUARE3 else "Noise", sms_sfx.frame_count() / SmsSong.FRAME_HZ]
+		if not sms_sfx.notes.is_empty():
+			text += " (%s)" % ", ".join(sms_sfx.notes)
+		lines.append(text)
+	lines.append("PSGlib plays sounds over the music and gives the channel back when they end.")
+	return lines
+
+
 func _sounds() -> Dictionary:
 	var sounds: Dictionary = AppState.kit.sounds.duplicate()
 	if sounds.is_empty() and AppState.sfx:
@@ -225,6 +268,8 @@ func _on_export() -> void:
 				_job = ExportJob.for_gameboy_song(AppState.get_gameboy_song(), options)
 			"nes":
 				_job = ExportJob.for_nes_song(AppState.get_nes_song(), options)
+			"sms":
+				_job = ExportJob.for_sms_song(AppState.get_sms_song(), options)
 			_:
 				_job = ExportJob.for_song(AppState.song, options)
 	else:
@@ -234,6 +279,8 @@ func _on_export() -> void:
 				_job = ExportJob.for_gameboy_sfx(sounds, prefix, options)
 			"nes":
 				_job = ExportJob.for_nes_sfx(sounds, prefix, options)
+			"sms":
+				_job = ExportJob.for_sms_sfx(sounds, prefix, options)
 			_:
 				_job = ExportJob.for_sfx(sounds, prefix, options)
 	%Export.disabled = true
