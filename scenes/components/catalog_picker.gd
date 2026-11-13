@@ -30,7 +30,6 @@ var _strengths: Array[float] = []
 var _strength_sliders: Array[HSlider] = []
 var _strength_labels: Array[Label] = []
 var _catalog: Catalog
-var _pending_removal := ""
 
 
 func _ready() -> void:
@@ -78,7 +77,8 @@ func get_strengths() -> Array[float]:
 	return _strengths
 
 
-## Removes [param id] from the picks, as if its chip was turned off.
+## Removes [param id] from the picks, as if its chip was turned off. The X
+## buttons under the chips call this directly, with no confirmation.
 func deselect(id: String) -> void:
 	var index := _selected.find(id)
 	if index < 0 or (_selected.size() == 1 and not allow_empty):
@@ -88,19 +88,6 @@ func deselect(id: String) -> void:
 	_sync_chips()
 	_rebuild_strengths()
 	selection_changed.emit(_selected)
-
-
-## Asks before removing [param id]. Used by the name buttons under the chips.
-func confirm_deselect(id: String) -> void:
-	var item: Resource = _items.get(id)
-	_pending_removal = id
-	%ConfirmRemove.dialog_text = "Remove %s from your %ss?" % [item.display_name if item else id, title.to_lower()]
-	if is_inside_tree():
-		%ConfirmRemove.popup_centered()
-
-
-func _on_remove_confirmed() -> void:
-	deselect(_pending_removal)
 
 
 ## Shows the tab holding [param id] and scrolls it into view.
@@ -191,7 +178,7 @@ func _rebuild_strengths() -> void:
 		remove.tooltip_text = "Remove %s" % item_name
 		remove.disabled = _selected.size() == 1 and not allow_empty
 		remove.set_meta("remove", _selected[i])
-		remove.pressed.connect(confirm_deselect.bind(_selected[i]))
+		remove.pressed.connect(deselect.bind(_selected[i]))
 		row.add_child(remove)
 		var label := Label.new()
 		label.text = item_name
