@@ -22,6 +22,8 @@ func refresh() -> void:
 		_buttons[id].set_pressed_no_signal(id == AppState.target)
 	if AppState.target == "gameboy":
 		%Hint.text = "Previews play through an emulated Game Boy sound chip: 2 pulse, 1 wave, 1 noise."
+	elif AppState.target == "nes":
+		%Hint.text = "Previews play through an emulated NES sound chip: 2 pulse, 1 triangle, 1 noise."
 	else:
 		%Hint.text = "Plays on any voice, with no limits."
 	%Hint.text += _later

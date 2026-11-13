@@ -88,9 +88,65 @@ jobs:
             gb_examples/*/*.gb
             gb_examples/*/src/
 
+  nes:
+    name: NES projects in FamiStudio
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Godot and FamiStudio
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -e
+          mkdir -p "$RUNNER_TEMP/tools/famistudio"
+          cd "$RUNNER_TEMP/tools"
+          curl -sSLo godot.zip "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+          unzip -q godot.zip && mv "Godot_v${GODOT_VERSION}-stable_linux.x86_64" godot
+          echo "$RUNNER_TEMP/tools" >> $GITHUB_PATH
+          # The exported projects carry no FamiStudio version, so any current
+          # release reads them; test against the latest one.
+          gh release view --repo BleuBleu/FamiStudio --json tagName,assets --jq '.tagName, .assets[].name'
+          gh release download --repo BleuBleu/FamiStudio --pattern '*Linux*' --dir famistudio
+          cd famistudio
+          for f in *.zip; do unzip -q "$f"; done
+          for f in *.tar.gz; do [ -e "$f" ] && tar -xzf "$f"; done
+          find . -maxdepth 3 | head -50
+          sudo apt-get update -qq && sudo apt-get install -y -qq xvfb libopenal1 libgl1 > /dev/null
+      - name: Export example projects
+        run: |
+          godot --headless --path . --import < /dev/null
+          godot --headless --path . -s tools/nes_examples.gd -- "$PWD/nes_examples" < /dev/null
+      - name: Convert them with FamiStudio
+        run: |
+          set -e
+          dll=$(find "$RUNNER_TEMP/tools/famistudio" -name FamiStudio.dll | head -1)
+          exe=$(find "$RUNNER_TEMP/tools/famistudio" -type f -name FamiStudio | head -1)
+          if [ -n "$dll" ]; then fs() { xvfb-run -a dotnet "$dll" "$@"; }; else chmod +x "$exe"; fs() { xvfb-run -a "$exe" "$@"; }; fi
+          fs -help | head -60 || true
+          cd nes_examples
+          for project in song_*.txt; do
+            name="${project%.txt}"
+            fs "$project" famistudio-asm-export "$name.s" -famistudio-asm-format:ca65
+            fs "$project" nsf-export "$name.nsf"
+            fs "$project" rom-export "$name.nes"
+            fs "$project" wav-export "$name.wav" -wav-export-duration:8
+            for out in "$name.s" "$name.nsf" "$name.nes" "$name.wav"; do
+              [ -s "$out" ] || { echo "FamiStudio did not write $out"; exit 1; }
+            done
+            python3 ../tools/nes_check.py "$name.wav" 4
+          done
+          fs kit.txt famistudio-asm-sfx-export kit_sfx.s -famistudio-asm-format:ca65
+          [ -s kit_sfx.s ] || { echo "FamiStudio did not write kit_sfx.s"; exit 1; }
+          ls -l
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nes-examples
+          path: nes_examples/
+
   export:
     name: Export ${{ matrix.preset }}
-    needs: [test, gameboy]
+    needs: [test, gameboy, nes]
     runs-on: ubuntu-latest
     container:
       image: barichello/godot-ci:4.5.1

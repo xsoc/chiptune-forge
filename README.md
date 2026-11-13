@@ -19,6 +19,11 @@ runs on phones, desktops and the web, and it exports straight into Godot.
   sound chip, and the export is a GBDK-2020 project (C data for hUGEDriver,
   an example `main.c` and a Makefile) that builds into a ROM. Sound effects
   convert too, with a small player that shares a channel with the music.
+- **NES target.** Pick the NES and the song is arranged for the 2A03's two
+  pulses, triangle and noise, previews play through an emulated NES sound
+  chip, and the export is a [FamiStudio](https://famistudio.org) project that
+  FamiStudio turns into data for its sound engine, an NSF or a ROM. Sound
+  effects export as a FamiStudio sound effect project.
 - **Seeds.** The same settings and seed always give the same song, on every
   platform.
 
@@ -99,23 +104,31 @@ described in [docs/format.md](docs/format.md).
 | `scripts/generation/` | The generators. Plain `RefCounted` code with no scene dependencies. |
 | `scripts/export/` | WAV, MIDI and zip export. |
 | `scripts/targets/gameboy/` | Game Boy target: sound chip emulation, hUGEDriver player, arranger, SFX conversion and C writer. |
+| `scripts/targets/nes/` | NES target: 2A03 emulation, a player that follows FamiStudio's sound engine, arranger, SFX conversion and the FamiStudio text writer. |
 | `assets/gameboy/hUGEDriver/` | The vendored hUGEDriver source bundled with Game Boy exports. |
 | `resources/` | Vibes, styles, SFX presets and chip profiles as `.tres` files, plus the theme. |
 | `tests/` | Unit and golden-file tests. |
-| `tools/` | Theme builder, screenshot tool, and the Game Boy build and emulator checks CI runs. |
+| `tools/` | Theme builder, screenshot tool, and the Game Boy and NES checks CI runs. |
 
 ## Roadmap
 
 Phase 1 is modern chiptune with no hardware limits. Phase 2 adds the Game Boy:
 an arranger that fits songs to its four channels, an emulated sound chip for
 previews, and C export for GBDK-2020 and hUGEDriver. CI builds example ROMs
-from the export and checks that they play in the PyBoy emulator. NES and
-Master System come next.
+from the export and checks that they play in the PyBoy emulator. Phase 3
+adds the NES: the same arranger approach for its four melodic channels, an
+emulated 2A03, and FamiStudio project export. CI opens the exported projects
+in FamiStudio and has it write sound engine data, NSF, ROM and WAV files from
+them. The Master System comes next.
 
 To build a Game Boy export yourself, unzip it, install
 [GBDK-2020](https://github.com/gbdk-2020/gbdk-2020) and run
 `make GBDK_HOME=/path/to/gbdk` in the `gameboy/` folder. The README inside
 explains how to use the song and sounds in your own game.
+
+To use an NES export, unzip it, open `nes/<name>.txt` in FamiStudio
+(File > Import) and export from there, or use FamiStudio's command line as
+`nes/README.txt` shows.
 
 ## Licence
 
