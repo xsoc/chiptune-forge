@@ -31,7 +31,7 @@ func test_picker_keeps_strength_sliders_for_same_picks() -> void:
 	picker.free()
 
 
-## The X button by each pick asks first, then removes it. With allow_empty the
+## The X button by each pick removes it straight away. With allow_empty the
 ## last pick can go too.
 func test_picker_name_buttons_remove_picks() -> void:
 	var catalog := Catalog.get_default()
@@ -50,14 +50,10 @@ func test_picker_name_buttons_remove_picks() -> void:
 	var buttons := _name_buttons(picker)
 	check_eq(buttons.size(), 2, "one X button per pick")
 	buttons[1].pressed.emit()
-	check_eq(picker.get_selected().size(), 2, "nothing removed before confirming")
-	var dialog: ConfirmationDialog = picker.get_node("%ConfirmRemove")
-	check(dialog.dialog_text.contains(catalog.vibes[ids[1]].display_name), "confirmation names the vibe")
-	dialog.confirmed.emit()
-	check_eq(picker.get_selected(), PackedStringArray([ids[0]]), "second pick removed")
+	check_eq(picker.get_selected(), PackedStringArray([ids[0]]), "second pick removed at once")
+	check(picker.find_children("*", "ConfirmationDialog", true, false).is_empty(), "no confirmation dialog")
 
 	_name_buttons(picker)[0].pressed.emit()
-	dialog.confirmed.emit()
 	check(picker.get_selected().is_empty(), "last pick removed")
 	check(picker.get_node("%EmptyHint").visible, "hint shown with no picks")
 	check_eq(emitted.size(), 2, "selection_changed per removal")
