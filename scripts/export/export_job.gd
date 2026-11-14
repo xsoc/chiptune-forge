@@ -236,6 +236,76 @@ static func for_sms_sfx(sounds: Dictionary, kit_name: String, options: Dictionar
 	return job
 
 
+## Export for a song arranged for the Mega Drive / Genesis: a VGM for SGDK
+## (which converts it to XGM music), the resource line and a minimal SGDK
+## program, plus optional WAV (rendered through the emulated YM2612 and
+## SN76489) and MIDI of the arranged parts. Options: prefix, wav, loops, midi.
+static func for_md_song(md: MdSong, options: Dictionary) -> ExportJob:
+	var job := ExportJob.new()
+	var song := md.source
+	var prefix := sanitize(str(options.get("prefix", md.title)))
+	var meta: Dictionary = song.data.get("meta", {})
+	var credit := "Made with Chiptune Forge. Seed %s. %s" % [meta.get("seed", ""), meta.get("license", "")]
+	job._tasks.append(func() -> bool:
+		var sym := PsgWriter.symbol(prefix)
+		job.files["genesis/%s.vgm" % prefix] = MdVgmWriter.vgm_bytes(MdVgmWriter.record(md), md.title, credit)
+		job.files["genesis/resources.res"] = (MdVgmWriter.res_line(sym, prefix + ".vgm") + "\n").to_utf8_buffer()
+		job.files["genesis/main.c"] = MdVgmWriter.main_c(sym, md.title).to_utf8_buffer()
+		job.files["genesis/README.txt"] = MdVgmWriter.readme(prefix).to_utf8_buffer()
+		return true)
+	if bool(options.get("midi", false)):
+		job._tasks.append(func() -> bool:
+			job.files["midi/%s.mid" % prefix] = MidiWriter.encode(song)
+			return true)
+	if bool(options.get("wav", true)):
+		job._r_nes = md
+		job._queue_render(song, "audio/%s.wav" % prefix, int(options.get("loops", 1)), [])
+	job._tasks.append(func() -> bool:
+		job.files["README.txt"] = job._md_readme(md, prefix, options).to_utf8_buffer()
+		return true)
+	return job
+
+
+## Export for sound effects on the Mega Drive: one 8-bit, 14 kHz WAV per
+## sound for SGDK's XGM driver, the resource lines, and WAVs of how each
+## one sounds on the console.
+static func for_md_sfx(sounds: Dictionary, kit_name: String, options: Dictionary) -> ExportJob:
+	var job := ExportJob.new()
+	var prefix := sanitize(kit_name)
+	var converted: Array = []
+	var ids := sounds.keys()
+	ids.sort()
+	for id in ids:
+		converted.append(MdSfx.from_sfx(sounds[id], sanitize(str(id))))
+	job._tasks.append(func() -> bool:
+		for md_sfx: MdSfx in converted:
+			job.files["genesis/%s.wav" % md_sfx.name] = md_sfx.wav_bytes()
+		job.files["genesis/resources.res"] = MdSfx.res_lines(converted).to_utf8_buffer()
+		job.files["genesis/README.txt"] = MdSfx.readme(prefix, converted).to_utf8_buffer()
+		return true)
+	if bool(options.get("wav", true)):
+		for md_sfx in converted:
+			job._tasks.append(func() -> bool:
+				job.files["audio/%s.wav" % md_sfx.name] = ChipAudio.encode_wav_mono(md_sfx.render(MIX_RATE), MIX_RATE)
+				return true)
+	job._tasks.append(func() -> bool:
+		var lines: Array[String] = [
+			"Sound kit for the Mega Drive / Genesis: %s" % prefix,
+			"Made with Chiptune Forge. You own these sounds and may use them for any purpose, including commercially.",
+			"",
+			"genesis/  One 8-bit, 14 kHz WAV per sound for SGDK's XGM driver, and resources.res.",
+			"          See genesis/README.txt to play them over your music.",
+			"audio/    One WAV per sound, 44.1 kHz, as the Mega Drive plays it.",
+			"",
+			"Sounds:",
+		]
+		for md_sfx: MdSfx in converted:
+			lines.append("  %s  (%.2f s)" % [MdSfx.symbol(md_sfx.name), md_sfx.seconds()])
+		job.files["README.txt"] = "\n".join(lines).to_utf8_buffer()
+		return true)
+	return job
+
+
 ## Export for sound effects on the Game Boy: a GBDK-2020 project with the
 ## sounds as cf_sfx data, plus WAVs of how each one sounds on the console.
 static func for_gameboy_sfx(sounds: Dictionary, kit_name: String, options: Dictionary) -> ExportJob:
@@ -363,6 +433,8 @@ func _queue_render(song: ChipSong, path: String, loops: int, muted: Array) -> vo
 func _start_render(song: ChipSong, path: String, loops: int, muted: Array) -> void:
 	if _r_gb:
 		_r_seq = GbSequencer.new(_r_gb, MIX_RATE)
+	elif _r_nes is MdSong:
+		_r_seq = MdSequencer.new(_r_nes, MIX_RATE)
 	elif _r_nes is SmsSong:
 		_r_seq = SmsSequencer.new(_r_nes, MIX_RATE)
 	elif _r_nes:
@@ -500,6 +572,24 @@ func _sms_readme(sms: SmsSong, prefix: String, options: Dictionary) -> String:
 		"",
 		"Arrangement:",
 		"\n".join(Array(sms.report).map(func(line: String) -> String: return "  " + line)),
+	])
+
+
+func _md_readme(md: MdSong, prefix: String, options: Dictionary) -> String:
+	var meta: Dictionary = md.source.data.get("meta", {})
+	return "\n".join([
+		"%s, arranged for the Mega Drive / Genesis" % md.title,
+		"Made with Chiptune Forge. Seed %s, %s, %d BPM on the console." % [meta.get("seed", ""), meta.get("key", ""), int(md.get_bpm())],
+		"",
+		str(meta.get("license", "")),
+		"",
+		"genesis/  %s.vgm (YM2612 and SN76489), with resources.res and main.c for SGDK." % prefix,
+		"          See genesis/README.txt to play it in your game.",
+		"audio/    WAV, 44.1 kHz, 16-bit, rendered through an emulated YM2612 and SN76489." if bool(options.get("wav", true)) else "",
+		"midi/     The ten arranged parts, one track each." if bool(options.get("midi", false)) else "",
+		"",
+		"Arrangement:",
+		"\n".join(Array(md.report).map(func(line: String) -> String: return "  " + line)),
 	])
 
 

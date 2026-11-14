@@ -20,23 +20,28 @@ var frame := 0
 var finished := false
 
 ## Per channel, the row index each note starts on, and the note.
-var _starts: Array = [{}, {}, {}, {}]
+var _starts: Array = []
 ## Per channel: row -> true where a note ends without another starting.
-var _stops: Array = [{}, {}, {}, {}]
+var _stops: Array = []
 var _ch: Array[_Channel] = []
+## Channels in the song: four on the NES, more on other hardware.
+var _count := 4
 
 
 func _init(nes_song: NesSong, nes_apu: Variant) -> void:
 	song = nes_song
 	apu = nes_apu
-	for c in 4:
+	_count = song.notes.size()
+	for c in _count:
 		_ch.append(_Channel.new())
+		_starts.append({})
+		_stops.append({})
 	_index_notes()
 	start(0)
 
 
 func _index_notes() -> void:
-	for c in 4:
+	for c in _count:
 		var list: Array = song.notes[c]
 		for k in list.size():
 			var n: Dictionary = list[k]
@@ -57,7 +62,7 @@ func start(from_row := 0) -> void:
 	frame = 0
 	finished = song.row_count == 0
 	# A note that started earlier and is still sounding plays on.
-	for c in 4:
+	for c in _count:
 		var list: Array = song.notes[c]
 		for k in list.size():
 			var n: Dictionary = list[k]
@@ -87,12 +92,12 @@ func tick() -> void:
 	if finished:
 		return
 	if frame == 0:
-		for c in 4:
+		for c in _count:
 			if _starts[c].has(row):
 				_attack(c, _starts[c][row])
 			elif _stops[c].has(row):
 				_ch[c].note = 0
-	for c in 4:
+	for c in _count:
 		_output(c)
 		_ch[c].advance()
 	frame += 1
@@ -104,7 +109,7 @@ func tick() -> void:
 				row = song.loop_start_row
 			else:
 				finished = true
-				for c in 4:
+				for c in _count:
 					_ch[c].note = 0
 					_output(c)
 

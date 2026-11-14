@@ -202,9 +202,81 @@ jobs:
           name: sms-examples
           path: sms_examples/
 
+  genesis:
+    name: Mega Drive example built with SGDK
+    runs-on: ubuntu-latest
+    env:
+      SGDK_IMAGE: ghcr.io/stephane-d/sgdk@sha256:b0bb8a7171f8dcbf1625685b3a839d23c5c32000019a2023d0e039dd6eadcf31
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: ValleyBell/libvgm
+          path: libvgm
+      - name: Install Godot, SGDK, libvgm's vgm2wav and stable-retro
+        run: |
+          set -e
+          mkdir -p "$RUNNER_TEMP/tools"
+          cd "$RUNNER_TEMP/tools"
+          curl -sSLo godot.zip "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+          unzip -q godot.zip && mv "Godot_v${GODOT_VERSION}-stable_linux.x86_64" godot
+          cmake -S "$GITHUB_WORKSPACE/libvgm" -B libvgm-build -DCMAKE_BUILD_TYPE=Release \
+            -DBUILD_LIBAUDIO=OFF -DBUILD_PLAYER=OFF -DBUILD_TESTS=OFF -DUSE_SANITIZERS=OFF > /dev/null
+          cmake --build libvgm-build -j4 --target vgm2wav > /dev/null
+          cp "$(find libvgm-build -name vgm2wav -type f -perm -u+x | head -1)" .
+          echo "$RUNNER_TEMP/tools" >> $GITHUB_PATH
+          docker pull -q "$SGDK_IMAGE"
+          pip install -q stable-retro
+      - name: Export the example project
+        run: |
+          godot --headless --path . --import < /dev/null
+          godot --headless --path . -s tools/md_examples.gd -- "$PWD/md_examples" < /dev/null
+      - name: Check the songs survive SGDK's XGM conversion
+        run: |
+          set -e
+          cd md_examples
+          chmod -R a+rwX .
+          for vgm in song_*.vgm; do
+            name="${vgm%.vgm}"
+            # XGM and back to VGM with SGDK's own tool: the same registers
+            # and key-ons on every frame.
+            docker run --rm -v "$PWD":/src --entrypoint /sgdk/bin/xgmtool "$SGDK_IMAGE" "/src/$vgm" "/src/$name.xgm"
+            docker run --rm -v "$PWD":/src --entrypoint /sgdk/bin/xgmtool "$SGDK_IMAGE" "/src/$name.xgm" "/src/$name.xgm.vgm"
+            python3 ../tools/md_check.py "$vgm" "$name.xgm.vgm"
+          done
+      - name: Build the example ROM with SGDK
+        run: |
+          set -e
+          cd md_examples/project
+          docker run --rm -v "$PWD":/src "$SGDK_IMAGE"
+          [ -s out/rom.bin ] || { echo "SGDK did not build the ROM"; exit 1; }
+          ls -l out/rom.bin
+      - name: Play the song with libvgm and the ROM in an emulator
+        run: |
+          set -e
+          cd md_examples
+          preview=song_happy_platformer_preview.wav
+          # An accurate YM2612 core playing our VGM should rise and fall with
+          # the app's own preview.
+          vgm2wav --loops 1 song_happy_platformer.vgm libvgm.wav > /dev/null
+          python3 ../tools/md_sound_check.py "$preview" libvgm.wav
+          # The ROM SGDK built: its Z80 driver playing the XGM data.
+          python3 ../tools/md_rom_audio.py project/out/rom.bin rom.wav 16
+          python3 ../tools/md_sound_check.py "$preview" rom.wav --align
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: genesis-examples
+          path: |
+            md_examples/*.vgm
+            md_examples/*.wav
+            md_examples/project/res/
+            md_examples/project/src/
+            md_examples/project/out/rom.bin
+
   export:
     name: Export ${{ matrix.preset }}
-    needs: [test, gameboy, nes, sms]
+    needs: [test, gameboy, nes, sms, genesis]
     runs-on: ubuntu-latest
     container:
       image: barichello/godot-ci:4.5.1

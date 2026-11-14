@@ -167,7 +167,7 @@ func _update_gains(count: int) -> void:
 
 ## Each NES channel takes the gain of the part it is playing now.
 func _apply_channel_gains() -> void:
-	for nes_channel in 4:
+	for nes_channel in nes.notes.size():
 		var sources: Array = nes.sources_at(_song_row, nes_channel)
 		var gain := 1.0
 		if not sources.is_empty():
@@ -180,7 +180,7 @@ func _apply_channel_gains() -> void:
 
 
 func _nes_channel_of(channel: int) -> int:
-	for nes_channel in 4:
+	for nes_channel in nes.notes.size():
 		if nes.sources_at(_song_row, nes_channel).has(channel):
 			return nes_channel
 	return -1
