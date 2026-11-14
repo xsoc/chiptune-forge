@@ -133,6 +133,43 @@ func test_famistudio_text_is_stable() -> void:
 	check_golden("nes_song_happy_platformer.txt", text)
 
 
+func test_famistudio_times_are_in_note_length_units() -> void:
+	# FamiStudio counts a pattern in frames of NoteLength each row: a note on
+	# row 2 with a groove of 6 sits at Time 12.
+	var nes := NesSong.new()
+	nes.title = "t"
+	nes.groove = PackedInt32Array([6])
+	nes.row_count = 16
+	nes.section_rows = [{"name": "A", "row": 0, "length": 16}]
+	nes.instruments = [{"name": "Lead", "volume": [15]}]
+	nes.notes[0] = [{"row": 2, "length": 3, "note": 49, "instrument": 0, "volume": 15, "arp": -1}]
+	var text := FamiStudioWriter.song_project(nes, "t")
+	check(text.contains("Note Time=\"12\" Value=\"C4\" Duration=\"18\""), "time and duration in units")
+
+
+func test_famistudio_asm_helpers() -> void:
+	check_eq(FamiStudioAsmWriter.crc32("123456789".to_ascii_buffer()), 0xCBF43926, "CRC-32")
+	check_eq(FamiStudioAsmWriter.nice_name("Boss Fight  Metal!"), "boss_fight_metal")
+	# FamiStudio's NTSC tempo envelope for one frame per unit.
+	check_eq(Array(FamiStudioAsmWriter.tempo_envelope([1])), [3, 5, 0x80])
+	check_eq(FamiStudioAsmWriter.frames_for_groove(16 * 6, [7, 6]), 16 * 6 + 8, "one pad frame per long row")
+
+
+func test_famistudio_asm_song() -> void:
+	var nes := NesArranger.arrange(_song())
+	var asm := FamiStudioAsmWriter.song_data([nes], nes.title)
+	var label := FamiStudioAsmWriter.data_label(nes.title)
+	check(asm.begins_with("; This file is for the FamiStudio Sound Engine"), "header")
+	check(asm.contains("\n%s:\n" % label), "data label")
+	check(asm.contains(".export _%s:=%s" % [label, label]), "C name")
+	for c in 5:
+		check(asm.contains("@song0ch%d:" % c), "channel %d" % c)
+	check(asm.contains("@song0ch0loop:"), "loops")
+	check(asm.contains("; FAMISTUDIO_USE_VOLUME_TRACK = 1"), "lists required flags")
+	check_eq(asm, FamiStudioAsmWriter.song_data([nes], nes.title), "deterministic")
+	check_golden("nes_song_happy_platformer.s", asm)
+
+
 func test_sfx_conversion() -> void:
 	var presets: Dictionary = Catalog.get_default().sfx_presets
 	var coin := NesSfx.from_sfx(SfxGenerator.make_sfx(presets["coin"], 1), "coin")
@@ -156,8 +193,13 @@ func test_export_jobs() -> void:
 	var job := ExportJob.for_nes_song(nes, {"prefix": "tune", "wav": true, "midi": true})
 	while not job.done:
 		job.step(1000000)
-	check(job.files.has("nes/tune.txt"), "FamiStudio project")
+	check(job.files.has("nes/famistudio/tune.txt"), "FamiStudio project")
 	check(job.files.has("nes/README.txt"), "how to use it")
+	check(job.files.has("nes/tune.s"), "music data for the engine")
+	check(job.files.has("nes/main.s") and job.files.has("nes/nes.cfg") and job.files.has("nes/Makefile"), "ROM project")
+	check(job.files.has("nes/famistudio_ca65.s") and job.files["nes/famistudio_ca65.s"].size() > 100000, "bundles the engine")
+	check(job.files.has("nes/NoteTables/famistudio_note_table_lsb.bin"), "and the note tables it includes")
+	check(job.files["nes/main.s"].get_string_from_utf8().contains("FAMISTUDIO_USE_VOLUME_TRACK = 1"), "main.s turns on what the data needs")
 	check(job.files.has("audio/tune.wav") and job.files["audio/tune.wav"].size() > 44100, "wav")
 	check(job.files.has("midi/tune.mid"), "midi")
 	var presets: Dictionary = Catalog.get_default().sfx_presets
@@ -165,4 +207,6 @@ func test_export_jobs() -> void:
 	while not kit.done:
 		kit.step(1000000)
 	check(kit.files.has("audio/coin.wav"), "sound wav")
-	check(kit.files.has("nes/my_kit.txt"), "kit project")
+	check(kit.files.has("nes/famistudio/my_kit.txt"), "kit project")
+	check(kit.files.has("nes/my_kit.s") and kit.files.has("nes/silence.s"), "sounds for the engine")
+	check(kit.files["nes/my_kit.s"].get_string_from_utf8().contains("@sfx_ntsc_coin:"), "names each sound")

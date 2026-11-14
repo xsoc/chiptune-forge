@@ -62,8 +62,14 @@ static func project(songs: Array, project_name: String, credit := "") -> String:
 	return "\n".join(lines) + "\n"
 
 
-static func _song_lines(nes: NesSong) -> PackedStringArray:
-	var lines: PackedStringArray = []
+## The song as FamiStudio lays it out: patterns cut at [method
+## NesSong.pattern_chunks], identical patterns shared within a channel. Times
+## and lengths are in FamiStudio's internal units: [code]note_length[/code]
+## units per row. Returns {chunks, default_rows, note_length, loop_point,
+## channels}; each channel is {patterns: {name: Array of note dictionaries
+## with "time" in pattern units}, order: pattern names in creation order,
+## instances: one pattern name per chunk, or "" for none}.
+static func song_layout(nes: NesSong) -> Dictionary:
 	var chunks := nes.pattern_chunks()
 	# The most common pattern length is the song's; others get custom settings.
 	var counts := {}
@@ -76,18 +82,58 @@ static func _song_lines(nes: NesSong) -> PackedStringArray:
 	var note_length := 999
 	for f in nes.groove:
 		note_length = mini(note_length, f)
-	var groove := _join(Array(nes.groove), "-")
-	var beat := mini(nes.steps_per_beat, default_rows)
 	var loop_point := -1
 	if nes.looping:
 		loop_point = 0
 		for i in chunks.size():
 			if int(chunks[i][0]) <= nes.loop_start_row:
 				loop_point = i
+	var channels: Array = []
+	for c in 4:
+		var list: Array = nes.notes[c]
+		var names := {}
+		var patterns := {}
+		var order: Array = []
+		var instances: Array = []
+		var k := 0
+		for chunk in chunks:
+			var start := int(chunk[0])
+			var end := start + int(chunk[1])
+			var body: Array = []
+			while k < list.size() and int(list[k]["row"]) < start:
+				k += 1
+			var j := k
+			while j < list.size() and int(list[j]["row"]) < end:
+				var n: Dictionary = list[j].duplicate()
+				n["time"] = (int(n["row"]) - start) * note_length
+				n["duration"] = maxi(int(n["length"]), 1) * note_length
+				body.append(n)
+				j += 1
+			if body.is_empty():
+				instances.append("")
+				continue
+			var key := str(body.map(func(n: Dictionary) -> String: return _note_line(nes, c, n)))
+			if not names.has(key):
+				names[key] = "%s %d" % [NesSong.CHANNEL_NAMES[c], names.size() + 1]
+				patterns[names[key]] = body
+				order.append(names[key])
+			instances.append(names[key])
+		channels.append({"patterns": patterns, "order": order, "instances": instances})
+	return {"chunks": chunks, "default_rows": default_rows, "note_length": note_length, "loop_point": loop_point, "channels": channels}
+
+
+static func _song_lines(nes: NesSong) -> PackedStringArray:
+	var lines: PackedStringArray = []
+	var layout := song_layout(nes)
+	var chunks: Array = layout["chunks"]
+	var default_rows: int = layout["default_rows"]
+	var note_length: int = layout["note_length"]
+	var groove := _join(Array(nes.groove), "-")
+	var beat := mini(nes.steps_per_beat, default_rows)
 	lines.append("\tSong%s%s%s%s%s%s%s%s" % [
 		_attr("Name", nes.title),
 		_attr("Length", chunks.size()),
-		_attr("LoopPoint", loop_point),
+		_attr("LoopPoint", layout["loop_point"]),
 		_attr("PatternLength", default_rows),
 		_attr("BeatLength", beat),
 		_attr("NoteLength", note_length),
@@ -107,43 +153,26 @@ static func _song_lines(nes: NesSong) -> PackedStringArray:
 			])
 	for c in 4:
 		lines.append("\t\tChannel%s" % _attr("Type", NesSong.FAMISTUDIO_CHANNELS[c]))
-		var list: Array = nes.notes[c]
-		var names := {}
-		var instances: Array = []
-		var bodies: Array = []
-		var k := 0
-		for chunk in chunks:
-			var start := int(chunk[0])
-			var end := start + int(chunk[1])
-			var body: PackedStringArray = []
-			while k < list.size() and int(list[k]["row"]) < start:
-				k += 1
-			var j := k
-			while j < list.size() and int(list[j]["row"]) < end:
-				body.append(_note_line(nes, c, list[j], start))
-				j += 1
-			if body.is_empty():
-				instances.append("")
-				continue
-			var key := "\n".join(body)
-			if not names.has(key):
-				names[key] = "%s %d" % [NesSong.CHANNEL_NAMES[c], names.size() + 1]
-				bodies.append([names[key], body])
-			instances.append(names[key])
-		for entry in bodies:
-			lines.append("\t\t\tPattern%s" % _attr("Name", entry[0]))
-			lines.append_array(entry[1])
+		var channel: Dictionary = layout["channels"][c]
+		for name in channel["order"]:
+			lines.append("\t\t\tPattern%s" % _attr("Name", name))
+			for n in channel["patterns"][name]:
+				lines.append(_note_line(nes, c, n))
+		var instances: Array = channel["instances"]
 		for i in instances.size():
 			if instances[i] != "":
 				lines.append("\t\t\tPatternInstance%s%s" % [_attr("Time", i), _attr("Pattern", instances[i])])
 	return lines
 
 
-static func _note_line(nes: NesSong, channel: int, n: Dictionary, pattern_start: int) -> String:
+## One note. FamiStudio counts time and duration in its internal units,
+## [code]NoteLength[/code] of them per row, so [param n] carries "time" and
+## "duration" in those units (see [method song_layout]).
+static func _note_line(nes: NesSong, channel: int, n: Dictionary) -> String:
 	var line := "\t\t\t\tNote%s%s%s" % [
-		_attr("Time", int(n["row"]) - pattern_start),
+		_attr("Time", int(n["time"])),
 		_attr("Value", NesSong.note_name(int(n["note"]))),
-		_attr("Duration", maxi(int(n["length"]), 1)),
+		_attr("Duration", int(n["duration"])),
 	]
 	var inst := int(n["instrument"])
 	if inst >= 0 and inst < nes.instruments.size():

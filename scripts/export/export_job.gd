@@ -67,12 +67,13 @@ static func for_gameboy_song(gb: GbSong, options: Dictionary) -> ExportJob:
 	var prefix := sanitize(str(options.get("prefix", gb.title)))
 	var meta: Dictionary = song.data.get("meta", {})
 	var credit := "Made with Chiptune Forge. Seed %s. %s" % [meta.get("seed", ""), meta.get("license", "")]
-	job._tasks.append(func() -> bool:
-		var symbol := GbCWriter.song_symbol(prefix)
-		var project := GbCWriter.song_project(gb, symbol, gb.title, credit)
-		for path in project:
-			job.files["gameboy/" + path] = project[path]
-		return true)
+	if bool(options.get("console", true)):
+		job._tasks.append(func() -> bool:
+			var symbol := GbCWriter.song_symbol(prefix)
+			var project := GbCWriter.song_project(gb, symbol, gb.title, credit)
+			for path in project:
+				job.files["gameboy/" + path] = project[path]
+			return true)
 	if bool(options.get("midi", false)):
 		job._tasks.append(func() -> bool:
 			job.files["midi/%s.mid" % prefix] = MidiWriter.encode(song)
@@ -86,8 +87,9 @@ static func for_gameboy_song(gb: GbSong, options: Dictionary) -> ExportJob:
 	return job
 
 
-## Export for a song arranged for the NES: a FamiStudio text project (which
-## FamiStudio exports for its sound engine, as NSF or as a ROM), plus
+## Export for a song arranged for the NES: the song as music data for
+## FamiStudio's sound engine (ca65) in a project that builds a ROM, and the
+## FamiStudio text project it comes from, plus
 ## optional WAV (rendered through the emulated 2A03) and MIDI of the arranged
 ## parts. Options: prefix, wav, loops, midi.
 static func for_nes_song(nes: NesSong, options: Dictionary) -> ExportJob:
@@ -96,10 +98,14 @@ static func for_nes_song(nes: NesSong, options: Dictionary) -> ExportJob:
 	var prefix := sanitize(str(options.get("prefix", nes.title)))
 	var meta: Dictionary = song.data.get("meta", {})
 	var credit := "Made with Chiptune Forge. Seed %s. %s" % [meta.get("seed", ""), meta.get("license", "")]
-	job._tasks.append(func() -> bool:
-		job.files["nes/%s.txt" % prefix] = FamiStudioWriter.song_project(nes, nes.title, credit).to_utf8_buffer()
-		job.files["nes/README.txt"] = FamiStudioWriter.readme("song", "%s.txt" % prefix).to_utf8_buffer()
-		return true)
+	if bool(options.get("console", true)):
+		job._tasks.append(func() -> bool:
+			var project := FamiStudioAsmWriter.song_project(nes, prefix, credit)
+			for path in project:
+				job.files["nes/" + path] = project[path]
+			job.files["nes/famistudio/%s.txt" % prefix] = FamiStudioWriter.song_project(nes, nes.title, credit).to_utf8_buffer()
+			job.files["nes/famistudio/README.txt"] = FamiStudioWriter.readme("song", "%s.txt" % prefix).to_utf8_buffer()
+			return true)
 	if bool(options.get("midi", false)):
 		job._tasks.append(func() -> bool:
 			job.files["midi/%s.mid" % prefix] = MidiWriter.encode(song)
@@ -113,8 +119,9 @@ static func for_nes_song(nes: NesSong, options: Dictionary) -> ExportJob:
 	return job
 
 
-## Export for sound effects on the NES: a FamiStudio text project with one
-## song per sound, plus WAVs of how each one sounds on the console.
+## Export for sound effects on the NES: the sounds for FamiStudio's sound
+## engine in a project that builds a ROM, a FamiStudio text project with one
+## song per sound, and WAVs of how each one sounds on the console.
 static func for_nes_sfx(sounds: Dictionary, kit_name: String, options: Dictionary) -> ExportJob:
 	var job := ExportJob.new()
 	var prefix := sanitize(kit_name)
@@ -123,10 +130,14 @@ static func for_nes_sfx(sounds: Dictionary, kit_name: String, options: Dictionar
 	ids.sort()
 	for id in ids:
 		converted.append(NesSfx.from_sfx(sounds[id], sanitize(str(id))))
-	job._tasks.append(func() -> bool:
-		job.files["nes/%s.txt" % prefix] = FamiStudioWriter.sfx_project(converted, kit_name).to_utf8_buffer()
-		job.files["nes/README.txt"] = FamiStudioWriter.readme("sfx", "%s.txt" % prefix).to_utf8_buffer()
-		return true)
+	if bool(options.get("console", true)):
+		job._tasks.append(func() -> bool:
+			var project := FamiStudioAsmWriter.sfx_project(converted, prefix)
+			for path in project:
+				job.files["nes/" + path] = project[path]
+			job.files["nes/famistudio/%s.txt" % prefix] = FamiStudioWriter.sfx_project(converted, kit_name).to_utf8_buffer()
+			job.files["nes/famistudio/README.txt"] = FamiStudioWriter.readme("sfx", "%s.txt" % prefix).to_utf8_buffer()
+			return true)
 	if bool(options.get("wav", true)):
 		for nes_sfx in converted:
 			job._tasks.append(func() -> bool:
@@ -137,8 +148,7 @@ static func for_nes_sfx(sounds: Dictionary, kit_name: String, options: Dictionar
 			"Sound kit for the NES: %s" % prefix,
 			"Made with Chiptune Forge. You own these sounds and may use them for any purpose, including commercially.",
 			"",
-			"nes/    A FamiStudio project with one song per sound. See nes/README.txt to export",
-			"        the sounds for FamiStudio's sound engine.",
+			"nes/    The sounds for FamiStudio's sound engine (ca65) and an example ROM project.\n        See nes/README.txt. nes/famistudio/ has them as a FamiStudio project to edit." if bool(options.get("console", true)) else "",
 			"audio/  One WAV per sound, as the NES plays it.",
 			"",
 			"Sounds:",
@@ -163,16 +173,17 @@ static func for_sms_song(sms: SmsSong, options: Dictionary) -> ExportJob:
 	var prefix := sanitize(str(options.get("prefix", sms.title)))
 	var meta: Dictionary = song.data.get("meta", {})
 	var credit := "%s. Made with Chiptune Forge. Seed %s. %s" % [sms.title, meta.get("seed", ""), meta.get("license", "")]
-	job._tasks.append(func() -> bool:
-		var recorded := PsgWriter.record(sms)
-		var psg := PsgWriter.encode(recorded)
-		var blobs := {PsgWriter.symbol(prefix) + "_psg": psg}
-		job.files["sms/%s.psg" % prefix] = psg
-		job.files["sms/%s.vgm" % prefix] = PsgWriter.vgm_bytes(recorded)
-		job.files["sms/%s_psg.c" % prefix] = PsgWriter.c_source(blobs, "%s_psg.h" % prefix, credit).to_utf8_buffer()
-		job.files["sms/%s_psg.h" % prefix] = PsgWriter.c_header(blobs, PsgWriter.symbol(prefix).to_upper() + "_PSG_H", credit).to_utf8_buffer()
-		job.files["sms/README.txt"] = PsgWriter.readme("song", prefix).to_utf8_buffer()
-		return true)
+	if bool(options.get("console", true)):
+		job._tasks.append(func() -> bool:
+			var recorded := PsgWriter.record(sms)
+			var psg := PsgWriter.encode(recorded)
+			var blobs := {PsgWriter.symbol(prefix) + "_psg": psg}
+			job.files["sms/%s.psg" % prefix] = psg
+			job.files["sms/%s.vgm" % prefix] = PsgWriter.vgm_bytes(recorded)
+			job.files["sms/%s_psg.c" % prefix] = PsgWriter.c_source(blobs, "%s_psg.h" % prefix, credit).to_utf8_buffer()
+			job.files["sms/%s_psg.h" % prefix] = PsgWriter.c_header(blobs, PsgWriter.symbol(prefix).to_upper() + "_PSG_H", credit).to_utf8_buffer()
+			job.files["sms/README.txt"] = PsgWriter.readme("song", prefix).to_utf8_buffer()
+			return true)
 	if bool(options.get("midi", false)):
 		job._tasks.append(func() -> bool:
 			job.files["midi/%s.mid" % prefix] = MidiWriter.encode(song)
@@ -197,19 +208,20 @@ static func for_sms_sfx(sounds: Dictionary, kit_name: String, options: Dictionar
 	ids.sort()
 	for id in ids:
 		converted.append(SmsSfx.from_sfx(sounds[id], sanitize(str(id))))
-	job._tasks.append(func() -> bool:
-		var blobs := {}
-		for sms_sfx: SmsSfx in converted:
-			var recorded := PsgWriter.record(sms_sfx.to_song(), 1 << sms_sfx.channel)
-			var psg := PsgWriter.encode(recorded)
-			job.files["sms/%s.psg" % sms_sfx.name] = psg
-			job.files["sms/%s.vgm" % sms_sfx.name] = PsgWriter.vgm_bytes(recorded)
-			blobs[PsgWriter.symbol(sms_sfx.name) + "_psg"] = psg
-		var comment := "%s: sound effects made with Chiptune Forge" % kit_name
-		job.files["sms/%s.c" % prefix] = PsgWriter.c_source(blobs, "%s.h" % prefix, comment).to_utf8_buffer()
-		job.files["sms/%s.h" % prefix] = PsgWriter.c_header(blobs, PsgWriter.symbol(prefix).to_upper() + "_H", comment).to_utf8_buffer()
-		job.files["sms/README.txt"] = PsgWriter.readme("sfx", prefix, converted).to_utf8_buffer()
-		return true)
+	if bool(options.get("console", true)):
+		job._tasks.append(func() -> bool:
+			var blobs := {}
+			for sms_sfx: SmsSfx in converted:
+				var recorded := PsgWriter.record(sms_sfx.to_song(), 1 << sms_sfx.channel)
+				var psg := PsgWriter.encode(recorded)
+				job.files["sms/%s.psg" % sms_sfx.name] = psg
+				job.files["sms/%s.vgm" % sms_sfx.name] = PsgWriter.vgm_bytes(recorded)
+				blobs[PsgWriter.symbol(sms_sfx.name) + "_psg"] = psg
+			var comment := "%s: sound effects made with Chiptune Forge" % kit_name
+			job.files["sms/%s.c" % prefix] = PsgWriter.c_source(blobs, "%s.h" % prefix, comment).to_utf8_buffer()
+			job.files["sms/%s.h" % prefix] = PsgWriter.c_header(blobs, PsgWriter.symbol(prefix).to_upper() + "_H", comment).to_utf8_buffer()
+			job.files["sms/README.txt"] = PsgWriter.readme("sfx", prefix, converted).to_utf8_buffer()
+			return true)
 	if bool(options.get("wav", true)):
 		for sms_sfx in converted:
 			job._tasks.append(func() -> bool:
@@ -220,8 +232,7 @@ static func for_sms_sfx(sounds: Dictionary, kit_name: String, options: Dictionar
 			"Sound kit for the Master System and Game Gear: %s" % prefix,
 			"Made with Chiptune Forge. You own these sounds and may use them for any purpose, including commercially.",
 			"",
-			"sms/    PSGlib data for each sound (.psg and as C arrays) and a VGM of each.",
-			"        See sms/README.txt to play them over your music.",
+			"sms/    PSGlib data for each sound (.psg and as C arrays) and a VGM of each.\n        See sms/README.txt to play them over your music." if bool(options.get("console", true)) else "",
 			"audio/  One WAV per sound, as the Master System plays it.",
 			"",
 			"Sounds:",
@@ -246,13 +257,14 @@ static func for_md_song(md: MdSong, options: Dictionary) -> ExportJob:
 	var prefix := sanitize(str(options.get("prefix", md.title)))
 	var meta: Dictionary = song.data.get("meta", {})
 	var credit := "Made with Chiptune Forge. Seed %s. %s" % [meta.get("seed", ""), meta.get("license", "")]
-	job._tasks.append(func() -> bool:
-		var sym := PsgWriter.symbol(prefix)
-		job.files["genesis/%s.vgm" % prefix] = MdVgmWriter.vgm_bytes(MdVgmWriter.record(md), md.title, credit)
-		job.files["genesis/resources.res"] = (MdVgmWriter.res_line(sym, prefix + ".vgm") + "\n").to_utf8_buffer()
-		job.files["genesis/main.c"] = MdVgmWriter.main_c(sym, md.title).to_utf8_buffer()
-		job.files["genesis/README.txt"] = MdVgmWriter.readme(prefix).to_utf8_buffer()
-		return true)
+	if bool(options.get("console", true)):
+		job._tasks.append(func() -> bool:
+			var sym := PsgWriter.symbol(prefix)
+			job.files["genesis/%s.vgm" % prefix] = MdVgmWriter.vgm_bytes(MdVgmWriter.record(md), md.title, credit)
+			job.files["genesis/resources.res"] = (MdVgmWriter.res_line(sym, prefix + ".vgm") + "\n").to_utf8_buffer()
+			job.files["genesis/main.c"] = MdVgmWriter.main_c(sym, md.title).to_utf8_buffer()
+			job.files["genesis/README.txt"] = MdVgmWriter.readme(prefix).to_utf8_buffer()
+			return true)
 	if bool(options.get("midi", false)):
 		job._tasks.append(func() -> bool:
 			job.files["midi/%s.mid" % prefix] = MidiWriter.encode(song)
@@ -277,12 +289,13 @@ static func for_md_sfx(sounds: Dictionary, kit_name: String, options: Dictionary
 	ids.sort()
 	for id in ids:
 		converted.append(MdSfx.from_sfx(sounds[id], sanitize(str(id))))
-	job._tasks.append(func() -> bool:
-		for md_sfx: MdSfx in converted:
-			job.files["genesis/%s.wav" % md_sfx.name] = md_sfx.wav_bytes()
-		job.files["genesis/resources.res"] = MdSfx.res_lines(converted).to_utf8_buffer()
-		job.files["genesis/README.txt"] = MdSfx.readme(prefix, converted).to_utf8_buffer()
-		return true)
+	if bool(options.get("console", true)):
+		job._tasks.append(func() -> bool:
+			for md_sfx: MdSfx in converted:
+				job.files["genesis/%s.wav" % md_sfx.name] = md_sfx.wav_bytes()
+			job.files["genesis/resources.res"] = MdSfx.res_lines(converted).to_utf8_buffer()
+			job.files["genesis/README.txt"] = MdSfx.readme(prefix, converted).to_utf8_buffer()
+			return true)
 	if bool(options.get("wav", true)):
 		for md_sfx in converted:
 			job._tasks.append(func() -> bool:
@@ -293,8 +306,7 @@ static func for_md_sfx(sounds: Dictionary, kit_name: String, options: Dictionary
 			"Sound kit for the Mega Drive / Genesis: %s" % prefix,
 			"Made with Chiptune Forge. You own these sounds and may use them for any purpose, including commercially.",
 			"",
-			"genesis/  One 8-bit, 14 kHz WAV per sound for SGDK's XGM driver, and resources.res.",
-			"          See genesis/README.txt to play them over your music.",
+			"genesis/  One 8-bit, 14 kHz WAV per sound for SGDK's XGM driver, and resources.res.\n          See genesis/README.txt to play them over your music." if bool(options.get("console", true)) else "",
 			"audio/    One WAV per sound, 44.1 kHz, as the Mega Drive plays it.",
 			"",
 			"Sounds:",
@@ -316,11 +328,12 @@ static func for_gameboy_sfx(sounds: Dictionary, kit_name: String, options: Dicti
 	ids.sort()
 	for id in ids:
 		converted.append(GbSfx.from_sfx(sounds[id], sanitize(str(id))))
-	job._tasks.append(func() -> bool:
-		var project := GbCWriter.sfx_project(converted, prefix, kit_name)
-		for path in project:
-			job.files["gameboy/" + path] = project[path]
-		return true)
+	if bool(options.get("console", true)):
+		job._tasks.append(func() -> bool:
+			var project := GbCWriter.sfx_project(converted, prefix, kit_name)
+			for path in project:
+				job.files["gameboy/" + path] = project[path]
+			return true)
 	if bool(options.get("wav", true)):
 		for gb_sfx in converted:
 			job._tasks.append(func() -> bool:
@@ -331,8 +344,7 @@ static func for_gameboy_sfx(sounds: Dictionary, kit_name: String, options: Dicti
 			"Sound kit for the Game Boy: %s" % prefix,
 			"Made with Chiptune Forge. You own these sounds and may use them for any purpose, including commercially.",
 			"",
-			"gameboy/  A GBDK-2020 project: the sounds, the cf_sfx player and an example ROM.",
-			"          See gameboy/README.txt to build it and use the sounds in your game.",
+			"gameboy/  A GBDK-2020 project: the sounds, the cf_sfx player and an example ROM.\n          See gameboy/README.txt to build it and use the sounds in your game." if bool(options.get("console", true)) else "",
 			"audio/    One WAV per sound, as the Game Boy plays it.",
 			"",
 			"Sounds:",
@@ -529,8 +541,7 @@ func _gameboy_readme(gb: GbSong, prefix: String, options: Dictionary) -> String:
 		"",
 		str(meta.get("license", "")),
 		"",
-		"gameboy/  A GBDK-2020 project: the song as hUGEDriver data, an example main.c and a Makefile",
-		"          that builds a ROM. See gameboy/README.txt.",
+		"gameboy/  A GBDK-2020 project: the song as hUGEDriver data, an example main.c and a Makefile\n          that builds a ROM. See gameboy/README.txt." if bool(options.get("console", true)) else "",
 		"audio/    WAV, 44.1 kHz, 16-bit, rendered through an emulated Game Boy sound chip." if bool(options.get("wav", true)) else "",
 		"midi/     The four arranged parts, one track each." if bool(options.get("midi", false)) else "",
 		"",
@@ -547,8 +558,7 @@ func _nes_readme(nes: NesSong, prefix: String, options: Dictionary) -> String:
 		"",
 		str(meta.get("license", "")),
 		"",
-		"nes/     %s.txt, a FamiStudio project. Open it in FamiStudio (File > Import) to" % prefix,
-		"         export it for FamiStudio's sound engine, as NSF or as a ROM. See nes/README.txt.",
+		("nes/     %s.s, the song for FamiStudio's sound engine (ca65), with the engine and an\n         example that builds a ROM with cc65. See nes/README.txt.\n         nes/famistudio/%s.txt is the FamiStudio project, to edit it or export NSF." % [prefix, prefix]) if bool(options.get("console", true)) else "",
 		"audio/   WAV, 44.1 kHz, 16-bit, rendered through an emulated NES sound chip." if bool(options.get("wav", true)) else "",
 		"midi/    The four arranged parts, one track each." if bool(options.get("midi", false)) else "",
 		"",
@@ -565,8 +575,7 @@ func _sms_readme(sms: SmsSong, prefix: String, options: Dictionary) -> String:
 		"",
 		str(meta.get("license", "")),
 		"",
-		"sms/     %s.psg, PSGlib data, also as a C array for devkitSMS, and %s.vgm." % [prefix, prefix],
-		"         See sms/README.txt to play it in your game.",
+		("sms/     %s.psg, PSGlib data, also as a C array for devkitSMS, and %s.vgm.\n         See sms/README.txt to play it in your game." % [prefix, prefix]) if bool(options.get("console", true)) else "",
 		"audio/   WAV, 44.1 kHz, 16-bit, rendered through an emulated SN76489." if bool(options.get("wav", true)) else "",
 		"midi/    The four arranged parts, one track each." if bool(options.get("midi", false)) else "",
 		"",
@@ -583,8 +592,7 @@ func _md_readme(md: MdSong, prefix: String, options: Dictionary) -> String:
 		"",
 		str(meta.get("license", "")),
 		"",
-		"genesis/  %s.vgm (YM2612 and SN76489), with resources.res and main.c for SGDK." % prefix,
-		"          See genesis/README.txt to play it in your game.",
+		("genesis/  %s.vgm (YM2612 and SN76489), with resources.res and main.c for SGDK.\n          See genesis/README.txt to play it in your game." % prefix) if bool(options.get("console", true)) else "",
 		"audio/    WAV, 44.1 kHz, 16-bit, rendered through an emulated YM2612 and SN76489." if bool(options.get("wav", true)) else "",
 		"midi/     The ten arranged parts, one track each." if bool(options.get("midi", false)) else "",
 		"",

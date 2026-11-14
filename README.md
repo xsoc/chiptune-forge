@@ -21,9 +21,10 @@ runs on phones, desktops and the web, and it exports straight into Godot.
   convert too, with a small player that shares a channel with the music.
 - **NES target.** Pick the NES and the song is arranged for the 2A03's two
   pulses, triangle and noise, previews play through an emulated NES sound
-  chip, and the export is a [FamiStudio](https://famistudio.org) project that
-  FamiStudio turns into data for its sound engine, an NSF or a ROM. Sound
-  effects export as a FamiStudio sound effect project.
+  chip, and the export is ca65 assembly for
+  [FamiStudio](https://famistudio.org)'s sound engine, with the engine and an
+  example program that builds a ROM with cc65. The FamiStudio project comes
+  too, to edit the song or make an NSF. Sound effects export the same way.
 - **Master System / Game Gear target.** Pick the Master System and the song
   is arranged for the SN76489's three squares and noise, previews play
   through an emulated SN76489, and the export is
@@ -116,7 +117,7 @@ described in [docs/format.md](docs/format.md).
 | `scripts/generation/` | The generators. Plain `RefCounted` code with no scene dependencies. |
 | `scripts/export/` | WAV, MIDI and zip export. |
 | `scripts/targets/gameboy/` | Game Boy target: sound chip emulation, hUGEDriver player, arranger, SFX conversion and C writer. |
-| `scripts/targets/nes/` | NES target: 2A03 emulation, a player that follows FamiStudio's sound engine, arranger, SFX conversion and the FamiStudio text writer. |
+| `scripts/targets/nes/` | NES target: 2A03 emulation, a player that follows FamiStudio's sound engine, arranger, SFX conversion, the FamiStudio text writer and the ca65 writer for FamiStudio's sound engine. |
 | `scripts/targets/sms/` | Master System target: SN76489 emulation, a player that writes PSGlib's register stream, arranger (built on the NES one), SFX conversion and the PSGlib, C and VGM writer. |
 | `scripts/targets/genesis/` | Mega Drive target: YM2612 emulation (with the Master System's SN76489), FM patches, arranger, a frame-by-frame player, the VGM writer and SFX conversion. |
 | `assets/gameboy/hUGEDriver/` | The vendored hUGEDriver source bundled with Game Boy exports. |
@@ -131,9 +132,10 @@ an arranger that fits songs to its four channels, an emulated sound chip for
 previews, and C export for GBDK-2020 and hUGEDriver. CI builds example ROMs
 from the export and checks that they play in the PyBoy emulator. Phase 3
 adds the NES: the same arranger approach for its four melodic channels, an
-emulated 2A03, and FamiStudio project export. CI opens the exported projects
-in FamiStudio and has it write sound engine data, NSF, ROM and WAV files from
-them. Then the Master System and Game Gear: the SN76489, exported as PSGlib
+emulated 2A03, and export as ca65 data for FamiStudio's sound engine. CI
+opens the FamiStudio projects in FamiStudio, checks that its own sound engine
+export matches the app's byte for byte, builds the example ROMs with cc65 and
+plays them in an emulator. Then the Master System and Game Gear: the SN76489, exported as PSGlib
 data. CI checks the data against PSGlib's own tools (vgm2psg, psgcomp and
 psgdecomp) and compiles the C arrays with SDCC. Phase 4 brings the 16-bit
 consoles, starting with the Mega Drive: CI converts the exported VGMs with
@@ -148,9 +150,10 @@ To build a Game Boy export yourself, unzip it, install
 `make GBDK_HOME=/path/to/gbdk` in the `gameboy/` folder. The README inside
 explains how to use the song and sounds in your own game.
 
-To use an NES export, unzip it, open `nes/<name>.txt` in FamiStudio
-(File > Import) and export from there, or use FamiStudio's command line as
-`nes/README.txt` shows.
+To use an NES export, unzip it, install [cc65](https://cc65.github.io) and
+run `make` in the `nes/` folder to build the example ROM; `nes/README.txt`
+explains how to use the song and sounds in your own game (assembly or C).
+`nes/famistudio/<name>.txt` opens in FamiStudio (File > Import).
 
 To use a Master System export, unzip it and add `sms/<name>_psg.c` to a
 devkitSMS project (or `incbin` `sms/<name>.psg` in assembly), then call

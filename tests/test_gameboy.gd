@@ -143,3 +143,9 @@ func test_export_jobs() -> void:
 	check(kit.files.has("audio/coin.wav"), "sound wav")
 	check(kit.files.has("gameboy/Makefile"), "kit makefile")
 	check(str(kit.files.keys()).contains(".c"), "kit C source")
+	var wav_only := ExportJob.for_gameboy_sfx({"coin": SfxGenerator.make_sfx(presets["coin"], 1)}, "My kit", {"wav": true, "console": false})
+	while not wav_only.done:
+		wav_only.step(1000000)
+	check(wav_only.files.has("audio/coin.wav"), "wav without source")
+	check(not str(wav_only.files.keys()).contains("gameboy/"), "no console source when unticked")
+	check(not wav_only.files["README.txt"].get_string_from_utf8().contains("gameboy/"), "readme skips the source")

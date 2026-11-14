@@ -14,7 +14,8 @@ MIT-compatible: no GPL or LGPL code, in the app or in the plugin.
 | PCG32 (Melissa O'Neill) | `scripts/generation/pcg32.gd` | Apache 2.0 or MIT | Reimplemented from the paper and reference output; no PCG source is bundled. |
 | hUGEDriver (Nick Faro and contributors) | `assets/gameboy/hUGEDriver/`, bundled in Game Boy exports; modelled in `scripts/targets/gameboy/huge_player.gd` | Public domain | https://github.com/SuperDisk/hUGEDriver. Includes its `tools/rgb2sdas.py`. |
 | hardware.inc (gbdev) | `assets/gameboy/hUGEDriver/include/hardware.inc` | CC0 | https://github.com/gbdev/hardware.inc |
-| FamiStudio (Mathieu Gauthier) | Model for `scripts/targets/nes/nes_player.gd` and `famistudio_writer.gd` | MIT | https://github.com/BleuBleu/FamiStudio. The text project format, NTSC note table, volume table and noise mapping were reimplemented from its documented behaviour; no FamiStudio code is bundled. |
+| FamiStudio (Mathieu Gauthier) | Model for `scripts/targets/nes/nes_player.gd`, `famistudio_writer.gd` and `famistudio_asm_writer.gd` | MIT | https://github.com/BleuBleu/FamiStudio. The text project format, NTSC note table, volume table and noise mapping were reimplemented from its documented behaviour. `famistudio_asm_writer.gd` is a GDScript port of the parts of its sound engine exporter (FamitoneMusicFile.cs, FamitoneSoundEffectFile.cs, TempoUtils.cs) the app needs. |
+| FamiStudio sound engine 4.5.4 | `assets/nes/famistudio/`, bundled in NES exports | MIT (engine file: all-permissive notice) | `famistudio_ca65.s` and `famistudio_cc65.h`, unchanged. |
 | 2A03 mixer formulas (nesdev wiki) | `scripts/targets/nes/nes_apu.gd` | Public technique | No code copied. |
 | PSGlib (sverx) | Data format written by `scripts/targets/sms/psg_writer.gd`; modelled in `sms_player.gd` | BSD 3-clause | https://github.com/sverx/PSGlib. The format was reimplemented from its converter's documented behaviour; no PSGlib code is bundled. CI builds its tools to check the exports. |
 | SN76489 behaviour (SMS Power! documentation) | `scripts/targets/sms/sms_psg.gd` | Public technique | No code copied. |
@@ -28,9 +29,11 @@ themselves and CI downloads; neither is bundled. Exported Game Boy projects
 link hUGEDriver, which is public domain, so a game built from them carries no
 licence obligations from it.
 
-NES exports are FamiStudio projects. FamiStudio, which users install
-themselves and CI downloads, is MIT licensed, and so is its sound engine, so
-a game built from an export carries only the MIT notice of that engine.
+NES exports are data for FamiStudio's sound engine, bundled with the engine,
+plus the FamiStudio project. FamiStudio is MIT licensed and its sound engine
+file carries an all-permissive notice, so a game built from an export needs
+at most to keep that notice in the engine's source. CI downloads FamiStudio
+and cc65 to check the exports; neither program is bundled.
 
 Master System exports are PSGlib data. PSGlib, which users get with
 devkitSMS or from its own repository, plays it; the data itself carries no
