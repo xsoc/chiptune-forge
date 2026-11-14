@@ -1249,7 +1249,15 @@ class _Recorder:
 # --- Example projects. ---
 
 const ENGINE_DIR := "res://assets/nes/famistudio"
-const ENGINE_FILES: PackedStringArray = ["famistudio_ca65.s", "famistudio_cc65.h", "LICENSE.txt"]
+const ENGINE_FILES: PackedStringArray = [
+	"famistudio_ca65.s",
+	"famistudio_cc65.h",
+	"NoteTables/famistudio_note_table_lsb.bin",
+	"NoteTables/famistudio_note_table_msb.bin",
+	"NoteTables/famistudio_note_table_pal_lsb.bin",
+	"NoteTables/famistudio_note_table_pal_msb.bin",
+	"LICENSE.txt",
+]
 
 
 ## A ca65 project that plays [param nes]: the music data, FamiStudio's
@@ -1469,6 +1477,7 @@ static func _readme(name: String, label: String, sfx: bool, sounds: Array = []) 
 		"main.s           An example program that %s." % ("plays each sound in turn" if sfx else "plays the song"),
 		"famistudio_ca65.s  FamiStudio's sound engine (MIT, https://famistudio.org).",
 		"famistudio_cc65.h  The engine's C header, for games written in C with cc65.",
+		"NoteTables/       Note period tables the engine includes.",
 		"nes.cfg, Makefile  Build the example: install cc65, then run make. The ROM is %s.nes." % name,
 		"",
 		"In your own game:",

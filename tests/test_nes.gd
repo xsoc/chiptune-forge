@@ -198,6 +198,7 @@ func test_export_jobs() -> void:
 	check(job.files.has("nes/tune.s"), "music data for the engine")
 	check(job.files.has("nes/main.s") and job.files.has("nes/nes.cfg") and job.files.has("nes/Makefile"), "ROM project")
 	check(job.files.has("nes/famistudio_ca65.s") and job.files["nes/famistudio_ca65.s"].size() > 100000, "bundles the engine")
+	check(job.files.has("nes/NoteTables/famistudio_note_table_lsb.bin"), "and the note tables it includes")
 	check(job.files["nes/main.s"].get_string_from_utf8().contains("FAMISTUDIO_USE_VOLUME_TRACK = 1"), "main.s turns on what the data needs")
 	check(job.files.has("audio/tune.wav") and job.files["audio/tune.wav"].size() > 44100, "wav")
 	check(job.files.has("midi/tune.mid"), "midi")
