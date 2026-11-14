@@ -47,7 +47,7 @@ func refresh() -> void:
 	%Console.visible = console
 	%Console.text = "Game Boy: C project for GBDK-2020 and hUGEDriver"
 	if nes:
-		%Console.text = "NES: FamiStudio project (for its sound engine, NSF or ROM)"
+		%Console.text = "NES: ca65 assembly for FamiStudio's sound engine, with a ROM project"
 	elif sms:
 		%Console.text = "Master System: PSGlib data for devkitSMS, and VGM"
 	elif genesis:
@@ -295,6 +295,7 @@ func _on_export() -> void:
 		"loops": %Loops.get_selected_id(),
 		"stems": %Stems.button_pressed,
 		"midi": %Midi.button_pressed,
+		"console": %Console.button_pressed,
 	}
 	if AppState.mode == "music":
 		if AppState.song == null:

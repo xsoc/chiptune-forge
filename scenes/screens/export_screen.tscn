@@ -128,8 +128,6 @@ autowrap_mode = 3
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
-disabled = true
-button_pressed = true
 text = "Game Boy: C project for GBDK-2020 and hUGEDriver"
 autowrap_mode = 3
 

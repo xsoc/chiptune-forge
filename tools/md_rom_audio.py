@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
-"""Runs a Mega Drive ROM in an emulator and records what it plays.
+"""Runs a Mega Drive or NES ROM in an emulator and records what it plays.
 
     python3 tools/md_rom_audio.py rom.bin out.wav [seconds]
 
 Uses stable-retro (pip install stable-retro), which bundles the Genesis
-Plus GX core, to run the ROM headless for the given time (default 15 s)
-and writes the sound as a 16-bit stereo WAV. CI uses it to hear the
-example ROM that SGDK built: the XGM driver on the Z80 playing our music.
+Plus GX and FCEUmm cores, to run the ROM headless for the given time
+(default 15 s) and writes the sound as a 16-bit stereo WAV. A ROM whose
+name ends in .nes runs on the NES core; anything else on the Mega Drive.
+CI uses it to hear the example ROMs: SGDK's XGM driver playing our music,
+and FamiStudio's sound engine playing our NES data.
 """
 import os
 import shutil
@@ -24,7 +26,7 @@ def main():
     seconds = float(sys.argv[3]) if len(sys.argv) > 3 else 15.0
     # The core is picked by the file extension.
     tmp = tempfile.mkdtemp()
-    rom = os.path.join(tmp, "rom.md")
+    rom = os.path.join(tmp, "rom.nes" if sys.argv[1].lower().endswith(".nes") else "rom.md")
     shutil.copy(sys.argv[1], rom)
     emu = retro.RetroEmulator(rom)
     rate = int(round(emu.get_audio_rate()))
