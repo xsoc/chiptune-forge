@@ -18,6 +18,9 @@ MIT-compatible: no GPL or LGPL code, in the app or in the plugin.
 | 2A03 mixer formulas (nesdev wiki) | `scripts/targets/nes/nes_apu.gd` | Public technique | No code copied. |
 | PSGlib (sverx) | Data format written by `scripts/targets/sms/psg_writer.gd`; modelled in `sms_player.gd` | BSD 3-clause | https://github.com/sverx/PSGlib. The format was reimplemented from its converter's documented behaviour; no PSGlib code is bundled. CI builds its tools to check the exports. |
 | SN76489 behaviour (SMS Power! documentation) | `scripts/targets/sms/sms_psg.gd` | Public technique | No code copied. |
+| YM2612 behaviour (Yamaha OPN2 documentation, MAME and Nuked-OPN2 write-ups) | `scripts/targets/genesis/ym2612.gd` | Public technique | Reimplemented from the documented behaviour (phase increments, detune table, envelope rates, algorithms); no emulator code is bundled. |
+| SGDK (Stephane Dallongeville) | Target of the Mega Drive exports (`scripts/targets/genesis/md_vgm_writer.gd`, `md_sfx.gd`) | MIT | https://github.com/Stephane-D/SGDK. Not bundled: users install it, and CI runs its Docker image to build the example ROM. |
+| libvgm (Valley Bell) and stable-retro (Genesis Plus GX) | CI only, to play the Mega Drive exports | Various | Downloaded by CI to check the exports; never bundled or linked. |
 | PolyBLEP oscillator method | `addons/chipforge/runtime/chip_voice.gd` | Public technique | No code copied. |
 
 Game Boy ROMs are built with GBDK-2020 and RGBDS, which users install
@@ -32,6 +35,10 @@ a game built from an export carries only the MIT notice of that engine.
 Master System exports are PSGlib data. PSGlib, which users get with
 devkitSMS or from its own repository, plays it; the data itself carries no
 licence terms from PSGlib.
+
+Mega Drive exports are VGM files and 8-bit WAVs. SGDK, which users install
+themselves, converts them and plays them with its XGM driver; SGDK is MIT
+licensed, so a game built with it carries only SGDK's MIT notice.
 
 The icons in `assets/ui/` and `addons/chipforge/icons/` were drawn for this
 project and are MIT licensed with the rest of the code.

@@ -7,11 +7,41 @@ script = ExtResource("1")
 id = "genesis"
 display_name = "Mega Drive / Genesis"
 chip_name = "YM2612 + SN76489"
-description = "6 FM, 3 square, 1 noise. Exports VGM for SGDK."
+description = "6 FM, 3 square, 1 noise. Exports VGM for SGDK's XGM driver, and sound effects as XGM samples."
 phase = 4
-available = false
+available = true
 stereo = true
 echo = false
 max_voices = 10
-voices = Array[Dictionary]([])
-export_formats = PackedStringArray("vgm")
+voices = Array[Dictionary]([{
+"name": "FM 1",
+"waves": ["fm"]
+}, {
+"name": "FM 2",
+"waves": ["fm"]
+}, {
+"name": "FM 3",
+"waves": ["fm"]
+}, {
+"name": "FM 4",
+"waves": ["fm"]
+}, {
+"name": "FM 5",
+"waves": ["fm"]
+}, {
+"name": "FM 6",
+"waves": ["fm"]
+}, {
+"name": "Square 1",
+"waves": ["pulse"]
+}, {
+"name": "Square 2",
+"waves": ["pulse"]
+}, {
+"name": "Square 3",
+"waves": ["pulse"]
+}, {
+"name": "Noise",
+"waves": ["noise"]
+}])
+export_formats = PackedStringArray("vgm", "xgm", "wav")

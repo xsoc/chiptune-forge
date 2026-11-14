@@ -138,6 +138,32 @@ and all of them as C arrays in `<kit>.c` and `<kit>.h`. Each sound writes only
 its own channel: Square 3 (`SFX_CHANNEL2` in PSGlib) for tonal sounds, the
 noise channel (`SFX_CHANNEL3`) for noisy ones.
 
+## Mega Drive export
+
+Mega Drive / Genesis exports are VGM 1.60 files for
+[SGDK](https://github.com/Stephane-D/SGDK), whose resource compiler converts
+them to music for its XGM driver (`XGM name "file.vgm"` in a `.res` file).
+The VGM holds the YM2612 (clock 7,670,453 Hz) and SN76489 (3,579,545 Hz)
+register writes the song makes, one frame at a time with a 1/60 s wait
+(command `0x62`) after each, which is the form XGM's converter expects.
+Each frame writes only the registers that changed. A new FM note loads its
+patch if the channel holds another one, sets the pitch (`$A4` then `$A0`),
+and keys the channel off and on; a note's end keys it off so the patch's own
+release plays. At the loop point every patch and register is written again.
+A GD3 tag carries the title.
+
+The arrangement: FM 1 plays the lead, FM 2 the harmony, FM 3 the arpeggio,
+FM 4 the bass and FM 5 the kick, snare and toms; Square 1 to 3 play the pad's
+chords (up to three notes) and the noise channel the snare, hats and
+cymbals. FM 6 is left free because XGM plays samples there. Each FM part's
+patch is picked from its wave in the source song (`scripts/targets/genesis/md_patches.gd`).
+
+A song export's `genesis/` folder holds `<name>.vgm`, `resources.res` (the
+resource line) and `main.c` (a minimal SGDK program that plays it). A sound
+kit export's `genesis/` folder holds one 8-bit mono WAV at 14 kHz per sound
+(XGM's sample format) and `resources.res` with a `WAV name "file.wav" XGM`
+line for each; `README.txt` shows `XGM_setPCM` and `XGM_startPlayPCM`.
+
 ## Game Boy export
 
 Game Boy exports are not a Chiptune Forge format: they are C source for

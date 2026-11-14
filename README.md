@@ -30,6 +30,12 @@ runs on phones, desktops and the web, and it exports straight into Godot.
   [PSGlib](https://github.com/sverx/PSGlib) data (a `.psg` file and a C
   array for devkitSMS) plus a VGM. Sound effects export as PSGlib sound
   effects that play over the music.
+- **Mega Drive / Genesis target.** Pick the Mega Drive and the song is
+  arranged for the YM2612's FM channels and the SN76489: FM lead, harmony,
+  arpeggio, bass and drums, with the pad's chords on the squares. Previews
+  play through an emulated YM2612 and SN76489, and the export is a VGM that
+  [SGDK](https://github.com/Stephane-D/SGDK) turns into XGM music, with a
+  minimal SGDK program. Sound effects export as 8-bit samples for XGM.
 - **Seeds.** The same settings and seed always give the same song, on every
   platform.
 
@@ -112,10 +118,11 @@ described in [docs/format.md](docs/format.md).
 | `scripts/targets/gameboy/` | Game Boy target: sound chip emulation, hUGEDriver player, arranger, SFX conversion and C writer. |
 | `scripts/targets/nes/` | NES target: 2A03 emulation, a player that follows FamiStudio's sound engine, arranger, SFX conversion and the FamiStudio text writer. |
 | `scripts/targets/sms/` | Master System target: SN76489 emulation, a player that writes PSGlib's register stream, arranger (built on the NES one), SFX conversion and the PSGlib, C and VGM writer. |
+| `scripts/targets/genesis/` | Mega Drive target: YM2612 emulation (with the Master System's SN76489), FM patches, arranger, a frame-by-frame player, the VGM writer and SFX conversion. |
 | `assets/gameboy/hUGEDriver/` | The vendored hUGEDriver source bundled with Game Boy exports. |
 | `resources/` | Vibes, styles, SFX presets and chip profiles as `.tres` files, plus the theme. |
 | `tests/` | Unit and golden-file tests. |
-| `tools/` | Theme builder, screenshot tool, and the Game Boy, NES and Master System checks CI runs. |
+| `tools/` | Theme builder, screenshot tool, and the Game Boy, NES, Master System and Mega Drive checks CI runs. |
 
 ## Roadmap
 
@@ -129,7 +136,12 @@ in FamiStudio and has it write sound engine data, NSF, ROM and WAV files from
 them. Then the Master System and Game Gear: the SN76489, exported as PSGlib
 data. CI checks the data against PSGlib's own tools (vgm2psg, psgcomp and
 psgdecomp) and compiles the C arrays with SDCC. Phase 4 brings the 16-bit
-consoles, and the last phase gives the modern synth several new engines.
+consoles, starting with the Mega Drive: CI converts the exported VGMs with
+SGDK's xgmtool and checks the XGM keeps every register write, builds an
+example ROM with SGDK, and compares the app's preview with libvgm's YM2612
+playing the VGM and with the ROM running in Genesis Plus GX. The SNES and
+PC Engine come next, and the last phase gives the modern synth several new
+engines.
 
 To build a Game Boy export yourself, unzip it, install
 [GBDK-2020](https://github.com/gbdk-2020/gbdk-2020) and run
@@ -143,6 +155,11 @@ To use an NES export, unzip it, open `nes/<name>.txt` in FamiStudio
 To use a Master System export, unzip it and add `sms/<name>_psg.c` to a
 devkitSMS project (or `incbin` `sms/<name>.psg` in assembly), then call
 `PSGPlay` once and `PSGFrame` every frame; `sms/README.txt` has the details.
+
+To use a Mega Drive export, unzip it, put `genesis/<name>.vgm` and
+`genesis/resources.res` in an SGDK project's `res/` folder and call
+`XGM_startPlay(<name>)`; `genesis/main.c` is a complete example and
+`genesis/README.txt` has the details.
 
 ## Licence
 

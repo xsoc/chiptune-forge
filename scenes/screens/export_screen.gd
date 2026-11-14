@@ -8,6 +8,8 @@ const LONG_SONG_SECONDS := 270.0
 var _job: ExportJob
 # PSGlib data size per Master System arrangement, for the report.
 var _psg_sizes := {}
+# VGM size per Mega Drive arrangement, for the report.
+var _vgm_sizes := {}
 
 
 func _ready() -> void:
@@ -36,7 +38,8 @@ func refresh() -> void:
 	var gameboy := AppState.target == "gameboy"
 	var nes := AppState.target == "nes"
 	var sms := AppState.target == "sms"
-	var console := gameboy or nes or sms
+	var genesis := AppState.target == "genesis"
+	var console := gameboy or nes or sms or genesis
 	%Export.theme_type_variation = &"PrimaryButton" if music else &"SfxPrimaryButton"
 	%Midi.visible = music
 	%WavOptions.visible = music and %Wav.button_pressed
@@ -47,6 +50,8 @@ func refresh() -> void:
 		%Console.text = "NES: FamiStudio project (for its sound engine, NSF or ROM)"
 	elif sms:
 		%Console.text = "Master System: PSGlib data for devkitSMS, and VGM"
+	elif genesis:
+		%Console.text = "Mega Drive: VGM for SGDK's XGM driver, with an example program" if music else "Mega Drive: 8-bit WAVs for SGDK's XGM driver"
 	%Godot.visible = not console
 	%Plugin.visible = not console
 	%GbOptions.visible = gameboy and music
@@ -68,6 +73,9 @@ func refresh() -> void:
 		elif sms:
 			%Wav.text = "Audio: WAV of the SMS version, loop points included"
 			%Midi.text = "MIDI: the four Master System parts"
+		elif genesis:
+			%Wav.text = "Audio: Mega Drive WAV, loop points included"
+			%Midi.text = "MIDI: the Mega Drive's ten parts"
 		else:
 			%Midi.text = "MIDI: one track per channel"
 		%Export.disabled = song == null
@@ -78,7 +86,7 @@ func refresh() -> void:
 		%Godot.text = "Godot: .chipkit and .chipsfx for the plugin"
 		%Wav.text = "Audio: one WAV per sound"
 		if console:
-			%Wav.text = "Audio: one WAV per sound, as the %s plays it" % ("NES" if nes else "Master System" if sms else "Game Boy")
+			%Wav.text = "Audio: one WAV per sound, as the %s plays it" % ("NES" if nes else "Master System" if sms else "Mega Drive" if genesis else "Game Boy")
 		%Export.disabled = AppState.sfx == null and count == 0
 	_update_report()
 
@@ -123,6 +131,8 @@ func _update_report() -> void:
 		lines.append_array(_nes_report())
 	elif AppState.target == "sms":
 		lines.append_array(_sms_report())
+	elif AppState.target == "genesis":
+		lines.append_array(_md_report())
 	elif AppState.mode == "music" and AppState.song:
 		var song: ChipSong = AppState.song
 		var used := 0
@@ -229,6 +239,32 @@ func _sms_report() -> Array[String]:
 	return lines
 
 
+func _md_report() -> Array[String]:
+	var lines: Array[String] = [""]
+	if AppState.mode == "music":
+		var md := AppState.get_md_song()
+		if md == null:
+			return lines
+		var key := md.get_instance_id()
+		if not _vgm_sizes.has(key):
+			_vgm_sizes = {key: MdVgmWriter.vgm_bytes(MdVgmWriter.record(md)).size()}
+		lines.append("[color=#52d1c0]Fits[/color] after arranging for 10 channels: a %.1f KB VGM, which SGDK packs into XGM music of about the same size." % (_vgm_sizes[key] / 1024.0))
+		for line in md.report:
+			lines.append("•  " + line)
+		return lines
+	var sounds := _sounds()
+	lines.append("[color=#52d1c0]Fits.[/color] Each sound is an 8-bit, 14 kHz sample for SGDK's XGM driver, which plays up to four over the music on FM 6.")
+	var ids := sounds.keys()
+	ids.sort()
+	var total := 0
+	for id in ids:
+		var md_sfx := MdSfx.from_sfx(sounds[id], str(id))
+		total += md_sfx.samples.size()
+		lines.append("•  %s: %.2f s, %.1f KB" % [id, md_sfx.seconds(), md_sfx.samples.size() / 1024.0])
+	lines.append("%.1f KB of samples in all." % (total / 1024.0))
+	return lines
+
+
 func _sounds() -> Dictionary:
 	var sounds: Dictionary = AppState.kit.sounds.duplicate()
 	if sounds.is_empty() and AppState.sfx:
@@ -270,6 +306,8 @@ func _on_export() -> void:
 				_job = ExportJob.for_nes_song(AppState.get_nes_song(), options)
 			"sms":
 				_job = ExportJob.for_sms_song(AppState.get_sms_song(), options)
+			"genesis":
+				_job = ExportJob.for_md_song(AppState.get_md_song(), options)
 			_:
 				_job = ExportJob.for_song(AppState.song, options)
 	else:
@@ -281,6 +319,8 @@ func _on_export() -> void:
 				_job = ExportJob.for_nes_sfx(sounds, prefix, options)
 			"sms":
 				_job = ExportJob.for_sms_sfx(sounds, prefix, options)
+			"genesis":
+				_job = ExportJob.for_md_sfx(sounds, prefix, options)
 			_:
 				_job = ExportJob.for_sfx(sounds, prefix, options)
 	%Export.disabled = true

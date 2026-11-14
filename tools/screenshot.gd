@@ -1,7 +1,7 @@
 extends SceneTree
 ## Captures the app at a given window size, for checking layouts.
-##   godot --path . -s tools/screenshot.gd -- 390 844 2 out.png [sfx|music|gameboy|nes|sms] [ScreenName]
-## "gameboy", "nes" and "sms" show Music mode with that export target picked.
+##   godot --path . -s tools/screenshot.gd -- 390 844 2 out.png [sfx|music|gameboy|nes|sms|genesis] [ScreenName]
+## "gameboy", "nes", "sms" and "genesis" show Music mode with that export target picked.
 
 func _initialize() -> void:
 	_run.call_deferred()
@@ -21,7 +21,7 @@ func _run() -> void:
 		await process_frame
 	if args.size() > 4 and args[4] == "sfx":
 		root.get_node("AppState").mode = "sfx"
-	if args.size() > 4 and args[4] in ["gameboy", "nes", "sms"]:
+	if args.size() > 4 and args[4] in ["gameboy", "nes", "sms", "genesis"]:
 		root.get_node("AppState").set_target(args[4])
 	if args.size() > 5:
 		main._show_screen(args[5])
