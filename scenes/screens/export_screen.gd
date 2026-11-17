@@ -39,7 +39,8 @@ func refresh() -> void:
 	var nes := AppState.target == "nes"
 	var sms := AppState.target == "sms"
 	var genesis := AppState.target == "genesis"
-	var console := gameboy or nes or sms or genesis
+	var snes := AppState.target == "snes"
+	var console := gameboy or nes or sms or genesis or snes
 	%Export.theme_type_variation = &"PrimaryButton" if music else &"SfxPrimaryButton"
 	%Midi.visible = music
 	%WavOptions.visible = music and %Wav.button_pressed
@@ -52,6 +53,8 @@ func refresh() -> void:
 		%Console.text = "Master System: PSGlib data for devkitSMS, and VGM"
 	elif genesis:
 		%Console.text = "Mega Drive: VGM for SGDK's XGM driver, with an example program" if music else "Mega Drive: 8-bit WAVs for SGDK's XGM driver"
+	elif snes:
+		%Console.text = "SNES: Impulse Tracker module for PVSnesLib, with a ROM project" if music else "SNES: BRR samples for PVSnesLib's sound driver"
 	%Godot.visible = not console
 	%Plugin.visible = not console
 	%GbOptions.visible = gameboy and music
@@ -76,6 +79,9 @@ func refresh() -> void:
 		elif genesis:
 			%Wav.text = "Audio: Mega Drive WAV, loop points included"
 			%Midi.text = "MIDI: the Mega Drive's ten parts"
+		elif snes:
+			%Wav.text = "Audio: SNES WAV, loop points included"
+			%Midi.text = "MIDI: the SNES's seven parts"
 		else:
 			%Midi.text = "MIDI: one track per channel"
 		%Export.disabled = song == null
@@ -86,7 +92,7 @@ func refresh() -> void:
 		%Godot.text = "Godot: .chipkit and .chipsfx for the plugin"
 		%Wav.text = "Audio: one WAV per sound"
 		if console:
-			%Wav.text = "Audio: one WAV per sound, as the %s plays it" % ("NES" if nes else "Master System" if sms else "Mega Drive" if genesis else "Game Boy")
+			%Wav.text = "Audio: one WAV per sound, as the %s plays it" % ("NES" if nes else "Master System" if sms else "Mega Drive" if genesis else "SNES" if snes else "Game Boy")
 		%Export.disabled = AppState.sfx == null and count == 0
 	_update_report()
 
@@ -133,6 +139,8 @@ func _update_report() -> void:
 		lines.append_array(_sms_report())
 	elif AppState.target == "genesis":
 		lines.append_array(_md_report())
+	elif AppState.target == "snes":
+		lines.append_array(_snes_report())
 	elif AppState.mode == "music" and AppState.song:
 		var song: ChipSong = AppState.song
 		var used := 0
@@ -265,6 +273,35 @@ func _md_report() -> Array[String]:
 	return lines
 
 
+func _snes_report() -> Array[String]:
+	var lines: Array[String] = [""]
+	if AppState.mode == "music":
+		var snes := AppState.get_snes_song()
+		if snes == null:
+			return lines
+		var ram := snes.ram_use()
+		var patterns: int = ItWriter.pattern_layout(snes)["patterns"].size()
+		if int(ram["free"]) > 8192 and patterns <= ItWriter.MAX_PATTERNS:
+			lines.append("[color=#52d1c0]Fits[/color] after arranging for 7 voices: %d patterns, and %.1f KB of audio RAM left for them." % [patterns, int(ram["free"]) / 1024.0])
+		else:
+			lines.append("[color=#f0a050]Tight on SNESMod's limits[/color] (%d of 64 patterns). Shorten the song if smconv says it is too big." % patterns)
+		for line in snes.report:
+			lines.append("•  " + line)
+		return lines
+	var sounds := _sounds()
+	lines.append("[color=#52d1c0]Fits.[/color] Each sound is a 16 kHz BRR sample that SNESMod plays on voice 8, over the music.")
+	var ids := sounds.keys()
+	ids.sort()
+	var total := 0
+	for id in ids:
+		var snes_sfx := SnesSfx.from_sfx(sounds[id], str(id))
+		var bytes := int(ceil(snes_sfx.pcm.size() / 16.0)) * SnesBrr.BLOCK_BYTES
+		total += bytes
+		lines.append("•  %s: %.2f s, %.1f KB" % [id, snes_sfx.seconds(), bytes / 1024.0])
+	lines.append("%.1f KB of audio RAM in all, on top of the music." % (total / 1024.0))
+	return lines
+
+
 func _sounds() -> Dictionary:
 	var sounds: Dictionary = AppState.kit.sounds.duplicate()
 	if sounds.is_empty() and AppState.sfx:
@@ -309,6 +346,8 @@ func _on_export() -> void:
 				_job = ExportJob.for_sms_song(AppState.get_sms_song(), options)
 			"genesis":
 				_job = ExportJob.for_md_song(AppState.get_md_song(), options)
+			"snes":
+				_job = ExportJob.for_snes_song(AppState.get_snes_song(), options)
 			_:
 				_job = ExportJob.for_song(AppState.song, options)
 	else:
@@ -322,6 +361,8 @@ func _on_export() -> void:
 				_job = ExportJob.for_sms_sfx(sounds, prefix, options)
 			"genesis":
 				_job = ExportJob.for_md_sfx(sounds, prefix, options)
+			"snes":
+				_job = ExportJob.for_snes_sfx(sounds, prefix, options)
 			_:
 				_job = ExportJob.for_sfx(sounds, prefix, options)
 	%Export.disabled = true

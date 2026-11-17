@@ -318,6 +318,75 @@ static func for_md_sfx(sounds: Dictionary, kit_name: String, options: Dictionary
 	return job
 
 
+## Export for a song arranged for the SNES: an Impulse Tracker module for
+## SNESMod with a PVSnesLib project that plays it, plus optional WAV
+## (rendered through the emulated S-DSP) and MIDI of the arranged parts.
+## Options: prefix, wav, loops, midi, console.
+static func for_snes_song(snes: SnesSong, options: Dictionary) -> ExportJob:
+	var job := ExportJob.new()
+	var song := snes.source
+	var prefix := sanitize(str(options.get("prefix", snes.title)))
+	if bool(options.get("console", true)):
+		job._tasks.append(func() -> bool:
+			job.files["snes/res/%s.it" % prefix] = ItWriter.module_bytes(snes)
+			job.files["snes/Makefile"] = ItWriter.makefile(prefix).to_utf8_buffer()
+			job.files["snes/main.c"] = ItWriter.main_c(prefix, snes.title).to_utf8_buffer()
+			job.files["snes/README.txt"] = ItWriter.readme(prefix, snes).to_utf8_buffer()
+			return true)
+	if bool(options.get("midi", false)):
+		job._tasks.append(func() -> bool:
+			job.files["midi/%s.mid" % prefix] = MidiWriter.encode(song)
+			return true)
+	if bool(options.get("wav", true)):
+		job._r_nes = snes
+		job._queue_render(song, "audio/%s.wav" % prefix, int(options.get("loops", 1)), [])
+	job._tasks.append(func() -> bool:
+		job.files["README.txt"] = job._snes_readme(snes, prefix, options).to_utf8_buffer()
+		return true)
+	return job
+
+
+## Export for sound effects on the SNES: one 16 kHz BRR sample per sound,
+## the assembly that puts them in the ROM, and WAVs of how each sounds.
+static func for_snes_sfx(sounds: Dictionary, kit_name: String, options: Dictionary) -> ExportJob:
+	var job := ExportJob.new()
+	var prefix := sanitize(kit_name)
+	var converted: Array = []
+	var ids := sounds.keys()
+	ids.sort()
+	for id in ids:
+		converted.append(SnesSfx.from_sfx(sounds[id], sanitize(str(id))))
+	if bool(options.get("console", true)):
+		for snes_sfx in converted:
+			job._tasks.append(func() -> bool:
+				job.files["snes/%s.brr" % snes_sfx.name] = snes_sfx.brr_bytes()
+				return true)
+		job._tasks.append(func() -> bool:
+			job.files["snes/data.asm"] = SnesSfx.data_asm(converted).to_utf8_buffer()
+			job.files["snes/README.txt"] = SnesSfx.readme(prefix, converted).to_utf8_buffer()
+			return true)
+	if bool(options.get("wav", true)):
+		for snes_sfx in converted:
+			job._tasks.append(func() -> bool:
+				job.files["audio/%s.wav" % snes_sfx.name] = ChipAudio.encode_wav_mono(snes_sfx.render(MIX_RATE), MIX_RATE)
+				return true)
+	job._tasks.append(func() -> bool:
+		var lines: Array[String] = [
+			"Sound kit for the SNES: %s" % prefix,
+			"Made with Chiptune Forge. You own these sounds and may use them for any purpose, including commercially.",
+			"",
+			"snes/   One 16 kHz BRR sample per sound for PVSnesLib, and data.asm.\n        See snes/README.txt to play them over your music." if bool(options.get("console", true)) else "",
+			"audio/  One WAV per sound, 44.1 kHz, as the SNES plays it.",
+			"",
+			"Sounds:",
+		]
+		for snes_sfx: SnesSfx in converted:
+			lines.append("  %s  (%.2f s)" % [SnesSfx.symbol(snes_sfx.name), snes_sfx.seconds()])
+		job.files["README.txt"] = "\n".join(lines).to_utf8_buffer()
+		return true)
+	return job
+
+
 ## Export for sound effects on the Game Boy: a GBDK-2020 project with the
 ## sounds as cf_sfx data, plus WAVs of how each one sounds on the console.
 static func for_gameboy_sfx(sounds: Dictionary, kit_name: String, options: Dictionary) -> ExportJob:
@@ -445,6 +514,8 @@ func _queue_render(song: ChipSong, path: String, loops: int, muted: Array) -> vo
 func _start_render(song: ChipSong, path: String, loops: int, muted: Array) -> void:
 	if _r_gb:
 		_r_seq = GbSequencer.new(_r_gb, MIX_RATE)
+	elif _r_nes is SnesSong:
+		_r_seq = SnesSequencer.new(_r_nes, MIX_RATE)
 	elif _r_nes is MdSong:
 		_r_seq = MdSequencer.new(_r_nes, MIX_RATE)
 	elif _r_nes is SmsSong:
@@ -598,6 +669,23 @@ func _md_readme(md: MdSong, prefix: String, options: Dictionary) -> String:
 		"",
 		"Arrangement:",
 		"\n".join(Array(md.report).map(func(line: String) -> String: return "  " + line)),
+	])
+
+
+func _snes_readme(snes: SnesSong, prefix: String, options: Dictionary) -> String:
+	var meta: Dictionary = snes.source.data.get("meta", {})
+	return "\n".join([
+		"%s, arranged for the SNES" % snes.title,
+		"Made with Chiptune Forge. Seed %s, %s, %d BPM on the console." % [meta.get("seed", ""), meta.get("key", ""), int(snes.get_bpm())],
+		"",
+		str(meta.get("license", "")),
+		"",
+		("snes/     res/%s.it, an Impulse Tracker module for PVSnesLib's SNESMod driver,\n          with a Makefile and main.c that build a ROM playing it. See snes/README.txt." % prefix) if bool(options.get("console", true)) else "",
+		"audio/    WAV, 44.1 kHz, 16-bit, rendered through an emulated S-DSP." if bool(options.get("wav", true)) else "",
+		"midi/     The arranged parts, one track each." if bool(options.get("midi", false)) else "",
+		"",
+		"Arrangement:",
+		"\n".join(Array(snes.report).map(func(line: String) -> String: return "  " + line)),
 	])
 
 

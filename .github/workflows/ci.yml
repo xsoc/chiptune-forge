@@ -302,9 +302,71 @@ jobs:
             md_examples/project/src/
             md_examples/project/out/rom.bin
 
+  snes:
+    name: SNES example built with PVSnesLib
+    runs-on: ubuntu-latest
+    env:
+      PVSNESLIB_TAG: 4.7.1
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Godot, PVSnesLib, libopenmpt and stable-retro
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -e
+          mkdir -p "$RUNNER_TEMP/tools/pvsneslib"
+          cd "$RUNNER_TEMP/tools"
+          curl -sSLo godot.zip "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+          unzip -q godot.zip && mv "Godot_v${GODOT_VERSION}-stable_linux.x86_64" godot
+          echo "$RUNNER_TEMP/tools" >> $GITHUB_PATH
+          gh release view "$PVSNESLIB_TAG" --repo alekmaul/pvsneslib --json assets --jq '.assets[].name'
+          gh release download "$PVSNESLIB_TAG" --repo alekmaul/pvsneslib --pattern '*linux*' --dir pvsneslib
+          cd pvsneslib
+          for f in *.zip; do unzip -q "$f"; done
+          home=$(dirname "$(dirname "$(find . -path '*devkitsnes/snes_rules' | head -1)")")
+          echo "PVSNESLIB_HOME=$(realpath "$home")" >> $GITHUB_ENV
+          chmod -R a+x "$home/devkitsnes/bin" "$home/devkitsnes/tools" || true
+          sudo apt-get update -qq && sudo apt-get install -y -qq openmpt123 > /dev/null
+          pip install -q stable-retro
+      - name: Check the stored BRR samples
+        run: |
+          godot --headless --path . --import < /dev/null
+          godot --headless --path . -s tools/snes_samples.gd -- --check < /dev/null
+      - name: Export the example projects
+        run: godot --headless --path . -s tools/snes_examples.gd -- "$PWD/snes_examples" < /dev/null
+      - name: Build the example ROMs with PVSnesLib
+        run: |
+          set -e
+          for dir in snes_examples/project snes_examples/sfx; do
+            make -C "$dir"
+            ls -l "$dir"/*.sfc
+          done
+      - name: Check smconv's BRR, and play the song in a tracker and the ROM in an emulator
+        run: |
+          set -e
+          cd snes_examples
+          # smconv must encode every sample exactly as the app's preview does.
+          python3 ../tools/snes_check.py project/res/soundbank.bnk sample_*.brr
+          for it in song_*.it; do
+            openmpt123 --render --force "$it" > /dev/null
+            [ -s "$it.wav" ] || { echo "libopenmpt could not render $it"; exit 1; }
+          done
+          # libopenmpt playing the module at Impulse Tracker's speed should
+          # rise and fall with the preview at the same speed.
+          python3 ../tools/md_sound_check.py song_happy_platformer_preview_tracker.wav song_happy_platformer.it.wav --min-corr 0.6
+          # The ROM PVSnesLib built: SNESMod playing the soundbank.
+          python3 ../tools/md_rom_audio.py project/*.sfc rom.wav 16
+          python3 ../tools/md_sound_check.py song_happy_platformer_preview.wav rom.wav --align
+          python3 ../tools/md_rom_audio.py sfx/*.sfc rom_sfx.wav 8
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: snes-examples
+          path: snes_examples/
+
   export:
     name: Export ${{ matrix.preset }}
-    needs: [test, gameboy, nes, sms, genesis]
+    needs: [test, gameboy, nes, sms, genesis, snes]
     runs-on: ubuntu-latest
     container:
       image: barichello/godot-ci:4.5.1
