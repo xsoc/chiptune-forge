@@ -19,7 +19,9 @@ runs on phones, desktops and the web, and it exports straight into Godot.
 - **More targets.** The SNES (SPC700 samples for SNESMod), the PC Engine
   (wavetables for our own HuC6280 player), the Game Boy Advance (8-bit
   samples for Maxmod), the MSX and ZX Spectrum 128 (AY-3-8910, with our Z80
-  player) and the Commodore 64 (SID, as PSID files with our 6502 player).
+  player), the Commodore 64 (SID, as PSID files with our 6502 player) and
+  the DOS PC's sound cards (the AdLib and Sound Blasters' OPL2, dual OPL2
+  and OPL3 FM chips, as IMF, DRO and VGM files, with VOC sound effects).
   Each one arranges the song for the chip, previews it through an emulated
   chip and exports source, data and an example project that builds.
 - **Community packs.** Add vibes, styles and sound presets that other
@@ -138,7 +140,7 @@ described in [docs/format.md](docs/format.md).
 | `scripts/targets/nes/` | NES target: 2A03 emulation, a player that follows FamiStudio's sound engine, arranger, SFX conversion, the FamiStudio text writer and the ca65 writer for FamiStudio's sound engine. |
 | `scripts/targets/sms/` | Master System target: SN76489 emulation, a player that writes PSGlib's register stream, arranger (built on the NES one), SFX conversion and the PSGlib, C and VGM writer. |
 | `scripts/targets/genesis/` | Mega Drive target: YM2612 emulation (with the Master System's SN76489), FM patches, arranger, a frame-by-frame player, the VGM writer and SFX conversion. |
-| `scripts/targets/snes/`, `pce/`, `gba/`, `msx/`, `c64/` | The SNES, PC Engine, Game Boy Advance, MSX/Spectrum and Commodore 64 targets, each with its chip emulation, arranger, player, SFX conversion and writers. |
+| `scripts/targets/snes/`, `pce/`, `gba/`, `msx/`, `c64/`, `pc/` | The SNES, PC Engine, Game Boy Advance, MSX/Spectrum, Commodore 64 and DOS PC targets, each with its chip emulation, arranger, player, SFX conversion and writers. |
 | `scripts/packs/`, `packs/` | Community packs: the loader, and the packs that ship with the repository. |
 | `scripts/cli/` | The headless command line ([docs/cli.md](docs/cli.md)). |
 | `store/` | App store listing text ([docs/release.md](docs/release.md)). |

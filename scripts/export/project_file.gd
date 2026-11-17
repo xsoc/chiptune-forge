@@ -24,28 +24,35 @@ static func for_song(song: ChipSong, settings: SongSettings, target: String, gam
 	}
 	if target == "gameboy" and not gameboy_options.is_empty():
 		data["gameboy"] = gameboy_options
+	if target == "pc" and gameboy_options.has("card"):
+		data["card"] = str(gameboy_options["card"])
 	return JSON.stringify(data, "\t", false) + "\n"
 
 
-static func for_kit(kit_name: String, sounds: Dictionary, target: String) -> String:
+static func for_kit(kit_name: String, sounds: Dictionary, target: String, card := "") -> String:
 	var list := {}
 	var ids := sounds.keys()
 	ids.sort()
 	for id in ids:
 		list[id] = (sounds[id] as ChipSfx).data
-	return JSON.stringify({
+	var data := {
 		"format": FORMAT,
 		"version": VERSION,
 		"kind": "kit",
 		"target": target,
 		"name": kit_name,
 		"sounds": list,
-	}, "\t", false) + "\n"
+	}
+	if target == "pc" and card != "":
+		data["card"] = card
+	return JSON.stringify(data, "\t", false) + "\n"
 
 
 ## Reads a project, or a .chipsong, .chipsfx or .chipkit file. Returns
 ## {"kind": "song", "song", "settings", "target", "gameboy"} or
-## {"kind": "kit", "name", "sounds", "target"}, or {"error": String}.
+## {"kind": "kit", "name", "sounds", "target", "card"}, or {"error": String}.
+## A PC project's sound card is under "card" in "gameboy" (songs) or in
+## "card" (kits).
 static func parse(text: String) -> Dictionary:
 	var parsed: Variant = JSON.parse_string(text)
 	if not parsed is Dictionary:
@@ -66,7 +73,7 @@ static func parse(text: String) -> Dictionary:
 					"song": ChipSong.from_dict(data["song"]),
 					"settings": SongSettings.from_dict(data.get("settings", {})),
 					"target": str(data.get("target", "modern")),
-					"gameboy": data.get("gameboy", {}),
+					"gameboy": (data.get("gameboy", {}) as Dictionary).merged({"card": str(data["card"])}) if data.has("card") else data.get("gameboy", {}),
 				}
 			if data.get("kind") == "kit":
 				var sounds := {}
@@ -80,7 +87,7 @@ static func parse(text: String) -> Dictionary:
 					if problem != "":
 						return {"error": "%s: %s" % [id, problem]}
 					sounds[str(id)] = ChipSfx.from_dict(list[id])
-				return {"kind": "kit", "name": str(data.get("name", "kit")), "sounds": sounds, "target": str(data.get("target", "modern"))}
+				return {"kind": "kit", "name": str(data.get("name", "kit")), "sounds": sounds, "target": str(data.get("target", "modern")), "card": str(data.get("card", ""))}
 			return {"error": "kind should be song or kit"}
 		ChipSong.FORMAT:
 			var problem := ChipSong.validate(data)

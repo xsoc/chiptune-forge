@@ -535,6 +535,49 @@ jobs:
           name: c64-examples
           path: c64_examples/
 
+  pc:
+    name: DOS PC music played with AdPlug
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Godot, AdPlug and FFmpeg
+        run: |
+          set -e
+          sudo apt-get install -y -q adplay ffmpeg > /dev/null
+          mkdir -p "$RUNNER_TEMP/tools"
+          cd "$RUNNER_TEMP/tools"
+          curl -sSLo godot.zip "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+          unzip -q godot.zip && mv "Godot_v${GODOT_VERSION}-stable_linux.x86_64" godot
+          echo "$RUNNER_TEMP/tools" >> $GITHUB_PATH
+      - name: Export the examples
+        run: |
+          godot --headless --path . --import < /dev/null
+          godot --headless --path . -s tools/pc_examples.gd -- "$PWD/pc_examples" < /dev/null
+      - name: Play every file with AdPlug and compare it with the app's preview
+        run: |
+          set -e
+          cd pc_examples
+          # AdPlug's DOSBox OPL core ("woody") plays OPL2, dual OPL2 and
+          # OPL3 files. Its loudness should rise and fall with the preview.
+          for file in adlib.wlf adlib.dro adlib.vgm sb.dro sbpro.dro sbpro.vgm sb16.dro sb16.vgm; do
+            card="${file%%.*}"
+            timeout 120 adplay -O disk -d "$PWD/$file.wav" -o --stereo --16bit -f 44100 -e woody "$PWD/$file" > /dev/null
+            python3 ../tools/md_sound_check.py "${card}_preview.wav" "$file.wav" --min-corr 0.85
+          done
+      - name: Decode the Sound Blaster effects
+        run: |
+          set -e
+          cd pc_examples/sfx
+          for voc in *.voc; do
+            ffmpeg -loglevel error -y -i "$voc" "${voc%.voc}_decoded.wav"
+            test -s "${voc%.voc}_decoded.wav"
+          done
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pc-examples
+          path: pc_examples/
+
   gba:
     name: Game Boy Advance example built with devkitARM and Maxmod
     runs-on: ubuntu-latest
@@ -617,7 +660,7 @@ jobs:
 
   export:
     name: Export ${{ matrix.preset }}
-    needs: [test, gameboy, nes, sms, genesis, snes, pce, msx, c64, gba, cli]
+    needs: [test, gameboy, nes, sms, genesis, snes, pce, msx, c64, pc, gba, cli]
     runs-on: ubuntu-latest
     container:
       image: barichello/godot-ci:4.5.1

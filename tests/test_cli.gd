@@ -93,6 +93,14 @@ func test_export_project_to_another_target() -> void:
 	check_eq(_code(cli), 0, "exported")
 	check(FileAccess.file_exists(out.path_join("c64/c64/level.sid")), "a SID file: %s" % [DirAccess.get_directories_at(out.path_join("c64"))])
 
+	cli = _run(["export", out.path_join("level.cforge"), "--target", "pc", "--card", "sbpro", "--format", "console,project", "--out", out.path_join("pc")])
+	check_eq(_code(cli), 0, "exported for the Sound Blaster Pro")
+	check(FileAccess.file_exists(out.path_join("pc/pc/level.dro")), "a DRO file")
+	check(not FileAccess.file_exists(out.path_join("pc/pc/level.wlf")), "no IMF for two OPL2s")
+	var project: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(out.path_join("pc/level.cforge")))
+	check_eq(project.get("card"), "sbpro", "the project keeps the card")
+	check_eq(_code(_run(["export", out.path_join("level.cforge"), "--target", "pc", "--card", "gus-max", "--out", out.path_join("pc2")])), 1, "an unknown card is a bad argument")
+
 
 func test_sfx_with_variants() -> void:
 	var out := _out_dir("sfx")

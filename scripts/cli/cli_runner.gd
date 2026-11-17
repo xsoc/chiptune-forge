@@ -195,6 +195,7 @@ func _formats(flags: Dictionary) -> Variant:
 
 func _options(formats: PackedStringArray, prefix: String, flags: Dictionary) -> Dictionary:
 	return {
+		"card": str(flags.get("card", PcCards.DEFAULT)).to_lower(),
 		"prefix": prefix,
 		"godot": formats.has("json") or formats.has("plugin"),
 		"plugin": formats.has("plugin"),
@@ -223,6 +224,9 @@ func _target(flags: Dictionary, fallback := "modern") -> String:
 			target = "pce"
 	if not ExportJob.TARGETS.has(target):
 		_error = "unknown target \"%s\". Targets: %s" % [target, ", ".join(ExportJob.TARGETS)]
+		return ""
+	if flags.has("card") and not PcCards.is_card(str(flags["card"]).to_lower()):
+		_error = "unknown sound card \"%s\". Cards: %s" % [flags["card"], ", ".join(PcCards.CARDS)]
 		return ""
 	var chip: ChipProfile = catalog.chips.get(target)
 	if chip and not chip.available:
@@ -373,11 +377,15 @@ func _apply_song_flags(s: SongSettings, flags: Dictionary) -> String:
 func _export_song(song: ChipSong, settings: SongSettings, target: String, formats: PackedStringArray, flags: Dictionary, gameboy: Dictionary) -> int:
 	var prefix := str(flags.get("name", song.get_title()))
 	var options := _options(formats, prefix, flags)
+	if target == "pc":
+		var card := str(flags.get("card", gameboy.get("card", PcCards.DEFAULT))).to_lower()
+		gameboy = {"card": card}
+		options["card"] = card
 	if formats.has("project"):
 		options["project"] = ProjectFile.for_song(song, settings, target, gameboy)
 	options["gameboy"] = gameboy
 	var arranged: Variant = ExportJob.arrange(target, song, gameboy)
-	var report := TargetReport.lines(target, true, song, arranged, {})
+	var report := TargetReport.lines(target, true, song, arranged, {}, str(options["card"]))
 	var job := ExportJob.for_target_song(target, song, options, arranged)
 	job.run()
 	var out := _path(str(flags.get("out", ".")))
@@ -433,8 +441,8 @@ func _sfx(flags: Dictionary) -> int:
 func _export_kit(kit_name: String, sounds: Dictionary, target: String, formats: PackedStringArray, flags: Dictionary) -> int:
 	var options := _options(formats, kit_name, flags)
 	if formats.has("project"):
-		options["project"] = ProjectFile.for_kit(kit_name, sounds, target)
-	var report := TargetReport.lines(target, false, null, null, sounds)
+		options["project"] = ProjectFile.for_kit(kit_name, sounds, target, options["card"] if target == "pc" else "")
+	var report := TargetReport.lines(target, false, null, null, sounds, str(options["card"]))
 	var job := ExportJob.for_target_sfx(target, sounds, kit_name, options)
 	job.run()
 	var out := _path(str(flags.get("out", ".")))
@@ -470,6 +478,8 @@ func _export(flags: Dictionary, positional: PackedStringArray) -> int:
 	if project["kind"] == "song":
 		var song: ChipSong = project["song"]
 		return _export_song(song, project["settings"], target, formats, flags, project.get("gameboy", {}))
+	if project.get("card", "") != "" and not flags.has("card"):
+		flags["card"] = project["card"]
 	return _export_kit(str(flags["name"]), project["sounds"], target, formats, flags)
 
 
@@ -558,10 +568,14 @@ func _validate(flags: Dictionary, positional: PackedStringArray) -> int:
 	var report: Array[String]
 	if project["kind"] == "song":
 		var song: ChipSong = project["song"]
-		report = TargetReport.lines(target, true, song, ExportJob.arrange(target, song, project.get("gameboy", {})), {})
+		var gameboy: Dictionary = project.get("gameboy", {})
+		if flags.has("card"):
+			gameboy = gameboy.merged({"card": str(flags["card"]).to_lower()}, true)
+		report = TargetReport.lines(target, true, song, ExportJob.arrange(target, song, gameboy), {}, str(gameboy.get("card", PcCards.DEFAULT)))
 		_report["title"] = song.get_title()
 	else:
-		report = TargetReport.lines(target, false, null, null, project["sounds"])
+		var kit_card := str(flags.get("card", project.get("card", ""))).to_lower()
+		report = TargetReport.lines(target, false, null, null, project["sounds"], kit_card if kit_card != "" else PcCards.DEFAULT)
 	_report["target"] = target
 	_report["chip_report"] = _report_dict(report)
 	_say_human("%s is valid. For %s:" % [positional[0], target])
@@ -698,6 +712,7 @@ func _usage() -> String:
 		"  --structure, --energy, --loop/--no-loop, --intro/--no-intro, --outro/--no-outro, --seed,",
 		"  --engine chip|auto|analog|fm|wavetable|sampled, --layer-engine Layer:engine (repeatable),",
 		"  --settings file.json (flags override it).",
+		"For --target pc: --card adlib|sb|sbpro|sb16 picks the sound card (default adlib).",
 		"Output: --format json,plugin,wav,stems,midi,console,project (default: json,plugin,wav,console,project),",
 		"  --out folder, --name prefix, --loops n.",
 		"Everywhere: --json for a machine-readable report (--report file.json writes it to a file), --strict to fail when the music does not fit a",

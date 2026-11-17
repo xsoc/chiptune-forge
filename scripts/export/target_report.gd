@@ -22,9 +22,12 @@ static var _vgm_sizes := {}
 
 ## The report lines for [param target]: for the song in Music mode
 ## ([param arranged] is the song arranged for the target, or null for
-## "modern"), or for [param sounds] in Sound FX mode.
-static func lines(target: String, music: bool, song: ChipSong, arranged: Variant, sounds: Dictionary) -> Array[String]:
+## "modern"), or for [param sounds] in Sound FX mode. [param card] is the
+## "pc" target's sound card.
+static func lines(target: String, music: bool, song: ChipSong, arranged: Variant, sounds: Dictionary, card := PcCards.DEFAULT) -> Array[String]:
 	match target:
+		"pc":
+			return _pc(music, arranged, sounds, card)
 		"gameboy":
 			return _gameboy(music, arranged, sounds)
 		"nes":
@@ -324,3 +327,40 @@ static func _channel_has_notes(song: ChipSong, channel: int) -> bool:
 static func _clock(song: ChipSong, step: int) -> String:
 	var s := int(step * song.get_step_seconds())
 	return "%d:%02d" % [s / 60, s % 60]
+
+
+static func _pc(music: bool, arranged: Variant, sounds: Dictionary, card: String) -> Array[String]:
+	var lines: Array[String] = [""]
+	if music:
+		var opl: OplSong = arranged
+		if opl == null:
+			return lines
+		var recorded := OplWriter.record(opl)
+		var dro := OplWriter.dro_bytes(recorded, opl.chip).size()
+		var melodic := 0
+		for v in opl.layout:
+			if str(v["drum"]) == "":
+				melodic += 1
+		var drums := " and the rhythm mode's drums" if melodic < opl.layout.size() else ""
+		lines.append("[color=#52d1c0]Fits[/color] after arranging for %d of the %s's FM voices%s: a %.1f KB DRO file." % [melodic, PcCards.name_of(opl.card), drums, dro / 1024.0])
+		for line in opl.report:
+			lines.append("•  " + line)
+		return lines
+	if card == "adlib":
+		lines.append("[color=#52d1c0]Fits.[/color] Each sound plays as FM on channel 2, in place of the harmony, which comes back when it ends.")
+	else:
+		lines.append("[color=#52d1c0]Fits.[/color] Each sound plays as a sample on the %s's DAC, over the FM music." % PcCards.name_of(card))
+	var ids := sounds.keys()
+	ids.sort()
+	var total := 0
+	for id in ids:
+		var pc_sfx := PcSfx.from_sfx(sounds[id], card, str(id))
+		if pc_sfx.is_fm():
+			lines.append("•  %s: %.2f s, FM %s" % [id, pc_sfx.seconds(), "noise" if pc_sfx.noisy else "square"])
+		else:
+			var size := pc_sfx.samples.size() * pc_sfx.bits / 8
+			total += size
+			lines.append("•  %s: %.2f s, %.1f KB at %d Hz, %d-bit" % [id, pc_sfx.seconds(), size / 1024.0, pc_sfx.rate, pc_sfx.bits])
+	if total > 0:
+		lines.append("All the samples take %.1f KB of memory." % (total / 1024.0))
+	return lines

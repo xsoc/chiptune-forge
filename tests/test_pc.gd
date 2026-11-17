@@ -1,0 +1,170 @@
+extends "res://tests/test_case.gd"
+
+
+func _song(style := "rock", seed_text := "opl") -> ChipSong:
+	var s := SongSettings.new()
+	s.vibes.assign(["happy"])
+	s.style = style
+	s.seed_text = seed_text
+	s.length_seconds = 30
+	return SongGenerator.generate(s)
+
+
+func _peak(out: PackedFloat32Array) -> float:
+	var peak := 0.0
+	for v in out:
+		peak = maxf(peak, absf(v))
+	return peak
+
+
+func _crossings(out: PackedFloat32Array) -> int:
+	var count := 0
+	for i in range(1, out.size()):
+		if (out[i - 1] < 0.0) != (out[i] < 0.0):
+			count += 1
+	return count
+
+
+func test_frequency_numbers() -> void:
+	var bf := OplSong.fnum_of(440.0)
+	var hz: float = bf[1] * Opl.CHIP_RATE / pow(2.0, 20 - bf[0])
+	check(absf(hz - 440.0) < 1.0, "A4's block and F-number play 440 Hz (%.2f)" % hz)
+	check(bf[1] < 1024, "the F-number fits 10 bits")
+	check_eq(OplSong.fnum_of(220.0)[0], bf[0] - 1, "an octave down is one block lower")
+	check_eq(OplSong.level_atten(15), 0, "full level is no attenuation")
+	check(OplSong.level_atten(1) > OplSong.level_atten(8), "quieter levels attenuate more")
+
+
+func test_chip_plays_a_sine() -> void:
+	var chip := Opl.new(44100.0)
+	chip.write(0, 0x01, 0x20)
+	var patch := {"fb": 0, "cnt": 0, "mod": OplPatches.op(1, 63, 15, 0, 0, 15), "car": OplPatches.op(1, 0, 15, 0, 0, 15)}
+	for w in OplSong.patch_registers(0, patch):
+		chip.write(0, w[0], w[1])
+	var bf := OplSong.fnum_of(440.0)
+	chip.write(0, 0xA0, bf[1] & 0xFF)
+	chip.write(0, 0xB0, 0x20 | (bf[0] << 2) | (bf[1] >> 8))
+	var left := PackedFloat32Array()
+	var right := PackedFloat32Array()
+	left.resize(44100)
+	right.resize(44100)
+	chip.render(left, right, 0, 44100)
+	var crossings := _crossings(left.slice(4410))
+	check(absi(crossings - 794) < 12, "a 440 Hz sine (%d crossings in 0.9 s)" % crossings)
+	check(_peak(left) > 0.05, "loud enough")
+	chip.write(0, 0xB0, (bf[0] << 2) | (bf[1] >> 8))
+	left.fill(0.0)
+	right.fill(0.0)
+	chip.render(left, right, 0, 44100)
+	check(_peak(left.slice(22050)) < 0.001, "keying off lets the fast release die away")
+
+
+func test_rhythm_mode_drums_sound() -> void:
+	var opl := OplArranger.arrange(_song(), "adlib")
+	check(opl.rhythm_on(0), "the AdLib arrangement uses the rhythm mode")
+	var drums := 0
+	for v in opl.layout:
+		if str(v["drum"]) != "":
+			drums += 1
+	check_eq(drums, 5, "five drum parts")
+	check_eq(opl.layout.size(), 11, "six melodic parts and five drums")
+
+
+func test_arrangements_for_each_card() -> void:
+	var song := _song()
+	for card in PcCards.CARDS:
+		var opl := OplArranger.arrange(song, card)
+		check_eq(opl.card, card, card)
+		check_eq(opl.chip, PcCards.chip_of(card), "%s chip" % card)
+		check(opl.note_count() > 50, "%s has the song's notes (%d)" % [card, opl.note_count()])
+		check(not opl.report.is_empty(), "%s reports what it did" % card)
+		var seq := OplSequencer.new(opl, 22050, song.data["channels"].size())
+		var buf := seq.render(22050 * 3)
+		var peak := 0.0
+		for v in buf:
+			peak = maxf(peak, absf(v.x))
+		check(peak > 0.05 and peak <= 1.0, "%s plays (peak %.2f)" % [card, peak])
+
+
+func test_arranging_is_deterministic() -> void:
+	var a := OplWriter.dro_bytes(OplWriter.record(OplArranger.arrange(_song(), "sb16")), "opl3")
+	var b := OplWriter.dro_bytes(OplWriter.record(OplArranger.arrange(_song(), "sb16")), "opl3")
+	check(a == b, "the same song gives the same DRO file")
+
+
+func test_file_formats() -> void:
+	var opl := OplArranger.arrange(_song(), "adlib")
+	var rec := OplWriter.record(opl)
+	check(rec["frames"].size() > 70 * 20, "about 30 s of frames (%d)" % rec["frames"].size())
+	var imf := OplWriter.imf_bytes(rec, "Test")
+	var length := imf.decode_u16(0)
+	check(length > 0 and length % 4 == 0, "IMF type 1 starts with the data length")
+	check_eq(imf[length + 2], 0x1A, "and ends with the footer tag")
+	check_eq(imf.decode_u32(2), 0, "the first record is empty, as players expect")
+	var dro := OplWriter.dro_bytes(rec, "opl2")
+	check_eq(dro.slice(0, 8).get_string_from_ascii(), "DBRAWOPL", "DRO signature")
+	check_eq(dro.decode_u16(8), 2, "DRO version 2")
+	check_eq(dro[20], 0, "hardware type OPL2")
+	check_eq(OplWriter.dro_bytes(OplWriter.record(OplArranger.arrange(_song(), "sbpro")), "dual_opl2")[20], 1, "dual OPL2")
+	check_eq(OplWriter.dro_bytes(OplWriter.record(OplArranger.arrange(_song(), "sb16")), "opl3")[20], 2, "OPL3")
+	var vgm := OplWriter.vgm_bytes(rec, "opl2", "Test")
+	check_eq(vgm.slice(0, 4).get_string_from_ascii(), "Vgm ", "VGM signature")
+	check_eq(vgm.decode_u32(0x50), 3579545, "YM3812 clock")
+	check_eq(vgm.decode_u32(4) + 4, vgm.size(), "the end-of-file offset matches")
+	var vgm3 := OplWriter.vgm_bytes(OplWriter.record(OplArranger.arrange(_song(), "sb16")), "opl3", "Test")
+	check_eq(vgm3.decode_u32(0x5C), 14318180, "YMF262 clock")
+
+
+func test_sound_effects_for_each_card() -> void:
+	var sfx := SfxGenerator.make_sfx(Catalog.get_default().get_sfx_preset("coin"), 3)
+	var noisy := SfxGenerator.make_sfx(Catalog.get_default().get_sfx_preset("explosion"), 3)
+	var adlib := PcSfx.from_sfx(sfx, "adlib")
+	check(adlib.is_fm(), "the AdLib plays effects as FM")
+	check(_peak(adlib.render(22050)) > 0.05, "and it sounds")
+	check(PcSfx.from_sfx(noisy, "adlib").noisy, "an explosion uses the noisy patch")
+	check(adlib.opl_frames().size() == adlib.volume.size() + 1, "a frame per 70th of a second, then key off")
+	var sb := PcSfx.from_sfx(sfx, "sb")
+	check_eq(sb.rate, 11025, "the Sound Blaster plays samples at 11 kHz")
+	var voc := sb.voc_bytes()
+	check_eq(voc.slice(0, 19).get_string_from_ascii(), "Creative Voice File", "VOC signature")
+	check_eq(voc[26], 1, "a sound data block")
+	check_eq(voc[30], 256 - roundi(1000000.0 / 11025), "with the 11 kHz time constant")
+	check_eq(voc[voc.size() - 1], 0, "and a terminator")
+	var sb16 := PcSfx.from_sfx(sfx, "sb16")
+	check_eq(sb16.bits, 16, "16-bit on the Sound Blaster 16")
+	var wav := sb16.wav_bytes()
+	check_eq(wav.decode_u16(34), 16, "a 16-bit WAV")
+	check_eq(wav.decode_u32(24), 22050, "at 22 kHz")
+
+
+func test_export_jobs() -> void:
+	var song := _song()
+	var job := ExportJob.for_target_song("pc", song, {"prefix": "tune", "wav": false, "card": "adlib"}, null)
+	job.run()
+	for path in ["pc/tune.wlf", "pc/tune.dro", "pc/tune.vgm", "pc/README.txt", "README.txt"]:
+		check(job.files.has(path), "AdLib export has %s" % path)
+	job = ExportJob.for_target_song("pc", song, {"prefix": "tune", "wav": false, "card": "sb16"}, null)
+	job.run()
+	check(not job.files.has("pc/tune.wlf"), "no IMF for the OPL3")
+	check(job.files.has("pc/tune.dro") and job.files.has("pc/tune.vgm"), "DRO and VGM for the OPL3")
+	var sounds := {"coin": SfxGenerator.make_sfx(Catalog.get_default().get_sfx_preset("coin"), 1)}
+	job = ExportJob.for_target_sfx("pc", sounds, "kit", {"card": "sbpro", "wav": true})
+	job.run()
+	check(job.files.has("pc/coin.voc"), "a VOC for the Sound Blaster Pro")
+	check(job.files.has("audio/coin.wav"), "and a WAV of it")
+	job = ExportJob.for_target_sfx("pc", sounds, "kit", {"card": "adlib", "wav": false})
+	job.run()
+	check(job.files.has("pc/coin.dro") and job.files.has("pc/coin.wlf"), "FM sound files for the AdLib")
+
+
+func test_report_and_project_keep_the_card() -> void:
+	var song := _song()
+	var opl := OplArranger.arrange(song, "sbpro")
+	var report := TargetReport.lines("pc", true, song, opl, {}, "sbpro")
+	check(TargetReport.fits(report), "the arrangement fits")
+	check("\n".join(report).contains("Sound Blaster Pro"), "the report names the card")
+	var text := ProjectFile.for_song(song, SongSettings.new(), "pc", {"card": "sbpro"})
+	var project := ProjectFile.parse(text)
+	check_eq(project["gameboy"].get("card"), "sbpro", "the project remembers the card")
+	var kit := ProjectFile.parse(ProjectFile.for_kit("k", {}, "pc", "sb16"))
+	check_eq(kit["card"], "sb16", "and so does a kit")

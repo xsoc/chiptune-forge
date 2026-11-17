@@ -43,8 +43,10 @@ var sfx_recent: Array = []
 var kit := ChipSfxKit.new()
 
 ## Export target id from the catalog: "modern", "gameboy", "nes", "sms",
-## "genesis", "snes", "pce", "gba", "msx" or "c64".
+## "genesis", "snes", "pce", "gba", "msx", "c64" or "pc".
 var target := "modern"
+## The sound card the "pc" target plays and exports for (see [PcCards]).
+var pc_card := PcCards.DEFAULT
 ## Game Boy arranger options: sfx_channel (-1 none, 1 Pulse 2, 3 noise) and
 ## sfx_free (keep that channel free of music).
 var gameboy_options := {"sfx_channel": -1, "sfx_free": false}
@@ -66,6 +68,8 @@ var _sid_song: SidSong
 var _sid_key := []
 var _gba_song: GbaSong
 var _gba_key := []
+var _pc_song: Variant
+var _pc_key := []
 
 ## True while the A/B switch plays the song on the classic chip synth.
 var ab_classic := false:
@@ -90,6 +94,12 @@ func set_target(id: String) -> void:
 	if id != target:
 		target = id
 		target_changed.emit(id)
+
+
+func set_pc_card(card: String) -> void:
+	if card != pc_card and PcCards.is_card(card):
+		pc_card = card
+		target_changed.emit(target)
 
 
 func set_gameboy_option(key: String, value: Variant) -> void:
@@ -206,6 +216,18 @@ func get_gba_song() -> GbaSong:
 	return _gba_song
 
 
+## The current song arranged for the current PC sound card, cached until
+## the song or the card changes. Null when there is no song.
+func get_pc_song() -> Variant:
+	if song == null:
+		return null
+	var key := [song.get_instance_id(), song.to_json().hash(), pc_card]
+	if _pc_song == null or key != _pc_key:
+		_pc_song = ExportJob.arrange("pc", song, {"card": pc_card})
+		_pc_key = key
+	return _pc_song
+
+
 ## The current song arranged for the current target (cached), or null on
 ## the modern target.
 func get_arranged_song() -> Variant:
@@ -228,13 +250,15 @@ func get_arranged_song() -> Variant:
 			return get_sid_song()
 		"gba":
 			return get_gba_song()
+		"pc":
+			return get_pc_song()
 	return null
 
 
 ## True when previews play through an emulated console instead of the
 ## modern synth.
 func is_console_target() -> bool:
-	return target in ["gameboy", "nes", "sms", "genesis", "snes", "pce", "gba", "msx", "c64"]
+	return target in ["gameboy", "nes", "sms", "genesis", "snes", "pce", "gba", "msx", "c64", "pc"]
 
 
 func can_make_music() -> bool:
