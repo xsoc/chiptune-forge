@@ -249,6 +249,23 @@ back when a sound ends.
 The planned Arkos Tracker 2 export was replaced by this player: its `.aks`
 format is not documented, and the data here can be checked end to end.
 
+## Game Boy Advance export
+
+Game Boy Advance exports are Impulse Tracker modules for
+[Maxmod](https://maxmod.org), devkitPro's sound library, which mixes
+sampled channels into the GBA's two Direct Sound PCM channels. The
+arrangement is the SNES one (lead, harmony, arpeggio, bass, two pad voices
+and drums on sampled instruments, channel 8 left free for sound effects),
+with 8-bit samples, no echo, and ticks at Impulse Tracker's own rate
+(tempo x 0.4 a second), as Maxmod plays them. The preview (`GbaPlayer`, on
+`GbaMixer`) follows the same row logic as the SNES preview and mixes the
+way Maxmod does: nearest-sample playback of 8-bit samples at 16 kHz.
+
+A song export's `gba/` folder holds `audio/<name>.it`, a `Makefile` (mmutil
+builds the soundbank, devkitARM links libgba and Maxmod) and a `main.c` that
+plays the song. A sound kit export's `gba/audio/` folder holds one 8-bit,
+16 kHz WAV per sound for the same soundbank, played with `mmEffect`.
+
 ## Commodore 64 export
 
 Commodore 64 exports are PSID files (`.sid`) holding Chiptune Forge's own

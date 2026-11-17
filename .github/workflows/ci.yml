@@ -535,9 +535,57 @@ jobs:
           name: c64-examples
           path: c64_examples/
 
+  gba:
+    name: Game Boy Advance example built with devkitARM and Maxmod
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Godot, devkitARM, libopenmpt and stable-retro
+        run: |
+          set -e
+          mkdir -p "$RUNNER_TEMP/tools"
+          cd "$RUNNER_TEMP/tools"
+          curl -sSLo godot.zip "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+          unzip -q godot.zip && mv "Godot_v${GODOT_VERSION}-stable_linux.x86_64" godot
+          echo "$RUNNER_TEMP/tools" >> $GITHUB_PATH
+          docker pull -q devkitpro/devkitarm
+          docker image inspect devkitpro/devkitarm --format 'devkitARM image {{index .RepoDigests 0}}'
+          sudo apt-get update -qq && sudo apt-get install -y -qq openmpt123 > /dev/null
+          pip install -q stable-retro
+      - name: Export the example projects
+        run: |
+          godot --headless --path . --import < /dev/null
+          godot --headless --path . -s tools/gba_examples.gd -- "$PWD/gba_examples" < /dev/null
+      - name: Build the example ROMs with devkitARM and Maxmod
+        run: |
+          set -e
+          chmod -R a+rwX gba_examples
+          for dir in project sfx; do
+            docker run --rm -v "$PWD/gba_examples/$dir:/src" -w /src devkitpro/devkitarm make
+            ls -l gba_examples/$dir/*.gba
+          done
+      - name: Play the module and the ROMs
+        run: |
+          set -e
+          cd gba_examples
+          # libopenmpt playing the module should rise and fall with the
+          # app's own preview.
+          openmpt123 --render --force --no-float --samplerate 44100 song_happy_platformer.it > /dev/null
+          python3 ../tools/md_sound_check.py song_happy_platformer_preview.wav song_happy_platformer.it.wav --min-corr 0.6
+          # Maxmod playing it on the console (mGBA core).
+          python3 ../tools/md_rom_audio.py project/*.gba rom.wav 16
+          python3 ../tools/md_sound_check.py song_happy_platformer_preview.wav rom.wav --align
+          python3 ../tools/md_rom_audio.py sfx/*.gba rom_sfx.wav 12
+          python3 ../tools/md_sound_check.py song_happy_platformer_preview.wav rom_sfx.wav --align --min-corr 0.5
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: gba-examples
+          path: gba_examples/
+
   export:
     name: Export ${{ matrix.preset }}
-    needs: [test, gameboy, nes, sms, genesis, snes, pce, msx, c64]
+    needs: [test, gameboy, nes, sms, genesis, snes, pce, msx, c64, gba]
     runs-on: ubuntu-latest
     container:
       image: barichello/godot-ci:4.5.1

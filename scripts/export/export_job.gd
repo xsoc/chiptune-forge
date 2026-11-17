@@ -318,6 +318,85 @@ static func for_md_sfx(sounds: Dictionary, kit_name: String, options: Dictionary
 	return job
 
 
+## Export for a song arranged for the Game Boy Advance: an Impulse Tracker
+## module with 8-bit samples for Maxmod, with a devkitARM project that plays
+## it, plus optional WAV (rendered through the emulated mixer) and MIDI of
+## the arranged parts. Options: prefix, wav, loops, midi, console.
+static func for_gba_song(gba: GbaSong, options: Dictionary) -> ExportJob:
+	var job := ExportJob.new()
+	var song := gba.source
+	var prefix := sanitize(str(options.get("prefix", gba.title)))
+	if bool(options.get("console", true)):
+		job._tasks.append(func() -> bool:
+			job.files["gba/audio/%s.it" % prefix] = GbaWriter.module_bytes(gba)
+			job.files["gba/Makefile"] = GbaWriter.makefile(prefix).to_utf8_buffer()
+			job.files["gba/main.c"] = GbaWriter.main_c(gba.title, ItWriter.module_id(prefix + ".it")).to_utf8_buffer()
+			job.files["gba/README.txt"] = GbaWriter.readme(prefix, gba).to_utf8_buffer()
+			return true)
+	if bool(options.get("midi", false)):
+		job._tasks.append(func() -> bool:
+			job.files["midi/%s.mid" % prefix] = MidiWriter.encode(song)
+			return true)
+	if bool(options.get("wav", true)):
+		job._r_nes = gba
+		job._queue_render(song, "audio/%s.wav" % prefix, int(options.get("loops", 1)), [])
+	job._tasks.append(func() -> bool:
+		var meta: Dictionary = song.data.get("meta", {})
+		job.files["README.txt"] = "\n".join([
+			"%s, arranged for the Game Boy Advance" % gba.title,
+			"Made with Chiptune Forge. Seed %s, %s, %d BPM on the console." % [meta.get("seed", ""), meta.get("key", ""), int(gba.get_bpm())],
+			"",
+			str(meta.get("license", "")),
+			"",
+			"gba/      An Impulse Tracker module for Maxmod (devkitPro), with a Makefile and\n          main.c that build a ROM playing it. See gba/README.txt." if bool(options.get("console", true)) else "",
+			"audio/    WAV, 44.1 kHz, 16-bit, rendered through an emulation of Maxmod's mixer." if bool(options.get("wav", true)) else "",
+			"midi/     The arranged parts, one track each." if bool(options.get("midi", false)) else "",
+			"",
+			"Arrangement:",
+			"\n".join(Array(gba.report).map(func(line: String) -> String: return "  " + line)),
+		]).to_utf8_buffer()
+		return true)
+	return job
+
+
+## Export for sound effects on the Game Boy Advance: one 8-bit, 16 kHz WAV
+## per sound for Maxmod's soundbank, and WAVs of how each sounds.
+static func for_gba_sfx(sounds: Dictionary, kit_name: String, options: Dictionary) -> ExportJob:
+	var job := ExportJob.new()
+	var prefix := sanitize(kit_name)
+	var converted: Array = []
+	var ids := sounds.keys()
+	ids.sort()
+	for id in ids:
+		converted.append(GbaSfx.from_sfx(sounds[id], sanitize(str(id))))
+	if bool(options.get("console", true)):
+		job._tasks.append(func() -> bool:
+			for gba_sfx: GbaSfx in converted:
+				job.files["gba/audio/%s.wav" % gba_sfx.name] = gba_sfx.wav_bytes()
+			job.files["gba/README.txt"] = GbaSfx.readme(prefix, converted).to_utf8_buffer()
+			return true)
+	if bool(options.get("wav", true)):
+		for gba_sfx in converted:
+			job._tasks.append(func() -> bool:
+				job.files["audio/%s.wav" % gba_sfx.name] = ChipAudio.encode_wav_mono(gba_sfx.render(MIX_RATE), MIX_RATE)
+				return true)
+	job._tasks.append(func() -> bool:
+		var lines: Array[String] = [
+			"Sound kit for the Game Boy Advance: %s" % prefix,
+			"Made with Chiptune Forge. You own these sounds and may use them for any purpose, including commercially.",
+			"",
+			"gba/      One 8-bit, 16 kHz WAV per sound for Maxmod's soundbank.\n          See gba/README.txt to play them over your music." if bool(options.get("console", true)) else "",
+			"audio/    One WAV per sound, 44.1 kHz, as the GBA plays it.",
+			"",
+			"Sounds:",
+		]
+		for gba_sfx: GbaSfx in converted:
+			lines.append("  %s  (%.2f s)" % [GbaSfx.symbol(gba_sfx.name), gba_sfx.seconds()])
+		job.files["README.txt"] = "\n".join(lines).to_utf8_buffer()
+		return true)
+	return job
+
+
 ## Export for a song arranged for the SNES: an Impulse Tracker module for
 ## SNESMod with a PVSnesLib project that plays it, plus optional WAV
 ## (rendered through the emulated S-DSP) and MIDI of the arranged parts.
@@ -765,6 +844,8 @@ func _queue_render(song: ChipSong, path: String, loops: int, muted: Array) -> vo
 func _start_render(song: ChipSong, path: String, loops: int, muted: Array) -> void:
 	if _r_gb:
 		_r_seq = GbSequencer.new(_r_gb, MIX_RATE)
+	elif _r_nes is GbaSong:
+		_r_seq = GbaSequencer.new(_r_nes, MIX_RATE)
 	elif _r_nes is SnesSong:
 		_r_seq = SnesSequencer.new(_r_nes, MIX_RATE)
 	elif _r_nes is PceSong:

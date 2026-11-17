@@ -35,7 +35,7 @@ var sfx_recent: Array = []
 var kit := ChipSfxKit.new()
 
 ## Export target id from the catalog: "modern", "gameboy", "nes", "sms",
-## "genesis", "snes", "pce", "msx" or "c64".
+## "genesis", "snes", "pce", "gba", "msx" or "c64".
 var target := "modern"
 ## Game Boy arranger options: sfx_channel (-1 none, 1 Pulse 2, 3 noise) and
 ## sfx_free (keep that channel free of music).
@@ -56,6 +56,8 @@ var _ay_song: AySong
 var _ay_key := []
 var _sid_song: SidSong
 var _sid_key := []
+var _gba_song: GbaSong
+var _gba_key := []
 
 ## Saved entries: {kind, name, favourite, created, settings | sfx}.
 var library: Array = []
@@ -177,10 +179,22 @@ func get_sid_song() -> SidSong:
 	return _sid_song
 
 
+## The current song arranged for the Game Boy Advance, cached until the
+## song changes. Null when there is no song.
+func get_gba_song() -> GbaSong:
+	if song == null:
+		return null
+	var key := [song.get_instance_id(), song.to_json().hash()]
+	if _gba_song == null or key != _gba_key:
+		_gba_song = GbaArranger.arrange(song)
+		_gba_key = key
+	return _gba_song
+
+
 ## True when previews play through an emulated console instead of the
 ## modern synth.
 func is_console_target() -> bool:
-	return target in ["gameboy", "nes", "sms", "genesis", "snes", "pce", "msx", "c64"]
+	return target in ["gameboy", "nes", "sms", "genesis", "snes", "pce", "gba", "msx", "c64"]
 
 
 func can_make_music() -> bool:
