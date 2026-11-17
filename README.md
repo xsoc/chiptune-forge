@@ -8,6 +8,14 @@ runs on phones, desktops and the web, and it exports straight into Godot.
   Blend up to three vibes, set intensity, complexity, tempo, key, form and
   length, then lock the layers you like and regenerate the rest. Tap notes
   in or out of any part on the Layers screen's note grid.
+- **Advanced mode.** Write or rework a song from single notes up: a piano
+  roll with draw, select and erase tools and a velocity lane; copy, paste,
+  duplicate, transpose and quantize bars; add, copy, repeat, reorder,
+  resize and rename sections and set the loop; or start from a blank song.
+  Play live on the on-screen keys, the computer keyboard or a MIDI keyboard
+  (desktop and Web MIDI), record takes into any part while the song loops,
+  or enter notes one at a time. Edited songs play through the same synth and
+  export to every target. See [docs/advanced.md](docs/advanced.md).
 - **Synth engines.** Besides the classic chip sound, songs can play on an
   analog-style subtractive synth, two-operator FM, a wavetable synth or
   samples made in the app (plucked strings, electric piano, strings, brass
@@ -144,6 +152,7 @@ described in [docs/format.md](docs/format.md).
 | `autoload/` | `AppState` (settings, current song, library) and `AudioService` (preview players). |
 | `scenes/` | One scene per screen and per reusable control. |
 | `scripts/generation/` | The generators. Plain `RefCounted` code with no scene dependencies. |
+| `scripts/editing/` | Note, bar and section editing, live input, the live synth and the take recorder. |
 | `scripts/export/` | WAV, MIDI and zip export. |
 | `scripts/targets/gameboy/` | Game Boy target: sound chip emulation, hUGEDriver player, arranger, SFX conversion and C writer. |
 | `scripts/targets/nes/` | NES target: 2A03 emulation, a player that follows FamiStudio's sound engine, arranger, SFX conversion, the FamiStudio text writer and the ca65 writer for FamiStudio's sound engine. |
