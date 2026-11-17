@@ -419,9 +419,72 @@ jobs:
             pce_examples/
             !pce_examples/**/*.s
 
+  msx:
+    name: MSX and Spectrum examples built with Pasmo
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: ValleyBell/libvgm
+          path: libvgm
+      - name: Install Godot and Pasmo, and build libvgm's vgm2wav
+        run: |
+          set -e
+          sudo apt-get install -y -q pasmo > /dev/null
+          mkdir -p "$RUNNER_TEMP/tools"
+          cd "$RUNNER_TEMP/tools"
+          curl -sSLo godot.zip "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+          unzip -q godot.zip && mv "Godot_v${GODOT_VERSION}-stable_linux.x86_64" godot
+          cmake -S "$GITHUB_WORKSPACE/libvgm" -B libvgm-build -DCMAKE_BUILD_TYPE=Release \
+            -DBUILD_LIBAUDIO=OFF -DBUILD_PLAYER=OFF -DBUILD_TESTS=OFF -DUSE_SANITIZERS=OFF > /dev/null
+          cmake --build libvgm-build -j4 --target vgm2wav > /dev/null
+          cp "$(find libvgm-build -name vgm2wav -type f -perm -u+x | head -1)" .
+          echo "$RUNNER_TEMP/tools" >> $GITHUB_PATH
+          touch "$GITHUB_WORKSPACE/libvgm/.gdignore"
+      - name: Export the example projects
+        run: |
+          godot --headless --path . --import < /dev/null
+          godot --headless --path . -s tools/msx_examples.gd -- "$PWD/msx_examples" < /dev/null
+      - name: Build the MSX cartridges and Spectrum tapes with Pasmo
+        run: |
+          set -e
+          for dir in msx_examples/project msx_examples/sfx; do
+            make -C "$dir"
+            ls -l "$dir"/*.rom "$dir"/*.tap
+          done
+      - name: Run the Z80 player and check every frame
+        run: |
+          set -e
+          cd msx_examples
+          for dir in project sfx; do
+            for machine in msx zx; do
+              (cd $dir && pasmo ${machine}_main.asm ../${dir}_${machine}.bin ../${dir}_${machine}.sym)
+            done
+          done
+          expected=song_happy_platformer_expected
+          python3 ../tools/ay_check.py msx project_msx.bin project_msx.sym ${expected}_msx.bin
+          python3 ../tools/ay_check.py msx project_msx.bin project_msx.sym ${expected}_msx.bin --60hz
+          python3 ../tools/ay_check.py zx project_zx.bin project_zx.sym ${expected}_zx.bin
+          python3 ../tools/ay_check.py msx sfx_msx.bin sfx_msx.sym ${expected}_msx.bin --sfx sfx/sfx_msx.bin
+          python3 ../tools/ay_check.py zx sfx_zx.bin sfx_zx.sym ${expected}_zx.bin --sfx sfx/sfx_zx.bin
+      - name: Play the VGM with libvgm
+        run: |
+          set -e
+          cd msx_examples
+          # libvgm's AY-3-8910 core playing our VGM should rise and fall with
+          # the app's own preview.
+          vgm2wav --loops 1 song_happy_platformer.vgm libvgm.wav > /dev/null
+          python3 ../tools/md_sound_check.py song_happy_platformer_preview.wav libvgm.wav
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: msx-examples
+          path: msx_examples/
+
   export:
     name: Export ${{ matrix.preset }}
-    needs: [test, gameboy, nes, sms, genesis, snes, pce]
+    needs: [test, gameboy, nes, sms, genesis, snes, pce, msx]
     runs-on: ubuntu-latest
     container:
       image: barichello/godot-ci:4.5.1

@@ -7,11 +7,20 @@ script = ExtResource("1")
 id = "msx"
 display_name = "MSX / ZX Spectrum 128"
 chip_name = "AY-3-8910"
-description = "3 square, noise, hardware envelope. Exports Arkos Tracker 2."
+description = "3 square channels and a noise generator. Exports data and a small MIT Z80 player, with MSX cartridge and Spectrum tape projects, and VGM."
 phase = 5
-available = false
+available = true
 stereo = false
 echo = false
 max_voices = 3
-voices = Array[Dictionary]([])
-export_formats = PackedStringArray("aks")
+voices = Array[Dictionary]([{
+"name": "Channel A",
+"waves": ["square", "noise"]
+},{
+"name": "Channel B",
+"waves": ["square", "noise"]
+},{
+"name": "Channel C",
+"waves": ["square", "noise"]
+}])
+export_formats = PackedStringArray("asm", "bin", "vgm", "wav")
