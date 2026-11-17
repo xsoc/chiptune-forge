@@ -125,3 +125,41 @@ func test_editor_on_the_layers_screen() -> void:
 	state.settings = old_settings
 	state.song = old_song
 	state.locked_layers = old_locks
+
+
+## Edited notes cannot be made again from the settings, so the library keeps
+## the song, and it still arranges for every target after a trip through
+## JSON (where every number becomes a float).
+func test_library_keeps_edited_notes() -> void:
+	var state: Node = Engine.get_main_loop().root.get_node("AppState")
+	var old_settings: SongSettings = state.settings
+	var old_song: ChipSong = state.song
+	var old_locks: PackedStringArray = state.locked_layers.duplicate()
+	var old_library: Array = state.library.duplicate(true)
+	state.settings = _settings("12")
+	state.generate()
+	state.save_song_to_library()
+	check(not state.library[0].has("song"), "an unedited song is kept as its settings")
+	state.edit_song("Bass", func(song: ChipSong) -> void:
+		PatternEdit.toggle(song, 0, GenContext.Channel.BASS, 2, 33, 2))
+	var edited: String = state.song.to_json()
+	state.save_song_to_library()
+	check(state.library[0].has("song"), "an edited song is kept whole")
+	state.library = JSON.parse_string(JSON.stringify(state.library))
+	state.generate()
+	state.open_library_entry(0)
+	check_eq(JSON.stringify(JSON.parse_string(state.song.to_json())), JSON.stringify(JSON.parse_string(edited)), "the edited notes come back")
+	for arrange in [GbArranger.arrange.bind(state.song, {}), NesArranger.arrange.bind(state.song), SmsArranger.arrange.bind(state.song),
+			MdArranger.arrange.bind(state.song), SnesArranger.arrange.bind(state.song), PceArranger.arrange.bind(state.song),
+			AyArranger.arrange.bind(state.song), SidArranger.arrange.bind(state.song), GbaArranger.arrange.bind(state.song)]:
+		check(arrange.call() != null, "arranges")
+	var frames := ChipSongSequencer.new(state.song).render(44100)
+	var peak := 0.0
+	for f in frames:
+		peak = maxf(peak, absf(f.x))
+	check(peak > 0.01, "plays")
+	state.library = old_library
+	state._save_library()
+	state.settings = old_settings
+	state.song = old_song
+	state.locked_layers = old_locks
