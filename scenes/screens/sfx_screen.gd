@@ -165,8 +165,6 @@ func _on_sfx_changed(sfx: ChipSfx) -> void:
 		where = "The Game Boy Advance plays it as an 8-bit sample with Maxmod, over the music."
 	elif AppState.target == "pc":
 		match AppState.pc_card:
-			"speaker":
-				where = "The PC speaker plays it in place of the music while it lasts."
 			"tandy":
 				where = "The Tandy 1000 plays it on Square 3 or the noise channel, over the music."
 			"gus":

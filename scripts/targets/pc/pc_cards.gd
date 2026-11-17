@@ -2,19 +2,12 @@ class_name PcCards
 extends RefCounted
 ## The PC sound cards of the late 1980s to the mid 1990s that the "pc"
 ## target can play and export for. Each card's music goes through one of
-## the arrangers ([method arrange] picks): [SpeakerArranger] for the PC
-## speaker, [SmsArranger] for the Tandy's SN76496 and [OplArranger] for the
-## FM cards.
+## the arrangers ([method arrange] picks): [SmsArranger] for the Tandy's
+## SN76496 and [OplArranger] for the FM cards.
 
-const CARDS: PackedStringArray = ["speaker", "tandy", "adlib", "sb", "sbpro", "sb16", "mt32", "gm", "gus"]
+const CARDS: PackedStringArray = ["tandy", "adlib", "sb", "sbpro", "sb16", "mt32", "gm", "gus"]
 const DEFAULT := "adlib"
 const INFO := {
-	"speaker": {
-		"name": "PC speaker",
-		"year": 1981,
-		"chip": "speaker",
-		"description": "The IBM PC's own speaker: one square wave from the 8253 timer, on or off. Exports C data and a small DOS player.",
-	},
 	"tandy": {
 		"name": "Tandy 1000",
 		"year": 1984,
@@ -76,7 +69,7 @@ static func name_of(card: String) -> String:
 
 ## Voices the card can sound at once, for the Layers screen's budget.
 static func voice_count(card: String) -> int:
-	return int({"speaker": 1, "tandy": 4, "adlib": 9, "sb": 9, "sbpro": 18, "sb16": 18, "mt32": 32, "gm": 24, "gus": 32}.get(card, 9))
+	return int({"tandy": 4, "adlib": 9, "sb": 9, "sbpro": 18, "sb16": 18, "mt32": 32, "gm": 24, "gus": 32}.get(card, 9))
 
 
 static func is_card(card: String) -> bool:
@@ -84,11 +77,9 @@ static func is_card(card: String) -> bool:
 
 
 ## Music export formats for a card: "imf" (OPL2 only), "dro" and "vgm";
-## "c" (data and player source) and "bin" for the PC speaker.
+## "vgm" for the Tandy, "mid" for the MIDI modules and "it" for the GUS.
 static func music_formats(card: String) -> PackedStringArray:
 	match chip_of(card):
-		"speaker":
-			return PackedStringArray(["c", "bin"])
 		"sn76496":
 			return PackedStringArray(["vgm"])
 		"la", "gm":
@@ -111,15 +102,13 @@ static func is_module(card: String) -> bool:
 
 
 ## [param song] arranged for [param card]: an [OplSong], an [SmsSong] (the
-## Tandy), a [SpeakerSong], a [ModuleSong] or a [GusSong].
+## Tandy), a [ModuleSong] or a [GusSong].
 static func arrange(song: ChipSong, card: String) -> Variant:
 	match chip_of(card):
 		"la", "gm":
 			return ModuleArranger.arrange(song, card)
 		"gf1":
 			return GusArranger.arrange(song)
-		"speaker":
-			return SpeakerArranger.arrange(song)
 		"sn76496":
 			return tandy(song)
 	return OplArranger.arrange(song, card)

@@ -866,8 +866,6 @@ static func for_pc_song(arranged: Variant, options: Dictionary) -> ExportJob:
 		return _for_module_song(arranged, options)
 	if arranged is GusSong:
 		return _for_gus_song(arranged, options)
-	if arranged is SpeakerSong:
-		return _for_speaker_song(arranged, options)
 	if arranged is SmsSong:
 		return _for_tandy_song(arranged, options)
 	var opl: OplSong = arranged
@@ -907,29 +905,6 @@ static func for_pc_song(arranged: Variant, options: Dictionary) -> ExportJob:
 			"\n".join(Array(opl.report).map(func(line: String) -> String: return "  " + line)),
 		]).to_utf8_buffer()
 		return true)
-	return job
-
-
-## The PC speaker: the song as C data and binary, the player
-## (speaker.c) and an example program for Open Watcom or Turbo C.
-static func _for_speaker_song(sp: SpeakerSong, options: Dictionary) -> ExportJob:
-	var job := ExportJob.new()
-	var song := sp.source
-	var prefix := sanitize(str(options.get("prefix", sp.title)))
-	var symbol := "song_" + PsgWriter.symbol(prefix)
-	if bool(options.get("console", true)):
-		job._tasks.append(func() -> bool:
-			var rec := SpeakerWriter.record(sp)
-			var slots: PackedInt32Array = rec["slots"]
-			job.files["pc/%s.h" % symbol] = SpeakerWriter.c_header(symbol, slots, int(rec["loop_slot"]), "%s, for the PC speaker" % sp.title).to_utf8_buffer()
-			job.files["pc/%s.bin" % symbol] = SpeakerWriter.bin_bytes(slots)
-			job.files["pc/speaker.c"] = SpeakerWriter.player_source().to_utf8_buffer()
-			job.files["pc/speaker.h"] = SpeakerWriter.player_header().to_utf8_buffer()
-			job.files["pc/main.c"] = SpeakerWriter.example_source("%s.h" % symbol, symbol, []).to_utf8_buffer()
-			job.files["pc/makefile"] = SpeakerWriter.makefile("play").to_utf8_buffer()
-			job.files["pc/README.txt"] = SpeakerWriter.readme(prefix, symbol, slots.size(), false).to_utf8_buffer()
-			return true)
-	_pc_common(job, sp, song, prefix, options, "pc/       The song as C data (%s.h) and binary, the player (speaker.c) and an example. See pc/README.txt." % symbol, "the PC speaker")
 	return job
 
 
@@ -1006,7 +981,7 @@ static func _for_module_song(mod: ModuleSong, options: Dictionary) -> ExportJob:
 	return job
 
 
-## WAV, MIDI and the top README for the speaker, Tandy and module exports.
+## WAV, MIDI and the top README for the Tandy, GUS and module exports.
 static func _pc_common(job: ExportJob, arranged: Variant, song: ChipSong, prefix: String, options: Dictionary, pc_line: String, sound: String) -> void:
 	if bool(options.get("midi", false)):
 		job._tasks.append(func() -> bool:
@@ -1048,21 +1023,7 @@ static func for_pc_sfx(sounds: Dictionary, kit_name: String, options: Dictionary
 	ids.sort()
 	for id in ids:
 		converted.append(PcSfx.from_sfx(sounds[id], card, sanitize(str(id))))
-	if bool(options.get("console", true)) and card == "speaker":
-		job._tasks.append(func() -> bool:
-			var symbols: Array = []
-			for pc_sfx: PcSfx in converted:
-				var symbol := "sfx_" + PsgWriter.symbol(pc_sfx.name)
-				job.files["pc/%s.h" % symbol] = SpeakerWriter.c_header(symbol, pc_sfx.slots, -1, "%s, for the PC speaker" % pc_sfx.name).to_utf8_buffer()
-				job.files["pc/%s.bin" % symbol] = SpeakerWriter.bin_bytes(pc_sfx.slots)
-				symbols.append(symbol)
-			job.files["pc/speaker.c"] = SpeakerWriter.player_source().to_utf8_buffer()
-			job.files["pc/speaker.h"] = SpeakerWriter.player_header().to_utf8_buffer()
-			job.files["pc/main.c"] = SpeakerWriter.example_source("", "", symbols).to_utf8_buffer()
-			job.files["pc/makefile"] = SpeakerWriter.makefile("sounds").to_utf8_buffer()
-			job.files["pc/README.txt"] = SpeakerWriter.readme(prefix, "", 0, true, symbols).to_utf8_buffer()
-			return true)
-	elif bool(options.get("console", true)):
+	if bool(options.get("console", true)):
 		for pc_sfx: PcSfx in converted:
 			job._tasks.append(func() -> bool:
 				if card == "tandy":
@@ -1325,8 +1286,6 @@ func _start_render(song: ChipSong, path: String, loops: int, muted: Array) -> vo
 		_r_seq = MdSequencer.new(_r_nes, rate)
 	elif _r_nes is SmsSong:
 		_r_seq = SmsSequencer.new(_r_nes, rate)
-	elif _r_nes is SpeakerSong:
-		_r_seq = SpeakerSequencer.new(_r_nes, rate)
 	elif _r_nes:
 		_r_seq = NesSequencer.new(_r_nes, rate)
 	else:

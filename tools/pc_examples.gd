@@ -4,10 +4,8 @@ extends SceneTree
 ## For each FM card, out_dir gets the song as IMF (.wlf, OPL2 only), DRO
 ## and VGM files and <card>_preview.wav, the app's own preview, to compare
 ## with how AdPlug plays the files; for the Tandy, tandy.vgm and its preview
-## to compare with libvgm. out_dir/speaker is the PC speaker export (C data,
-## player and example), for Open Watcom to build. Sound effects go in
-## out_dir/sfx: VOC files for the Sound Blaster and DRO files for the AdLib,
-## and out_dir/speaker_sfx is the PC speaker's sound kit export.
+## to compare with libvgm. Sound effects go in out_dir/sfx: VOC files for
+## the Sound Blaster and DRO files for the AdLib.
 
 const SONG := ["happy", "rock", "opl"]
 
@@ -39,17 +37,14 @@ func _initialize() -> void:
 			_write(out.path_join("gus_preview.wav"), ChipAudio.encode_wav_stereo(gus_seq.render(44100 * 12), 44100))
 			print("gus: written in %d ms" % (Time.get_ticks_msec() - started))
 			continue
-		if not PcCards.is_fm(card):
-			var arranged: NesSong = PcCards.arrange(song, card)
+		if card == "tandy":
+			var arranged: SmsSong = PcCards.arrange(song, card)
 			var job := ExportJob.for_target_song("pc", song, {"prefix": "tune", "wav": false, "card": card}, arranged)
 			job.run()
 			for path: String in job.files:
-				if path.begins_with("pc/"):
-					var dest := out.path_join(card).path_join(path.get_file()) if card == "speaker" else out.path_join("tandy.vgm")
-					DirAccess.make_dir_recursive_absolute(dest.get_base_dir())
-					if card == "speaker" or path.ends_with(".vgm"):
-						_write(dest, job.files[path])
-			var player: Variant = SpeakerSequencer.new(arranged, 44100) if arranged is SpeakerSong else SmsSequencer.new(arranged, 44100)
+				if path.begins_with("pc/") and path.ends_with(".vgm"):
+					_write(out.path_join("tandy.vgm"), job.files[path])
+			var player := SmsSequencer.new(arranged, 44100)
 			player.seek_step(0)
 			_write(out.path_join(card + "_preview.wav"), ChipAudio.encode_wav_stereo(player.render(44100 * 12), 44100))
 			print("%s: written in %d ms" % [card, Time.get_ticks_msec() - started])
@@ -73,16 +68,6 @@ func _initialize() -> void:
 		var fm := PcSfx.from_sfx(sfx, "adlib", id)
 		_write(out.path_join("sfx/%s.dro" % id), OplWriter.dro_bytes(fm.recorded(), "opl2"))
 		_write(out.path_join("sfx/%s_preview.wav" % id), ChipAudio.encode_wav_mono(fm.render(44100), 44100))
-	var kit := {}
-	for id in ["coin", "jump", "explosion", "laser"]:
-		if catalog.sfx_presets.has(id):
-			kit[id] = SfxGenerator.make_sfx(catalog.sfx_presets[id], 1)
-	var sfx_job := ExportJob.for_target_sfx("pc", kit, "kit", {"card": "speaker", "wav": false})
-	sfx_job.run()
-	DirAccess.make_dir_recursive_absolute(out.path_join("speaker_sfx"))
-	for path: String in sfx_job.files:
-		if path.begins_with("pc/"):
-			_write(out.path_join("speaker_sfx").path_join(path.get_file()), sfx_job.files[path])
 	print("Wrote the DOS PC examples to ", out)
 	quit()
 

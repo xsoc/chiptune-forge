@@ -321,8 +321,8 @@ $1009 with the sound's number), which the music gets back when a sound ends.
 
 ## DOS PC export
 
-The DOS PC target plays and exports for one sound card at a time: the PC
-speaker (1981), the Tandy 1000 (1984), the AdLib (1987) and Sound Blaster
+The DOS PC target plays and exports for one sound card at a time: the Tandy
+1000 (1984), the AdLib (1987) and Sound Blaster
 (1989), both a Yamaha YM3812 (OPL2), the Sound Blaster Pro (two OPL2s, one
 per speaker), the Sound Blaster 16 (a YMF262, the OPL3), and the MIDI
 modules: the Roland MT-32 (1987) and Roland's Sound Canvas (1991), and the
@@ -348,17 +348,6 @@ and the exports record those writes:
 
 CI plays every file with AdPlug's DOSBox OPL core and checks its loudness
 follows the app's preview.
-
-The PC speaker is one square wave from the timer chip, on or off. Its
-arranger keeps the NES arrangement's lead, bass and drums; the driver runs
-at 70 Hz and plays two tones a frame, each 1/140 s, so while the lead and
-bass both sound they take turns, and a drum hit takes over (noise as random
-pitches, kicks and toms as a falling tone). The export is the speaker's
-pitch as one 16-bit PIT divisor per 1/140 s (0 is silence), as a C header
-and as a binary file, with `speaker.c`, an MIT-licensed player for Open
-Watcom or Turbo C that runs the timer at 140 Hz, keeps the BIOS clock right
-and plays a sound effect over the music, and an example program. CI builds
-it with Open Watcom.
 
 The Tandy 1000's SN76496 is the Master System's chip with different white
 noise, so the Tandy uses the Master System arrangement and exports VGM

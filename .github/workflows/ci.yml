@@ -536,7 +536,7 @@ jobs:
           path: c64_examples/
 
   pc:
-    name: DOS PC music played with AdPlug, libvgm, FluidSynth and libopenmpt, player built with Open Watcom
+    name: DOS PC music played with AdPlug, libvgm, FluidSynth and libopenmpt
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -544,7 +544,7 @@ jobs:
         with:
           repository: ValleyBell/libvgm
           path: libvgm
-      - name: Install Godot, AdPlug, FFmpeg, libvgm's vgm2wav and Open Watcom
+      - name: Install Godot, AdPlug, FFmpeg, and libvgm's vgm2wav
         run: |
           set -e
           sudo apt-get update -qq
@@ -557,12 +557,7 @@ jobs:
             -DBUILD_LIBAUDIO=OFF -DBUILD_PLAYER=OFF -DBUILD_TESTS=OFF -DUSE_SANITIZERS=OFF > /dev/null
           cmake --build libvgm-build -j4 --target vgm2wav > /dev/null
           cp "$(find libvgm-build -name vgm2wav -type f -perm -u+x | head -1)" .
-          mkdir -p watcom
-          curl -sSL https://github.com/open-watcom/open-watcom-v2/releases/download/Current-build/ow-snapshot.tar.xz | tar -xJ -C watcom
           echo "$RUNNER_TEMP/tools" >> $GITHUB_PATH
-          echo "$RUNNER_TEMP/tools/watcom/binl64" >> $GITHUB_PATH
-          echo "WATCOM=$RUNNER_TEMP/tools/watcom" >> $GITHUB_ENV
-          echo "INCLUDE=$RUNNER_TEMP/tools/watcom/h" >> $GITHUB_ENV
       - name: Export the examples
         run: |
           godot --headless --path . --import < /dev/null
@@ -600,12 +595,6 @@ jobs:
           for card in gm mt32; do
             fluidsynth -ni -F "$PWD/$card.wav" -r 44100 /usr/share/sounds/sf2/FluidR3_GM.sf2 "$card.mid" > /dev/null
             python3 ../tools/md_sound_check.py "${card}_preview.wav" "$card.wav" --align --min-corr 0.3
-          done
-      - name: Build the PC speaker player and examples with Open Watcom
-        run: |
-          set -e
-          for dir in pc_examples/speaker pc_examples/speaker_sfx; do
-            (cd "$dir" && wcl -q -bt=dos -ml -fe=play.exe main.c speaker.c && ls -l play.exe)
           done
       - name: Decode the Sound Blaster effects
         run: |

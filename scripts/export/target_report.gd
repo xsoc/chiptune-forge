@@ -331,16 +331,6 @@ static func _clock(song: ChipSong, step: int) -> String:
 
 static func _pc(music: bool, arranged: Variant, sounds: Dictionary, card: String) -> Array[String]:
 	var lines: Array[String] = [""]
-	if music and arranged is SpeakerSong:
-		var sp: SpeakerSong = arranged
-		var rec := SpeakerWriter.record(sp)
-		var size := (rec["slots"] as PackedInt32Array).size() * 2
-		lines.append("[color=#52d1c0]Fits[/color] after arranging for one square wave: %.1f KB of data for the player." % (size / 1024.0))
-		if size > 60000:
-			lines.append("[color=%s]Over 60 KB:[/color] in the small memory models one array can't be bigger than 64 KB; build with -ml or load the .bin file." % WARN)
-		for line in sp.report:
-			lines.append("•  " + line)
-		return lines
 	if music and arranged is GusSong:
 		var gus: GusSong = arranged
 		var size := ItWriter.module_bytes(gus, false).size()
@@ -383,8 +373,6 @@ static func _pc(music: bool, arranged: Variant, sounds: Dictionary, card: String
 		lines.append("[color=#52d1c0]Fits.[/color] The %s plays music only, so each sound is a 22 kHz sample for a Sound Blaster beside it, as DOS games did." % PcCards.name_of(card))
 	elif card == "gus":
 		lines.append("[color=#52d1c0]Fits.[/color] Each sound is a 16-bit sample for a voice the music leaves free.")
-	elif card == "speaker":
-		lines.append("[color=#52d1c0]Fits.[/color] Each sound takes over the speaker while it plays; the music carries on underneath.")
 	elif card == "tandy":
 		lines.append("[color=#52d1c0]Fits.[/color] Each sound plays on Square 3 or the noise channel, over the music.")
 	elif card == "adlib":
