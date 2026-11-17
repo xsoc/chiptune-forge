@@ -1,12 +1,17 @@
 extends Control
-## Music mode, Layers screen: lock and regenerate layers, and set the levels
-## of each layer in each adaptive state.
+## Music mode, Layers screen: lock and regenerate layers, edit their notes,
+## and set the levels of each layer in each adaptive state.
 
 const LAYER_ROW := preload("res://scenes/components/layer_row.tscn")
 const LEVELS: PackedStringArray = ["off", "low", "mid", "full"]
 const LEVEL_TEXT := {"off": "Off", "low": "Low", "mid": "Mid", "full": "Full"}
+## New note lengths in steps, with their names.
+const LENGTHS := [[1, "1 step"], [2, "2 steps"], [4, "1 beat"], [8, "2 beats"], [16, "1 bar"]]
+const VISIBLE_PITCHES := 24
 
 var _rows: Dictionary = {}
+## The pitch of the editor's bottom row, per tonal part.
+var _low_pitch: Dictionary = {}
 
 
 func _ready() -> void:
@@ -25,12 +30,24 @@ func _ready() -> void:
 	AppState.song_changed.connect(_on_song_changed)
 	AppState.locks_changed.connect(_sync_locks)
 	%Code.text = _code_sample("combat")
+	for layer in SongSettings.LAYERS:
+		%PartPick.add_item(layer)
+	for l in LENGTHS:
+		%LengthPick.add_item(l[1])
+	%LengthPick.select(0)
+	%SectionPick.item_selected.connect(func(_i: int) -> void: _refresh_editor())
+	%PartPick.item_selected.connect(func(_i: int) -> void: _refresh_editor())
+	%OctaveDown.pressed.connect(_shift_octave.bind(-12))
+	%OctaveUp.pressed.connect(_shift_octave.bind(12))
+	%Undo.pressed.connect(func() -> void: AppState.undo_edit())
+	%PatternGrid.cell_pressed.connect(_on_note_cell)
 	if AppState.song:
 		_on_song_changed(AppState.song)
 
 
 func set_playhead(step: float) -> void:
 	%SongView.playhead_step = step
+	%PatternGrid.playhead_step = _step_in_section(step)
 
 
 func _on_song_changed(song: ChipSong) -> void:
@@ -48,6 +65,8 @@ func _on_song_changed(song: ChipSong) -> void:
 		_rows[layer].setup(layer, SongView.LANE_COLOURS[i], text)
 	_sync_locks()
 	_build_grid(song)
+	_fill_sections(song)
+	_refresh_editor()
 
 
 func _sync_locks() -> void:
@@ -162,3 +181,116 @@ func _code_sample(state: String, intensity := -1.0) -> String:
 		lines.append("$Music.intensity = 0.72")
 	lines.append("$Music.transition_to(\"B\", \"bar\")")
 	return "\n".join(lines)
+
+
+# Note editor -----------------------------------------------------------------
+
+func _fill_sections(song: ChipSong) -> void:
+	var sections: Array = song.data["sections"]
+	var keep: int = %SectionPick.selected
+	if %SectionPick.item_count != sections.size():
+		_low_pitch.clear()
+		keep = 0
+	%SectionPick.clear()
+	for s in sections.size():
+		%SectionPick.add_item(str(sections[s]["name"]))
+	%SectionPick.select(clampi(keep, 0, sections.size() - 1))
+
+
+func _part() -> String:
+	return SongSettings.LAYERS[maxi(%PartPick.selected, 0)]
+
+
+func _is_drums() -> bool:
+	return _part() == "Drums"
+
+
+func _channel() -> int:
+	return int(SongGenerator.LAYER_CHANNELS[_part()][0])
+
+
+func _low() -> int:
+	var part := _part()
+	if not _low_pitch.has(part):
+		_low_pitch[part] = PatternEdit.default_low_pitch(AppState.song, _channel())
+	return int(_low_pitch[part])
+
+
+func _refresh_editor() -> void:
+	var song: ChipSong = AppState.song
+	var section: int = %SectionPick.selected
+	%OctaveDown.disabled = _is_drums()
+	%OctaveUp.disabled = _is_drums()
+	%Undo.disabled = not AppState.can_undo()
+	if song == null or section < 0:
+		%PatternGrid.set_view(PackedStringArray(), 16, 4, 4, [], Color.WHITE)
+		%Shared.visible = false
+		return
+	var info: Dictionary = song.data["sections"][section]
+	var timing: Dictionary = song.data["timing"]
+	var colour: Color = SongView.LANE_COLOURS[_channel()]
+	var labels := PackedStringArray()
+	var marked := PackedInt32Array()
+	var rows: Array = []
+	if _is_drums():
+		for instrument in PatternEdit.DRUM_ROWS:
+			labels.append(PatternEdit.DRUM_NAMES[instrument])
+		for channel in SongGenerator.LAYER_CHANNELS["Drums"]:
+			for n in PatternEdit.notes_at(song, section, channel):
+				var row := PatternEdit.DRUM_ROWS.find(int(n[4]) if n.size() > 4 else DrumWriter.TOM)
+				if row >= 0:
+					rows.append([int(n[0]), int(n[1]), row])
+	else:
+		var low := _low()
+		for r in VISIBLE_PITCHES:
+			var pitch := low + VISIBLE_PITCHES - 1 - r
+			labels.append(PatternEdit.note_name(pitch))
+			if pitch % 12 == 0:
+				marked.append(r)
+		for n in PatternEdit.notes_at(song, section, _channel()):
+			var row := low + VISIBLE_PITCHES - 1 - int(n[2])
+			if row >= 0 and row < VISIBLE_PITCHES:
+				rows.append([int(n[0]), int(n[1]), row])
+	%PatternGrid.set_view(labels, int(info["length"]), int(timing["steps_per_beat"]), int(timing["beats_per_bar"]), rows, colour, marked)
+	var others := PatternEdit.sharing(song, section, _channel()) - 1
+	if others > 0:
+		%Shared.text = "These notes also play in %d other section%s with the same part." % [others, "" if others == 1 else "s"]
+	else:
+		%Shared.text = ""
+	%Shared.visible = others > 0
+
+
+func _shift_octave(by: int) -> void:
+	_low_pitch[_part()] = clampi(_low() + by, 12, 108 - VISIBLE_PITCHES)
+	_refresh_editor()
+
+
+func _on_note_cell(step: int, row: int) -> void:
+	var section: int = %SectionPick.selected
+	if AppState.song == null or section < 0:
+		return
+	var length: int = LENGTHS[maxi(%LengthPick.selected, 0)][0]
+	if _is_drums():
+		var instrument := PatternEdit.DRUM_ROWS[row]
+		AppState.edit_song("Drums", func(song: ChipSong) -> void:
+			PatternEdit.toggle(song, section, 0, step, 0, 1, instrument))
+	else:
+		var pitch := _low() + VISIBLE_PITCHES - 1 - row
+		var channel := _channel()
+		AppState.edit_song(_part(), func(song: ChipSong) -> void:
+			PatternEdit.toggle(song, section, channel, step, pitch, length))
+
+
+## The step within the section shown in the editor, or -1 when another
+## section is playing.
+func _step_in_section(step: float) -> float:
+	var song: ChipSong = AppState.song
+	if song == null or step < 0.0:
+		return -1.0
+	var start := 0.0
+	for index in song.data["order"]:
+		var length := float(song.data["sections"][int(index)]["length"])
+		if step < start + length:
+			return step - start if int(index) == %SectionPick.selected else -1.0
+		start += length
+	return -1.0

@@ -1,9 +1,10 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://scenes/screens/layers_screen.gd" id="1"]
 [ext_resource type="Script" path="res://scripts/ui/responsive_columns.gd" id="2"]
 [ext_resource type="PackedScene" path="res://scenes/components/slider_row.tscn" id="3"]
 [ext_resource type="Script" path="res://scenes/components/song_view.gd" id="4"]
+[ext_resource type="Script" path="res://scenes/components/pattern_grid.gd" id="5"]
 
 [node name="LayersScreen" type="Control"]
 layout_mode = 3
@@ -73,6 +74,84 @@ custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
 theme_type_variation = &"PrimaryButton"
 text = "Regenerate unlocked parts"
+
+[node name="NotesCard" type="PanelContainer" parent="Scroll/Margin/Columns"]
+layout_mode = 2
+theme_type_variation = &"Card"
+
+[node name="Notes" type="VBoxContainer" parent="Scroll/Margin/Columns/NotesCard"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="Scroll/Margin/Columns/NotesCard/Notes"]
+layout_mode = 2
+theme_type_variation = &"SectionLabel"
+text = "NOTES"
+
+[node name="Help" type="Label" parent="Scroll/Margin/Columns/NotesCard/Notes"]
+layout_mode = 2
+theme_type_variation = &"MutedLabel"
+text = "Tap a cell to add or remove a note. Editing a part locks it, so regenerating keeps your notes."
+autowrap_mode = 3
+
+[node name="Controls" type="HFlowContainer" parent="Scroll/Margin/Columns/NotesCard/Notes"]
+layout_mode = 2
+
+[node name="SectionPick" type="OptionButton" parent="Scroll/Margin/Columns/NotesCard/Notes/Controls"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+tooltip_text = "Section"
+
+[node name="PartPick" type="OptionButton" parent="Scroll/Margin/Columns/NotesCard/Notes/Controls"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+tooltip_text = "Part"
+
+[node name="LengthPick" type="OptionButton" parent="Scroll/Margin/Columns/NotesCard/Notes/Controls"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+tooltip_text = "Length of new notes"
+
+[node name="OctaveDown" type="Button" parent="Scroll/Margin/Columns/NotesCard/Notes/Controls"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+tooltip_text = "Show lower notes"
+theme_type_variation = &"Chip"
+text = "Lower"
+
+[node name="OctaveUp" type="Button" parent="Scroll/Margin/Columns/NotesCard/Notes/Controls"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+tooltip_text = "Show higher notes"
+theme_type_variation = &"Chip"
+text = "Higher"
+
+[node name="Undo" type="Button" parent="Scroll/Margin/Columns/NotesCard/Notes/Controls"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+disabled = true
+theme_type_variation = &"Chip"
+text = "Undo"
+
+[node name="Shared" type="Label" parent="Scroll/Margin/Columns/NotesCard/Notes"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"MutedLabel"
+autowrap_mode = 3
+
+[node name="NotesScroll" type="ScrollContainer" parent="Scroll/Margin/Columns/NotesCard/Notes"]
+layout_mode = 2
+vertical_scroll_mode = 0
+
+[node name="PatternGrid" type="Control" parent="Scroll/Margin/Columns/NotesCard/Notes/NotesScroll"]
+unique_name_in_owner = true
+layout_mode = 2
+script = ExtResource("5")
 
 [node name="AdaptiveCard" type="PanelContainer" parent="Scroll/Margin/Columns"]
 layout_mode = 2
