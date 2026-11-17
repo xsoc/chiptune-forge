@@ -1,0 +1,39 @@
+# An example GitHub Actions workflow for a game that keeps its music and
+# sounds as Chiptune Forge settings and seeds. Copy it to
+# .github/workflows/audio.yml in your game's repository, with
+# music.manifest.json beside your project.
+#
+# It builds the Chiptune Forge image, runs the manifest (every song and sound
+# is made again from its seed, the same on every machine), then builds the
+# NES example projects the exports include, to check they assemble. Add
+# --strict to the batch to fail when a song does not fit its chip as made.
+name: Audio
+
+on:
+  push:
+    paths: ["music.manifest.json"]
+  workflow_dispatch:
+
+jobs:
+  audio:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: xsoc/chiptune-forge
+          path: .chiptune-forge
+      - name: Build the Chiptune Forge image
+        run: docker build -t chiptune-forge .chiptune-forge
+      - name: Make the music and sounds
+        run: docker run --rm -u "$(id -u):$(id -g)" -v "$PWD:/work" chiptune-forge batch music.manifest.json --json > audio-report.json || (cat audio-report.json; exit 1)
+      - name: Build the NES examples
+        run: |
+          sudo apt-get install -y --no-install-recommends cc65
+          for dir in build/audio/*/nes/; do make -C "$dir"; done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: audio
+          path: |
+            build/audio/
+            audio-report.json

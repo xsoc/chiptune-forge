@@ -13,3 +13,6 @@ Thumbs.db
 
 # Built by tools/build_hugedriver.sh (CI bundles it with exports)
 assets/gameboy/hUGEDriver/lib/
+
+# Built by the command line examples
+examples/cli/build/

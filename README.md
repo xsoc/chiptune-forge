@@ -41,6 +41,9 @@ runs on phones, desktops and the web, and it exports straight into Godot.
   play through an emulated YM2612 and SN76489, and the export is a VGM that
   [SGDK](https://github.com/Stephane-D/SGDK) turns into XGM music, with a
   minimal SGDK program. Sound effects export as 8-bit samples for XGM.
+- **Command line.** The desktop builds and a Docker image run headless:
+  `generate`, `sfx`, `export`, `batch`, `validate` and `list`, with JSON
+  reports and exit codes for CI. See [docs/cli.md](docs/cli.md).
 - **Seeds.** The same settings and seed always give the same song, on every
   platform.
 
