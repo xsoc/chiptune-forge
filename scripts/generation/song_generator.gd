@@ -571,6 +571,9 @@ static func _same_form(ctx: GenContext, previous: ChipSong) -> bool:
 
 
 static func _previous_notes(previous: ChipSong, section_index: int, channel: int) -> Array:
+	# A song whose sections were rearranged by hand may have fewer.
+	if section_index >= previous.data["sections"].size():
+		return []
 	var ids: Array = previous.data["sections"][section_index].get("patterns", [])
 	if channel >= ids.size() or int(ids[channel]) < 0:
 		return []

@@ -6,6 +6,7 @@
 [ext_resource type="PackedScene" path="res://scenes/screens/layers_screen.tscn" id="4"]
 [ext_resource type="PackedScene" path="res://scenes/screens/export_screen.tscn" id="5"]
 [ext_resource type="PackedScene" path="res://scenes/screens/library_screen.tscn" id="6"]
+[ext_resource type="PackedScene" path="res://scenes/screens/editor_screen.tscn" id="editor_screen"]
 [ext_resource type="PackedScene" path="res://scenes/screens/sfx_screen.tscn" id="7"]
 [ext_resource type="PackedScene" path="res://scenes/screens/kit_screen.tscn" id="8"]
 [ext_resource type="PackedScene" path="res://scenes/components/player_bar.tscn" id="9"]
@@ -118,6 +119,11 @@ unique_name_in_owner = true
 layout_mode = 1
 
 [node name="LayersScreen" parent="Layout/Screens" instance=ExtResource("4")]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+
+[node name="EditorScreen" parent="Layout/Screens" instance=ExtResource("editor_screen")]
 unique_name_in_owner = true
 visible = false
 layout_mode = 1
