@@ -47,6 +47,9 @@ runs on phones, desktops and the web, and it exports straight into Godot.
 - **Exports.** `.chipsong`, `.chipsfx` and `.chipkit` JSON for the Godot
   plugin, WAV with loop points (or one WAV per layer), OGG Vorbis with loop
   tags (from our own GDScript encoder), and MIDI.
+  Before export, the lead is checked against well-known public-domain tunes
+  (in any key and tempo), and the Export screen warns if an eight-note
+  phrase follows one.
 - **Game Boy target.** Pick the Game Boy on the Export screen and the song is
   arranged for its four channels, previews play through an emulated Game Boy
   sound chip, and the export is a GBDK-2020 project (C data for hUGEDriver,

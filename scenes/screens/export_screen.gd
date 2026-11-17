@@ -194,6 +194,8 @@ func _update_report() -> void:
 		return
 	var arranged: Variant = AppState.get_arranged_song() if music else null
 	lines.append_array(TargetReport.lines(AppState.target, music, AppState.song, arranged, _sounds(), AppState.pc_card))
+	if music:
+		lines.append(SimilarityCheck.report_line(AppState.song, TargetReport.WARN))
 	%Report.text = "\n".join(lines)
 
 
