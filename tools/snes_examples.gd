@@ -77,10 +77,12 @@ func _initialize() -> void:
 			decls.append(line.strip_edges())
 		elif line.begins_with("  spcAllocate") or line.begins_with("  spcSetSoundEntry"):
 			setup.append("    " + line.strip_edges())
-	setup.append("    spcPlaySound(0);")
+	# SNESMod resets the module when the sound region changes, so the setup
+	# goes before spcLoad, as the README says.
 	var main := ItWriter.main_c(first, "Chiptune Forge CI sound effects")
 	main = main.replace("extern char SOUNDBANK__;", "extern char SOUNDBANK__;\n" + "\n".join(decls))
-	main = main.replace("    spcPlay(0);", "    spcPlay(0);\n" + "\n".join(setup))
+	main = main.replace("    spcLoad(", "\n".join(setup) + "\n    spcLoad(")
+	main = main.replace("    spcPlay(0);", "    spcPlay(0);\n    spcPlaySound(0);")
 	_write(sfx_dir.path_join("main.c"), main.to_utf8_buffer())
 	print("Wrote the SNES example projects to ", out)
 	quit()

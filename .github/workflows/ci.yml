@@ -358,6 +358,8 @@ jobs:
           python3 ../tools/md_rom_audio.py project/*.sfc rom.wav 16
           python3 ../tools/md_sound_check.py song_happy_platformer_preview.wav rom.wav --align
           python3 ../tools/md_rom_audio.py sfx/*.sfc rom_sfx.wav 8
+          # With the sound effects set up, the music must still play.
+          python3 ../tools/md_sound_check.py song_happy_platformer_preview.wav rom_sfx.wav --align
       - uses: actions/upload-artifact@v4
         if: always()
         with:
