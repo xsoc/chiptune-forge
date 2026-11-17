@@ -30,8 +30,12 @@ runs on phones, desktops and the web, and it exports straight into Godot.
 - **Community packs.** Add vibes, styles and sound presets that other
   people made, from one `.chippack` file each. See [packs/](packs/README.md)
   to find packs or make your own.
-- **Adaptive music.** Every song has layers and four states (Explore,
-  Tension, Combat, Boss) that the Godot plugin can fade between by intensity.
+- **Adaptive music.** Every song has layers and states (Explore, Tension,
+  Combat and Boss to start with, plus any you add) that the Godot plugin
+  moves between by intensity or by name. Transition rules per route say
+  when a change lands (now, or on the next beat, bar or phrase) and how
+  (crossfade, cut or a stinger), and the Layers screen warns when a state
+  needs more voices than the chip has.
 - **Exports.** `.chipsong`, `.chipsfx` and `.chipkit` JSON for the Godot
   plugin, WAV with loop points (or one WAV per layer), and MIDI.
 - **Game Boy target.** Pick the Game Boy on the Export screen and the song is
@@ -118,11 +122,13 @@ $Music.play()
 $Music.intensity = 0.7          # adaptive: picks the Combat state
 $Music.set_state("Boss")        # or choose a state directly
 $Music.set_layer("Lead", "off") # or fade a single layer
+$Music.play_stinger("rise")     # a short phrase over the music
 $Music.transition_to("B", "bar")
 $Music.bar.connect(func(i): print("bar ", i))
+$Music.state_changed.connect(func(s): print("now in ", s))
 
 # Sound effects: add a ChipSfxPlayer node and assign the kit.
-$Sfx.play("jump")
+$Sfx.play("jump")               # play_sfx("jump") does the same
 $Sfx.play("coin", 1.2)          # a little higher
 ```
 

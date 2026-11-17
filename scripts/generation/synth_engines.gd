@@ -122,15 +122,62 @@ static func chip_song(song: ChipSong) -> ChipSong:
 		if inst is Dictionary and inst.has("engine"):
 			any = true
 			break
-	if not any:
+	var volumes := _channel_volumes(song)
+	if not any and volumes.is_empty():
 		return song
 	var copy := ChipSong.new()
 	copy.data = song.data.duplicate()
-	var plain: Array = []
-	for inst in instruments:
-		plain.append(chip_instrument(inst))
-	copy.data["instruments"] = plain
+	if any:
+		var plain: Array = []
+		for inst in instruments:
+			plain.append(chip_instrument(inst))
+		copy.data["instruments"] = plain
+	if not volumes.is_empty():
+		_fold_volumes(copy, volumes)
 	return copy
+
+
+## {channel index: volume} for channels whose volume is not 1.
+static func _channel_volumes(song: ChipSong) -> Dictionary:
+	var result := {}
+	var channels: Array = song.data.get("channels", [])
+	for c in channels.size():
+		var volume := float(channels[c].get("volume", 1.0))
+		if not is_equal_approx(volume, 1.0):
+			result[c] = volume
+	return result
+
+
+## Console arrangers read velocities, not channel volumes, so a layer
+## volume set in the Advanced controls is folded into its notes'
+## velocities (a channel at 0 goes silent).
+static func _fold_volumes(copy: ChipSong, volumes: Dictionary) -> void:
+	var channels: Array = copy.data["channels"].duplicate(true)
+	var patterns: Array = copy.data["patterns"].duplicate(true)
+	var sections: Array = copy.data["sections"].duplicate(true)
+	var scaled := {} # "pattern:channel" -> new pattern index
+	for section in sections:
+		var ids: Array = section["patterns"]
+		for c in ids.size():
+			if not volumes.has(c) or int(ids[c]) < 0:
+				continue
+			var volume := float(volumes[c])
+			if volume <= 0.0:
+				ids[c] = -1
+				continue
+			var key := "%d:%d" % [int(ids[c]), c]
+			if not scaled.has(key):
+				var notes: Array = patterns[int(ids[c])]["notes"].duplicate(true)
+				for note in notes:
+					note[3] = clampi(roundi(float(note[3]) * volume), 1, 127)
+				scaled[key] = patterns.size()
+				patterns.append({"notes": notes})
+			ids[c] = scaled[key]
+	for c in volumes:
+		channels[c]["volume"] = 1.0
+	copy.data["channels"] = channels
+	copy.data["patterns"] = patterns
+	copy.data["sections"] = sections
 
 
 ## The engine each layer of [param song] plays with, as {layer: engine}.

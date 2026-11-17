@@ -36,6 +36,39 @@ var engine := "chip"
 var layer_engines: Dictionary = {}
 ## Bumped per layer by "Regenerate unlocked parts", so only those layers change.
 var variations: Dictionary = {}
+## Advanced: swing from 0 to 100, or -1 to take it from the vibe and style.
+var swing := -1.0
+## Advanced: how far velocities and note lengths wander, 0 to 100.
+var humanise := 0.0
+## Advanced: {layer: volume in percent, 0 to 150}. Missing layers are 100.
+var layer_volumes: Dictionary = {}
+## Advanced: {layer: one of [constant SWAPS]} replacing the layer's sound.
+## Drums have none.
+var instrument_swaps: Dictionary = {}
+
+## Adaptive states, as the song stores them; empty means the defaults
+## ([constant SongGenerator.STATES]). Set when the user edits a state.
+var states: Array = []
+## Transition rules; empty means [constant SongGenerator.TRANSITIONS].
+var transitions: Array = []
+
+## Instrument swaps: id to [wave, duty].
+const SWAPS := {
+	"pulse12": ["pulse", 0.125],
+	"pulse25": ["pulse", 0.25],
+	"square": ["pulse", 0.5],
+	"triangle": ["triangle", 0.5],
+	"saw": ["saw", 0.5],
+	"sine": ["sine", 0.5],
+}
+const SWAP_NAMES := {
+	"pulse12": "Thin pulse (12.5%)",
+	"pulse25": "Pulse (25%)",
+	"square": "Square",
+	"triangle": "Triangle",
+	"saw": "Saw",
+	"sine": "Sine",
+}
 
 
 func get_seed() -> int:
@@ -71,6 +104,18 @@ func to_dict() -> Dictionary:
 		dict["engine"] = engine
 	if not layer_engines.is_empty():
 		dict["layer_engines"] = layer_engines.duplicate()
+	if swing >= 0.0:
+		dict["swing"] = swing
+	if humanise > 0.0:
+		dict["humanise"] = humanise
+	if not layer_volumes.is_empty():
+		dict["layer_volumes"] = layer_volumes.duplicate()
+	if not instrument_swaps.is_empty():
+		dict["instrument_swaps"] = instrument_swaps.duplicate()
+	if not states.is_empty():
+		dict["states"] = states.duplicate(true)
+	if not transitions.is_empty():
+		dict["transitions"] = transitions.duplicate(true)
 	return dict
 
 
@@ -101,7 +146,71 @@ static func from_dict(dict: Dictionary) -> SongSettings:
 	s.variations = dict.get("variations", {}).duplicate()
 	s.engine = str(dict.get("engine", "chip"))
 	s.layer_engines = dict.get("layer_engines", {}).duplicate()
+	s.swing = clampf(float(dict.get("swing", -1.0)), -1.0, 100.0)
+	s.humanise = clampf(float(dict.get("humanise", 0.0)), 0.0, 100.0)
+	s.layer_volumes = {}
+	var volumes: Variant = dict.get("layer_volumes", {})
+	if volumes is Dictionary:
+		for layer in volumes:
+			if LAYERS.has(str(layer)):
+				s.layer_volumes[str(layer)] = clampf(float(volumes[layer]), 0.0, 150.0)
+	s.instrument_swaps = {}
+	var swaps: Variant = dict.get("instrument_swaps", {})
+	if swaps is Dictionary:
+		for layer in swaps:
+			if LAYERS.has(str(layer)) and str(layer) != "Drums" and SWAPS.has(str(swaps[layer])):
+				s.instrument_swaps[str(layer)] = str(swaps[layer])
+	s.states = clean_states(dict.get("states", []))
+	s.transitions = clean_transitions(dict.get("transitions", []))
 	return s
+
+
+## Valid states only: a unique non-empty name, an intensity from 0 to 1 and
+## a level per known layer.
+static func clean_states(value: Variant) -> Array:
+	var out: Array = []
+	var names := {}
+	if not value is Array:
+		return out
+	for state in value:
+		if not state is Dictionary:
+			continue
+		var name := str(state.get("name", "")).strip_edges()
+		if name == "" or names.has(name.to_lower()):
+			continue
+		names[name.to_lower()] = true
+		var levels := {}
+		var given: Variant = state.get("levels", {})
+		for layer in LAYERS:
+			var level: Variant = given.get(layer, "full") if given is Dictionary else "full"
+			if level is String and str(level) in ["off", "low", "mid", "full"]:
+				levels[layer] = str(level)
+			elif level is float or level is int:
+				levels[layer] = clampf(float(level), 0.0, 1.0)
+			else:
+				levels[layer] = "full"
+		out.append({"name": name, "min_intensity": clampf(float(state.get("min_intensity", 1.0)), 0.0, 1.0), "levels": levels})
+	return out
+
+
+## Valid transition rules only.
+static func clean_transitions(value: Variant) -> Array:
+	var out: Array = []
+	if not value is Array:
+		return out
+	for rule in value:
+		if not rule is Dictionary or str(rule.get("to", "")) == "":
+			continue
+		var clean := {
+			"from": str(rule.get("from", "*")),
+			"to": str(rule["to"]),
+			"when": str(rule.get("when", "beat")) if SongGenerator.WHEN.has(str(rule.get("when", ""))) else "beat",
+			"how": str(rule.get("how", "crossfade")) if SongGenerator.HOW.has(str(rule.get("how", ""))) else "crossfade",
+		}
+		if clean["how"] == "stinger":
+			clean["stinger"] = str(rule.get("stinger", "rise")) if SongGenerator.STINGERS.has(str(rule.get("stinger", ""))) else "rise"
+		out.append(clean)
+	return out
 
 
 func duplicate_settings() -> SongSettings:

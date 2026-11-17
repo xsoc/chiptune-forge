@@ -159,7 +159,7 @@ func _parse(args: PackedStringArray) -> Dictionary:
 				return {"error": "--%s needs a value" % name}
 			value = args[i]
 			i += 1
-		if name in ["vibe", "preset", "pack", "layer-engine"]:
+		if name in ["vibe", "preset", "pack", "layer-engine", "volume", "instrument"]:
 			if not flags.has(name):
 				flags[name] = []
 			flags[name].append(value)
@@ -368,6 +368,33 @@ func _apply_song_flags(s: SongSettings, flags: Dictionary) -> String:
 			if not SynthEngines.CHOICES.has(engine):
 				return "--layer-engine engine should be one of %s" % ", ".join(SynthEngines.CHOICES)
 			s.layer_engines[layer] = engine
+	if flags.has("swing"):
+		if str(flags["swing"]) == "auto":
+			s.swing = -1.0
+		elif not str(flags["swing"]).is_valid_float():
+			return "--swing should be 0 to 100, or auto"
+		else:
+			s.swing = clampf(float(flags["swing"]), 0.0, 100.0)
+	if flags.has("humanise"):
+		if not str(flags["humanise"]).is_valid_float():
+			return "--humanise should be 0 to 100"
+		s.humanise = clampf(float(flags["humanise"]), 0.0, 100.0)
+	if flags.has("volume"):
+		for entry in flags["volume"]:
+			var layer := str(entry).get_slice(":", 0).capitalize()
+			var amount := str(entry).get_slice(":", 1)
+			if not SongSettings.LAYERS.has(layer) or not amount.is_valid_float():
+				return "--volume should be Layer:percent, with a layer from %s" % ", ".join(SongSettings.LAYERS)
+			s.layer_volumes[layer] = clampf(float(amount), 0.0, 150.0)
+	if flags.has("instrument"):
+		for entry in flags["instrument"]:
+			var layer := str(entry).get_slice(":", 0).capitalize()
+			var swap := str(entry).get_slice(":", 1).to_lower()
+			if not SongSettings.LAYERS.has(layer) or layer == "Drums":
+				return "--instrument layer should be one of Lead, Harmony, Arp, Pad, Bass"
+			if not SongSettings.SWAPS.has(swap):
+				return "--instrument sound should be one of %s" % ", ".join(SongSettings.SWAPS.keys())
+			s.instrument_swaps[layer] = swap
 	for name in ["loop", "intro", "outro"]:
 		if flags.has(name):
 			s.set(name, true)
@@ -714,6 +741,7 @@ func _usage() -> String:
 		"  --complexity 0-100, --tempo BPM|auto, --key C..B|auto, --mode name|auto, --length seconds|m:ss,",
 		"  --structure, --energy, --loop/--no-loop, --intro/--no-intro, --outro/--no-outro, --seed,",
 		"  --engine chip|auto|analog|fm|wavetable|sampled, --layer-engine Layer:engine (repeatable),",
+		"  --swing 0-100|auto, --humanise 0-100, --volume Layer:percent and --instrument Layer:sound (repeatable),",
 		"  --settings file.json (flags override it).",
 		"For --target pc: --card speaker|tandy|adlib|sb|sbpro|sb16|mt32|gm|gus picks the sound card (default adlib).",
 		"Output: --format json,plugin,wav,stems,midi,console,project (default: json,plugin,wav,console,project),",

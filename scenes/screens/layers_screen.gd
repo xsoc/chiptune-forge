@@ -29,7 +29,17 @@ func _ready() -> void:
 	%Preview.toggled.connect(_on_preview_toggled)
 	%Intensity.value_changed.connect(_on_intensity_changed)
 	AppState.song_changed.connect(_on_song_changed)
+	AppState.adaptive_changed.connect(func() -> void: _build_grid(AppState.song))
+	AppState.target_changed.connect(func(_t: String) -> void:
+		if AppState.song:
+			_update_budget())
 	AppState.locks_changed.connect(_sync_locks)
+	%AddState.pressed.connect(_on_add_state)
+	%NewState.text_submitted.connect(func(_t: String) -> void: _on_add_state())
+	%ResetAdaptive.pressed.connect(func() -> void: AppState.reset_adaptive())
+	%AddRule.pressed.connect(func() -> void:
+		AppState.edit_adaptive(func(_states: Array, rules: Array) -> void:
+			rules.insert(0, {"from": "*", "to": "*", "when": "bar", "how": "crossfade"})))
 	%Code.text = _code_sample("combat")
 	for layer in SongSettings.LAYERS:
 		%PartPick.add_item(layer)
@@ -99,10 +109,22 @@ func _build_grid(song: ChipSong) -> void:
 	%Grid.columns = states.size() + 1
 	%Grid.add_child(Control.new())
 	for state in states:
-		var header := Label.new()
-		header.text = str(state["name"])
-		header.theme_type_variation = &"SectionLabel"
-		header.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		var header := HBoxContainer.new()
+		header.alignment = BoxContainer.ALIGNMENT_CENTER
+		var title := Label.new()
+		title.text = str(state["name"])
+		title.theme_type_variation = &"SectionLabel"
+		title.tooltip_text = "Begins at intensity %.2f" % float(state.get("min_intensity", 0.0))
+		title.mouse_filter = Control.MOUSE_FILTER_PASS
+		header.add_child(title)
+		if states.size() > 1:
+			var remove := Button.new()
+			remove.text = "×"
+			remove.flat = true
+			remove.tooltip_text = "Remove %s" % state["name"]
+			remove.custom_minimum_size = Vector2(32, 32)
+			remove.pressed.connect(_on_remove_state.bind(str(state["name"])))
+			header.add_child(remove)
 		%Grid.add_child(header)
 		var button := Button.new()
 		button.text = "Play %s" % state["name"]
@@ -123,6 +145,8 @@ func _build_grid(song: ChipSong) -> void:
 			_style_cell(cell, level)
 			cell.pressed.connect(_on_cell_pressed.bind(cell, s, layer))
 			%Grid.add_child(cell)
+	_update_budget()
+	_build_transitions(song)
 
 
 func _style_cell(cell: Button, level: String) -> void:
@@ -133,14 +157,125 @@ func _style_cell(cell: Button, level: String) -> void:
 
 func _on_cell_pressed(cell: Button, state_index: int, layer: String) -> void:
 	var song: ChipSong = AppState.song
-	var levels: Dictionary = song.data["states"][state_index]["levels"]
-	var current := str(levels.get(layer, "full"))
+	var current := str(song.data["states"][state_index]["levels"].get(layer, "full"))
 	var next := LEVELS[(LEVELS.find(current) + 1) % LEVELS.size()]
-	levels[layer] = next
-	_style_cell(cell, next)
+	AppState.edit_adaptive(func(states: Array, _rules: Array) -> void:
+		states[state_index]["levels"][layer] = next)
 	var music: ChipMusicPlayer = AudioService.music
 	if music.adaptive and music.get_current_state() != "":
 		music.set_state(music.get_current_state(), 0.5)
+
+
+## Each state's voices against the chip's, with a warning when one is over.
+func _update_budget() -> void:
+	var parts := PackedStringArray()
+	var over := PackedStringArray()
+	for b in AppState.state_budgets():
+		parts.append("%s %d" % [b["name"], b["voices"]])
+		if int(b["limit"]) > 0 and int(b["voices"]) > int(b["limit"]):
+			over.append(str(b["name"]))
+	var budgets := AppState.state_budgets()
+	var text := "Parts playing per state: " + ", ".join(parts) + "."
+	if budgets.is_empty() or int(budgets[0]["limit"]) <= 0:
+		text += " Modern chiptune has no voice limit."
+	else:
+		text = "Parts playing per state, against the chip's %d voices: %s." % [int(budgets[0]["limit"]), ", ".join(parts)]
+	if not over.is_empty():
+		text += " Over the limit in %s, so the arranger merges or drops parts there. Turn a layer Off to fit." % ", ".join(over)
+	%Budget.text = text
+	%Budget.theme_type_variation = &"WarningLabel" if not over.is_empty() else &"MutedLabel"
+
+
+func _on_add_state() -> void:
+	var name: String = %NewState.text.strip_edges()
+	if name == "":
+		name = "State %d" % (AppState.song.data.get("states", []).size() + 1)
+	for state in AppState.song.data.get("states", []):
+		if str(state["name"]).to_lower() == name.to_lower():
+			%NewState.text = ""
+			%NewState.placeholder_text = "%s already exists" % name
+			return
+	var from: float = %NewStateFrom.value
+	AppState.edit_adaptive(func(states: Array, _rules: Array) -> void:
+		var levels := {}
+		for layer in SongSettings.LAYERS:
+			levels[layer] = "full"
+		if not states.is_empty():
+			levels = states[states.size() - 1]["levels"].duplicate()
+		states.append({"name": name, "min_intensity": from, "levels": levels}))
+	%NewState.text = ""
+
+
+func _on_remove_state(state_name: String) -> void:
+	AppState.edit_adaptive(func(states: Array, rules: Array) -> void:
+		for i in range(states.size() - 1, -1, -1):
+			if str(states[i]["name"]) == state_name:
+				states.remove_at(i)
+		for i in range(rules.size() - 1, -1, -1):
+			if str(rules[i].get("to", "")) == state_name or str(rules[i].get("from", "")) == state_name:
+				rules.remove_at(i))
+
+
+## One row per transition rule: from, to, when, how, the stinger, a preview
+## and remove.
+func _build_transitions(song: ChipSong) -> void:
+	for child in %Transitions.get_children():
+		child.queue_free()
+	var names := PackedStringArray(["*"])
+	for state in song.data.get("states", []):
+		names.append(str(state["name"]))
+	var stingers := PackedStringArray()
+	for stinger in song.data.get("stingers", []):
+		stingers.append(str(stinger["name"]))
+	var rules: Array = song.data.get("transitions", [])
+	for i in rules.size():
+		var rule: Dictionary = rules[i]
+		var row := HFlowContainer.new()
+		row.add_child(_rule_pick(names, str(rule.get("from", "*")), i, "from", "Any state"))
+		var arrow := Label.new()
+		arrow.text = "to"
+		row.add_child(arrow)
+		row.add_child(_rule_pick(names, str(rule.get("to", "*")), i, "to", "Any state"))
+		row.add_child(_rule_pick(SongGenerator.WHEN, str(rule.get("when", "beat")), i, "when", ""))
+		row.add_child(_rule_pick(SongGenerator.HOW, str(rule.get("how", "crossfade")), i, "how", ""))
+		if str(rule.get("how", "")) == "stinger":
+			row.add_child(_rule_pick(stingers, str(rule.get("stinger", "rise")), i, "stinger", ""))
+			var hear := Button.new()
+			hear.text = "Hear"
+			hear.tooltip_text = "Preview this stinger"
+			hear.custom_minimum_size.y = 40
+			hear.pressed.connect(func() -> void: AudioService.music.play_stinger(str(rule.get("stinger", "rise"))))
+			row.add_child(hear)
+		var remove := Button.new()
+		remove.text = "×"
+		remove.flat = true
+		remove.tooltip_text = "Remove this route"
+		remove.custom_minimum_size = Vector2(40, 40)
+		remove.pressed.connect(func() -> void:
+			AppState.edit_adaptive(func(_states: Array, r: Array) -> void: r.remove_at(i)))
+		row.add_child(remove)
+		%Transitions.add_child(row)
+
+
+const RULE_TEXT := {"*": "Any state", "now": "Now", "beat": "Next beat", "bar": "Next bar", "phrase": "Next phrase",
+	"crossfade": "Crossfade", "cut": "Cut", "stinger": "Stinger", "rise": "Rising stinger", "fall": "Falling stinger", "hit": "Hit stinger"}
+
+
+func _rule_pick(options: PackedStringArray, current: String, index: int, key: String, _any: String) -> OptionButton:
+	var pick := OptionButton.new()
+	pick.custom_minimum_size = Vector2(0, 40)
+	for option in options:
+		pick.add_item(str(RULE_TEXT.get(option, option)))
+		pick.set_item_metadata(pick.item_count - 1, option)
+		if option == current:
+			pick.selected = pick.item_count - 1
+	pick.item_selected.connect(func(choice: int) -> void:
+		var value := str(pick.get_item_metadata(choice))
+		AppState.edit_adaptive(func(_states: Array, rules: Array) -> void:
+			rules[index][key] = value
+			if key == "how" and value == "stinger" and not rules[index].has("stinger"):
+				rules[index]["stinger"] = "rise"))
+	return pick
 
 
 func _on_state_pressed(state: String) -> void:
@@ -195,6 +330,7 @@ func _code_sample(state: String, intensity := -1.0) -> String:
 		lines.append("$Music.intensity = %.2f" % intensity)
 	else:
 		lines.append("$Music.intensity = 0.72")
+	lines.append("$Music.play_stinger(\"rise\")")
 	lines.append("$Music.transition_to(\"B\", \"bar\")")
 	return "\n".join(lines)
 

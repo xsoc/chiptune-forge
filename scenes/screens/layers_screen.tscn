@@ -199,6 +199,69 @@ value_format = "%.2f"
 unique_name_in_owner = true
 layout_mode = 2
 
+[node name="Budget" type="Label" parent="Scroll/Margin/Columns/AdaptiveCard/Adaptive"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"MutedLabel"
+autowrap_mode = 3
+
+[node name="AddStateRow" type="HFlowContainer" parent="Scroll/Margin/Columns/AdaptiveCard/Adaptive"]
+layout_mode = 2
+
+[node name="NewState" type="LineEdit" parent="Scroll/Margin/Columns/AdaptiveCard/Adaptive/AddStateRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(170, 44)
+layout_mode = 2
+placeholder_text = "New state, e.g. Stealth"
+
+[node name="NewStateFrom" type="SpinBox" parent="Scroll/Margin/Columns/AdaptiveCard/Adaptive/AddStateRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+tooltip_text = "The intensity where this state begins. 1 means only set_state() reaches it."
+max_value = 1.0
+step = 0.05
+value = 1.0
+prefix = "from"
+
+[node name="AddState" type="Button" parent="Scroll/Margin/Columns/AdaptiveCard/Adaptive/AddStateRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "Add state"
+
+[node name="ResetAdaptive" type="Button" parent="Scroll/Margin/Columns/AdaptiveCard/Adaptive/AddStateRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+tooltip_text = "Put back the default states and transitions"
+theme_type_variation = &"FlatButton"
+text = "Reset"
+
+[node name="TransitionsLabel" type="Label" parent="Scroll/Margin/Columns/AdaptiveCard/Adaptive"]
+layout_mode = 2
+theme_type_variation = &"SectionLabel"
+text = "TRANSITIONS"
+
+[node name="TransitionsHelp" type="Label" parent="Scroll/Margin/Columns/AdaptiveCard/Adaptive"]
+layout_mode = 2
+theme_type_variation = &"MutedLabel"
+text = "For each route, when the change lands and how. The most specific route wins."
+autowrap_mode = 3
+
+[node name="Transitions" type="VBoxContainer" parent="Scroll/Margin/Columns/AdaptiveCard/Adaptive"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="AddRule" type="Button" parent="Scroll/Margin/Columns/AdaptiveCard/Adaptive"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+size_flags_horizontal = 0
+theme_type_variation = &"FlatButton"
+text = "Add a route"
+
 [node name="CodeLabel" type="Label" parent="Scroll/Margin/Columns/AdaptiveCard/Adaptive"]
 layout_mode = 2
 theme_type_variation = &"SectionLabel"

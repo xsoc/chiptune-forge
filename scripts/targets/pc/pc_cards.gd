@@ -74,6 +74,11 @@ static func name_of(card: String) -> String:
 	return str(INFO.get(card, INFO[DEFAULT])["name"])
 
 
+## Voices the card can sound at once, for the Layers screen's budget.
+static func voice_count(card: String) -> int:
+	return int({"speaker": 1, "tandy": 4, "adlib": 9, "sb": 9, "sbpro": 18, "sb16": 18, "mt32": 32, "gm": 24, "gus": 32}.get(card, 9))
+
+
 static func is_card(card: String) -> bool:
 	return CARDS.has(card)
 

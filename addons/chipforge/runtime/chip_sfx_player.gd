@@ -36,9 +36,14 @@ func play(id: String, pitch_scale := 1.0) -> void:
 	play_sfx(kit.sounds[id], pitch_scale)
 
 
-## Plays any [ChipSfx], whether or not it is in the kit.
-func play_sfx(sfx: ChipSfx, pitch_scale := 1.0) -> void:
-	if _voices.is_empty():
+## Plays a kit sound by its id (the same as [method play]), or any
+## [ChipSfx], whether or not it is in the kit.
+func play_sfx(sound: Variant, pitch_scale := 1.0) -> void:
+	if sound is String or sound is StringName:
+		play(str(sound), pitch_scale)
+		return
+	var sfx := sound as ChipSfx
+	if sfx == null or _voices.is_empty():
 		return
 	var player := _free_voice()
 	player.stream = sfx.get_stream()

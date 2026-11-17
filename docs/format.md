@@ -29,6 +29,8 @@ double extension would be imported as plain JSON.)
 | `order` | Section indexes in play order. |
 | `layers` | `[{name, channels: [...]}]`: the named groups the adaptive system fades. |
 | `states` | `[{name, min_intensity, levels: {layer: level}}]`. A level is `"off"`, `"low"`, `"mid"`, `"full"` or a number from 0 to 1. |
+| `transitions` | `[{from, to, when, how, stinger?}]`: how the music moves between states. `from` and `to` are state names or `"*"` for any; `when` is `now`, `beat`, `bar` or `phrase` (four bars); `how` is `crossfade`, `cut` or `stinger`, which plays the named stinger over the music as the change lands. The most specific matching route wins. |
+| `stingers` | `[{name, length, notes}]`: short phrases in the song's key (`rise`, `fall`, `hit`) the plugin plays over the music with `play_stinger()`. Each note is `[channel, step, length, pitch, velocity, instrument?]`. |
 | `cues` | `[{name, step}]`, absolute steps from the song start. Includes `section:<name>`, `loop_start` and `loop_end`. |
 
 ### Notes

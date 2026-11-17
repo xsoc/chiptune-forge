@@ -29,8 +29,20 @@ const ADVANCED := [
 	["crush", "Crunch", 0.0, 1.0], ["echo", "Echo", 0.0, 1.0], ["volume", "Volume", 0.0, 1.0],
 ]
 
+## Standard sliders, in groups: [group label, [[synth parameter, label, min, max], ...]].
+## They edit the first layer; Advanced has every parameter of either layer.
+const STANDARD := [
+	["ENVELOPE", [["attack", "Attack", 0.0, 1.0], ["sustain", "Sustain", 0.0, 1.0], ["punch", "Punch", 0.0, 1.0], ["decay", "Decay", 0.0, 1.0]]],
+	["PITCH", [["base_freq", "Start pitch", 0.0, 1.0], ["freq_ramp", "Slide", -1.0, 1.0], ["vib_strength", "Vibrato depth", 0.0, 1.0], ["vib_speed", "Vibrato speed", 0.0, 1.0], ["arp_mod", "Jump amount", -1.0, 1.0]]],
+	["TONE", [["duty", "Duty", 0.0, 1.0], ["lpf_freq", "Low-pass", 0.0, 1.0], ["lpf_resonance", "Resonance", 0.0, 1.0], ["hpf_freq", "High-pass", 0.0, 1.0]]],
+	["EFFECTS", [["repeat_speed", "Repeat", 0.0, 1.0], ["pha_offset", "Phaser", -1.0, 1.0], ["crush", "Crunch", 0.0, 1.0], ["echo", "Echo", 0.0, 1.0]]],
+]
+
 var _simple_rows: Dictionary = {}
+var _standard_rows: Dictionary = {}
 var _advanced_rows: Dictionary = {}
+## Which layer the Advanced tab edits: 0 or 1.
+var _layer := 0
 var _syncing := false
 ## Slider edits wait for a short pause before the sound is rebuilt.
 var _pending := ""
@@ -52,7 +64,15 @@ func _ready() -> void:
 		_flash(%Save, "Saved", "Save to library"))
 	%Tabs.tab_changed.connect(func(tab: int) -> void:
 		%Simple.visible = tab == 0
-		%Advanced.visible = tab == 1)
+		%Standard.visible = tab == 1
+		%Advanced.visible = tab == 2)
+	%LayerPick.item_selected.connect(func(index: int) -> void:
+		_layer = index
+		if AppState.sfx:
+			_on_sfx_changed(AppState.sfx))
+	%LayerToggle.pressed.connect(_on_layer_toggle)
+	%Import.pressed.connect(_on_import)
+	%ImportText.text_submitted.connect(func(_t: String) -> void: _on_import())
 	%Reset.pressed.connect(func() -> void: AppState.reset_sfx_tweaks())
 	%Replay.timeout.connect(_apply_pending)
 
@@ -69,18 +89,22 @@ func _ready() -> void:
 		%Simple.move_child(row, %Simple.get_child_count() - 2)
 		row.value_changed.connect(_on_simple_changed.bind(spec[0]))
 		_simple_rows[spec[0]] = row
+	for group in STANDARD:
+		var label := Label.new()
+		label.text = group[0]
+		label.theme_type_variation = &"SectionLabel"
+		%Standard.add_child(label)
+		for spec in group[1]:
+			var row := _param_row(spec)
+			%Standard.add_child(row)
+			row.value_changed.connect(_on_standard_changed.bind(spec[0]))
+			_standard_rows[spec[0]] = row
 	for wave in ChipSfxSynth.WAVES:
 		%Wave.add_item(wave.replace("_", " ").capitalize())
 		%Wave.set_item_metadata(%Wave.item_count - 1, wave)
 	%Wave.item_selected.connect(func(_i: int) -> void: _on_advanced_changed(0.0, "wave"))
 	for spec in ADVANCED:
-		var row: SliderRow = SLIDER_ROW.instantiate()
-		row.label_text = spec[1]
-		row.min_value = spec[2]
-		row.max_value = spec[3]
-		row.step = 0.01
-		row.value_format = "%.2f"
-		row.sfx_style = true
+		var row := _param_row(spec)
 		%Advanced.add_child(row)
 		row.value_changed.connect(_on_advanced_changed.bind(spec[0]))
 		_advanced_rows[spec[0]] = row
@@ -96,6 +120,17 @@ func _ready() -> void:
 		_on_sfx_changed(AppState.sfx)
 
 
+func _param_row(spec: Array) -> SliderRow:
+	var row: SliderRow = SLIDER_ROW.instantiate()
+	row.label_text = spec[1]
+	row.min_value = spec[2]
+	row.max_value = spec[3]
+	row.step = 0.01
+	row.value_format = "%.2f"
+	row.sfx_style = true
+	return row
+
+
 func _play() -> void:
 	AudioService.play_sfx(AppState.sfx)
 
@@ -107,7 +142,9 @@ func _on_sfx_changed(sfx: ChipSfx) -> void:
 	%PresetPicker.set_selected(PackedStringArray([AppState.sfx_preset_id]))
 	var kind := preset.description.get_slice(": ", 1) if preset else "custom"
 	var variant := str(sfx.data.get("meta", {}).get("variant", ""))
-	if not variant.is_empty() and variant != "Classic":
+	if variant == "jsfxr":
+		kind = "imported from jsfxr"
+	elif not variant.is_empty() and variant != "Classic":
 		kind += " (%s)" % variant.to_lower()
 	var where := "Modern chiptune plays it on any voice, with no limits."
 	if AppState.target == "gameboy":
@@ -145,9 +182,18 @@ func _on_sfx_changed(sfx: ChipSfx) -> void:
 	%Note.text = "%s · %s. %s" % [SfxGenerator.c_id(sfx.get_sound_name()), kind, where]
 	%Waveform.set_samples(sfx.render(22050), 22050)
 	var params := ChipSfxSynth.with_defaults(sfx.data.get("params", {}))
+	for key in _standard_rows:
+		_standard_rows[key].set_value_silently(float(params[key]))
+	var layer2: Dictionary = sfx.data.get("layer2", {})
+	if layer2.is_empty():
+		_layer = 0
+	%LayerPick.set_item_disabled(1, layer2.is_empty())
+	%LayerPick.selected = _layer
+	%LayerToggle.text = "Add layer 2" if layer2.is_empty() else "Remove layer 2"
+	var shown := ChipSfxSynth.with_defaults(layer2) if _layer == 1 else params
 	for key in _advanced_rows:
-		_advanced_rows[key].set_value_silently(float(params[key]))
-	%Wave.selected = maxi(ChipSfxSynth.WAVES.find(str(params["wave"])), 0)
+		_advanced_rows[key].set_value_silently(float(shown[key]))
+	%Wave.selected = maxi(ChipSfxSynth.WAVES.find(str(shown["wave"])), 0)
 	for key in _simple_rows:
 		_simple_rows[key].set_value_silently(float(AppState.sfx_tweaks.get(key, SfxGenerator.TWEAK_DEFAULTS[key])))
 	_rebuild_recent()
@@ -177,6 +223,13 @@ func _on_simple_changed(value: float, key: String) -> void:
 	%Replay.start()
 
 
+func _on_standard_changed(_value: float, _key: String) -> void:
+	if _syncing or AppState.sfx == null:
+		return
+	_pending = "standard"
+	%Replay.start()
+
+
 func _on_advanced_changed(_value: float, _key: String) -> void:
 	if _syncing or AppState.sfx == null:
 		return
@@ -189,15 +242,48 @@ func _apply_pending() -> void:
 		AppState.set_sfx_tweak("pitch", float(AppState.sfx_tweaks["pitch"]))
 	elif _pending == "advanced":
 		_apply_advanced()
+	elif _pending == "standard":
+		var params: Dictionary = AppState.sfx.data["params"].duplicate()
+		for key in _standard_rows:
+			params[key] = _standard_rows[key].value
+		AppState.set_sfx_params(params)
 	_pending = ""
 
 
 func _apply_advanced() -> void:
 	var params: Dictionary = AppState.sfx.data["params"].duplicate()
+	var layer2: Dictionary = AppState.sfx.data.get("layer2", {}).duplicate()
+	var edited := layer2 if _layer == 1 else params
 	for key in _advanced_rows:
-		params[key] = _advanced_rows[key].value
-	params["wave"] = str(%Wave.get_item_metadata(%Wave.selected))
-	AppState.set_sfx_params(params)
+		edited[key] = _advanced_rows[key].value
+	edited["wave"] = str(%Wave.get_item_metadata(%Wave.selected))
+	AppState.set_sfx_layers(params, layer2)
+
+
+## Adds a second layer (an octave down and quieter, to start from) or
+## removes it.
+func _on_layer_toggle() -> void:
+	var sfx := AppState.sfx
+	if sfx == null:
+		return
+	var params: Dictionary = sfx.data["params"].duplicate()
+	if sfx.data.get("layer2", {}).is_empty():
+		var second := ChipSfxSynth.with_defaults(params)
+		second["base_freq"] = float(second["base_freq"]) * 0.5
+		second["volume"] = float(second["volume"]) * 0.6
+		_layer = 1
+		AppState.set_sfx_layers(params, second)
+	else:
+		_layer = 0
+		AppState.set_sfx_layers(params, {})
+
+
+func _on_import() -> void:
+	var error := AppState.import_jsfxr(%ImportText.text)
+	%ImportNote.visible = true
+	%ImportNote.text = error if error != "" else "Imported. Tweak it here, then add it to a kit or save it."
+	if error == "":
+		%ImportText.text = ""
 
 
 func _on_add_to_kit() -> void:

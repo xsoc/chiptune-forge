@@ -165,9 +165,10 @@ layout_mode = 2
 [node name="Tabs" type="TabBar" parent="Scroll/Margin/Stack/Columns/TweakCard/Tweak"]
 unique_name_in_owner = true
 layout_mode = 2
-tab_count = 2
+tab_count = 3
 tab_0/title = "Simple"
-tab_1/title = "Advanced"
+tab_1/title = "Standard"
+tab_2/title = "Advanced"
 
 [node name="Simple" type="VBoxContainer" parent="Scroll/Margin/Stack/Columns/TweakCard/Tweak"]
 unique_name_in_owner = true
@@ -181,10 +182,61 @@ size_flags_horizontal = 0
 theme_type_variation = &"FlatButton"
 text = "Reset sliders"
 
+[node name="Standard" type="VBoxContainer" parent="Scroll/Margin/Stack/Columns/TweakCard/Tweak"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+
 [node name="Advanced" type="VBoxContainer" parent="Scroll/Margin/Stack/Columns/TweakCard/Tweak"]
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
+
+[node name="LayerRow" type="HBoxContainer" parent="Scroll/Margin/Stack/Columns/TweakCard/Tweak/Advanced"]
+layout_mode = 2
+
+[node name="LayerPick" type="OptionButton" parent="Scroll/Margin/Stack/Columns/TweakCard/Tweak/Advanced/LayerRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+size_flags_horizontal = 3
+tooltip_text = "Sounds can stack a second voice, such as a thump under an explosion"
+selected = 0
+item_count = 2
+popup/item_0/text = "Layer 1"
+popup/item_0/id = 0
+popup/item_1/text = "Layer 2"
+popup/item_1/id = 1
+
+[node name="LayerToggle" type="Button" parent="Scroll/Margin/Stack/Columns/TweakCard/Tweak/Advanced/LayerRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+theme_type_variation = &"FlatButton"
+text = "Add layer 2"
+
+[node name="ImportRow" type="HBoxContainer" parent="Scroll/Margin/Stack/Columns/TweakCard/Tweak/Advanced"]
+layout_mode = 2
+
+[node name="ImportText" type="LineEdit" parent="Scroll/Margin/Stack/Columns/TweakCard/Tweak/Advanced/ImportRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Paste jsfxr JSON or a share link"
+
+[node name="Import" type="Button" parent="Scroll/Margin/Stack/Columns/TweakCard/Tweak/Advanced/ImportRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+text = "Import"
+
+[node name="ImportNote" type="Label" parent="Scroll/Margin/Stack/Columns/TweakCard/Tweak/Advanced"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_type_variation = &"MutedLabel"
+autowrap_mode = 3
 
 [node name="WaveRow" type="HBoxContainer" parent="Scroll/Margin/Stack/Columns/TweakCard/Tweak/Advanced"]
 layout_mode = 2
