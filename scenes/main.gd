@@ -31,6 +31,7 @@ func _ready() -> void:
 	AppState.song_changed.connect(_on_song_changed)
 	AppState.settings_changed.connect(_on_settings_changed)
 
+	%About.pressed.connect(func() -> void: %AboutDialog.open())
 	%PlayerBar.play_toggled.connect(_on_play_toggled)
 	%PlayerBar.seek_requested.connect(_on_seek_fraction)
 	%PlayerBar.loop_toggled.connect(func(on: bool) -> void: AudioService.music.loop = on)
@@ -48,6 +49,10 @@ func _ready() -> void:
 
 	_on_mode_changed(AppState.mode)
 	_on_settings_changed()
+	# Keyboard and gamepad users need somewhere to start; Godot's ui_* actions
+	# (arrows, Tab, the d-pad and the A button) move from here.
+	if not OS.has_feature("mobile"):
+		%MusicMode.grab_focus.call_deferred()
 	if AppState.song == null:
 		AppState.generate()
 
@@ -60,6 +65,10 @@ func _process(_delta: float) -> void:
 	if music.is_playing():
 		var seconds := music.get_position()
 		var step := seconds / song.get_step_seconds()
+		if AppState.reduce_motion:
+			# Move once a bar rather than smoothly.
+			var bar := float(song.get_steps_per_beat() * song.get_beats_per_bar())
+			step = floorf(step / bar) * bar
 		%GenerateScreen.set_playhead(step)
 		%LayersScreen.set_playhead(step)
 		%PlayerBar.set_time(seconds, song.get_length_seconds())

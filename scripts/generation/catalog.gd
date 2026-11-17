@@ -130,6 +130,33 @@ func get_sfx_preset(id: String) -> SfxPreset:
 	return sfx_presets.get(id)
 
 
+## A gentle note when a vibe and a style pull in different directions, or ""
+## when they suit each other.
+static func combo_note(vibe: Vibe, style: Style) -> String:
+	if vibe == null or style == null:
+		return ""
+	if vibe.tempo_max < style.tempo_min - 10 or vibe.tempo_min > style.tempo_max + 10:
+		return "Unusual combo: %s and %s want different tempos, so they meet in the middle." % [vibe.display_name, style.display_name]
+	if vibe.energy < 0.3 and style.drum_density > 0.75:
+		return "Unusual combo: a calm vibe with a busy style. Try lowering Intensity."
+	return ""
+
+
+## "Surprise me": a vibe and style that suit each other, as [vibe id,
+## style id]. The same [param rng] state gives the same pair.
+func surprise_pair(rng: Pcg32) -> PackedStringArray:
+	var vibe_ids := vibes.keys()
+	var style_ids := styles.keys()
+	vibe_ids.sort()
+	style_ids.sort()
+	for attempt in 64:
+		var vibe: Vibe = vibes[rng.pick(vibe_ids)]
+		var style: Style = styles[rng.pick(style_ids)]
+		if combo_note(vibe, style) == "" and vibe.tempo_max >= style.tempo_min and vibe.tempo_min <= style.tempo_max:
+			return PackedStringArray([vibe.id, style.id])
+	return PackedStringArray([vibe_ids[0], style_ids[0]])
+
+
 ## Items of one group, in the order their files sort.
 func in_group(items: Dictionary, group: String) -> Array:
 	var out: Array = []

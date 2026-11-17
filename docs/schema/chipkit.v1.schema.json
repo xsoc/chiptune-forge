@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://xsoc.github.io/chiptune-forge/schema/chipkit.v1.schema.json",
+  "title": "Chiptune Forge sound kit (.chipkit), version 1",
+  "type": "object",
+  "required": ["format", "version", "sounds"],
+  "properties": {
+    "format": {"const": "chipforge-kit"},
+    "version": {"const": 1},
+    "name": {"type": "string"},
+    "sounds": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "sound"],
+        "properties": {
+          "id": {"type": "string", "minLength": 1},
+          "sound": {"$ref": "chipsfx.v1.schema.json"}
+        }
+      }
+    }
+  }
+}

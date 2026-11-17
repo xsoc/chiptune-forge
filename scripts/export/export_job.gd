@@ -5,12 +5,17 @@ extends RefCounted
 ## [method step] every frame until [member done], then [method build_zip].
 
 const MIX_RATE := 44100
+## The WAV sample rates an export can use.
+const RATES: Array[int] = [44100, 48000]
 const BLOCK := 4096
 
 var files: Dictionary = {}
 var progress := 0.0
 var done := false
 var status := ""
+## The sample rate of the WAV files: [constant MIX_RATE] or 48000 (option
+## "rate").
+var rate := MIX_RATE
 
 var _tasks: Array[Callable] = []
 var _task_index := 0
@@ -66,6 +71,7 @@ static func arrange(target: String, song: ChipSong, gameboy_options := {}) -> Va
 ## text to include as <prefix>.cforge.
 static func for_target_song(target: String, song: ChipSong, options: Dictionary, arranged: Variant = null) -> ExportJob:
 	var job := _song_job(target, song, options, arranged)
+	job._use_rate(options)
 	if options.has("project"):
 		job.files["%s.%s" % [sanitize(str(options.get("prefix", song.get_title()))), ProjectFile.EXTENSION]] = str(options["project"]).to_utf8_buffer()
 	return job
@@ -103,6 +109,7 @@ static func _song_job(target: String, song: ChipSong, options: Dictionary, arran
 ## The export of a set of sounds (id to [ChipSfx]) for any target.
 static func for_target_sfx(target: String, sounds: Dictionary, kit_name: String, options: Dictionary) -> ExportJob:
 	var job := _sfx_job(target, sounds, kit_name, options)
+	job._use_rate(options)
 	if options.has("project"):
 		job.files["%s.%s" % [sanitize(kit_name), ProjectFile.EXTENSION]] = str(options["project"]).to_utf8_buffer()
 	return job
@@ -271,7 +278,7 @@ static func for_nes_sfx(sounds: Dictionary, kit_name: String, options: Dictionar
 	if bool(options.get("wav", true)):
 		for nes_sfx in converted:
 			job._tasks.append(func() -> bool:
-				job.files["audio/%s.wav" % nes_sfx.name] = ChipAudio.encode_wav_mono(nes_sfx.render(MIX_RATE), MIX_RATE)
+				job.files["audio/%s.wav" % nes_sfx.name] = ChipAudio.encode_wav_mono(nes_sfx.render(job.rate), job.rate)
 				return true)
 	job._tasks.append(func() -> bool:
 		var lines: Array[String] = [
@@ -355,7 +362,7 @@ static func for_sms_sfx(sounds: Dictionary, kit_name: String, options: Dictionar
 	if bool(options.get("wav", true)):
 		for sms_sfx in converted:
 			job._tasks.append(func() -> bool:
-				job.files["audio/%s.wav" % sms_sfx.name] = ChipAudio.encode_wav_mono(sms_sfx.render(MIX_RATE), MIX_RATE)
+				job.files["audio/%s.wav" % sms_sfx.name] = ChipAudio.encode_wav_mono(sms_sfx.render(job.rate), job.rate)
 				return true)
 	job._tasks.append(func() -> bool:
 		var lines: Array[String] = [
@@ -429,7 +436,7 @@ static func for_md_sfx(sounds: Dictionary, kit_name: String, options: Dictionary
 	if bool(options.get("wav", true)):
 		for md_sfx in converted:
 			job._tasks.append(func() -> bool:
-				job.files["audio/%s.wav" % md_sfx.name] = ChipAudio.encode_wav_mono(md_sfx.render(MIX_RATE), MIX_RATE)
+				job.files["audio/%s.wav" % md_sfx.name] = ChipAudio.encode_wav_mono(md_sfx.render(job.rate), job.rate)
 				return true)
 	job._tasks.append(func() -> bool:
 		var lines: Array[String] = [
@@ -508,7 +515,7 @@ static func for_gba_sfx(sounds: Dictionary, kit_name: String, options: Dictionar
 	if bool(options.get("wav", true)):
 		for gba_sfx in converted:
 			job._tasks.append(func() -> bool:
-				job.files["audio/%s.wav" % gba_sfx.name] = ChipAudio.encode_wav_mono(gba_sfx.render(MIX_RATE), MIX_RATE)
+				job.files["audio/%s.wav" % gba_sfx.name] = ChipAudio.encode_wav_mono(gba_sfx.render(job.rate), job.rate)
 				return true)
 	job._tasks.append(func() -> bool:
 		var lines: Array[String] = [
@@ -577,7 +584,7 @@ static func for_snes_sfx(sounds: Dictionary, kit_name: String, options: Dictiona
 	if bool(options.get("wav", true)):
 		for snes_sfx in converted:
 			job._tasks.append(func() -> bool:
-				job.files["audio/%s.wav" % snes_sfx.name] = ChipAudio.encode_wav_mono(snes_sfx.render(MIX_RATE), MIX_RATE)
+				job.files["audio/%s.wav" % snes_sfx.name] = ChipAudio.encode_wav_mono(snes_sfx.render(job.rate), job.rate)
 				return true)
 	job._tasks.append(func() -> bool:
 		var lines: Array[String] = [
@@ -657,7 +664,7 @@ static func for_pce_sfx(sounds: Dictionary, kit_name: String, options: Dictionar
 	if bool(options.get("wav", true)):
 		for pce_sfx in converted:
 			job._tasks.append(func() -> bool:
-				job.files["audio/%s.wav" % pce_sfx.name] = ChipAudio.encode_wav_mono(pce_sfx.render(MIX_RATE), MIX_RATE)
+				job.files["audio/%s.wav" % pce_sfx.name] = ChipAudio.encode_wav_mono(pce_sfx.render(job.rate), job.rate)
 				return true)
 	job._tasks.append(func() -> bool:
 		var lines: Array[String] = [
@@ -741,7 +748,7 @@ static func for_ay_sfx(sounds: Dictionary, kit_name: String, options: Dictionary
 	if bool(options.get("wav", true)):
 		for ay_sfx in converted:
 			job._tasks.append(func() -> bool:
-				job.files["audio/%s.wav" % ay_sfx.name] = ChipAudio.encode_wav_mono(ay_sfx.render(MIX_RATE), MIX_RATE)
+				job.files["audio/%s.wav" % ay_sfx.name] = ChipAudio.encode_wav_mono(ay_sfx.render(job.rate), job.rate)
 				return true)
 	job._tasks.append(func() -> bool:
 		var lines: Array[String] = [
@@ -828,7 +835,7 @@ static func for_sid_sfx(sounds: Dictionary, kit_name: String, options: Dictionar
 	if bool(options.get("wav", true)):
 		for sid_sfx in converted:
 			job._tasks.append(func() -> bool:
-				job.files["audio/%s.wav" % sid_sfx.name] = ChipAudio.encode_wav_mono(sid_sfx.render(MIX_RATE), MIX_RATE)
+				job.files["audio/%s.wav" % sid_sfx.name] = ChipAudio.encode_wav_mono(sid_sfx.render(job.rate), job.rate)
 				return true)
 	job._tasks.append(func() -> bool:
 		var lines: Array[String] = [
@@ -1076,7 +1083,7 @@ static func for_pc_sfx(sounds: Dictionary, kit_name: String, options: Dictionary
 	if bool(options.get("wav", true)):
 		for pc_sfx: PcSfx in converted:
 			job._tasks.append(func() -> bool:
-				job.files["audio/%s.wav" % pc_sfx.name] = ChipAudio.encode_wav_mono(pc_sfx.render(MIX_RATE), MIX_RATE)
+				job.files["audio/%s.wav" % pc_sfx.name] = ChipAudio.encode_wav_mono(pc_sfx.render(job.rate), job.rate)
 				return true)
 	job._tasks.append(func() -> bool:
 		var lines: Array[String] = [
@@ -1114,7 +1121,7 @@ static func for_gameboy_sfx(sounds: Dictionary, kit_name: String, options: Dicti
 	if bool(options.get("wav", true)):
 		for gb_sfx in converted:
 			job._tasks.append(func() -> bool:
-				job.files["audio/%s.wav" % gb_sfx.name] = ChipAudio.encode_wav_mono(gb_sfx.render(MIX_RATE), MIX_RATE)
+				job.files["audio/%s.wav" % gb_sfx.name] = ChipAudio.encode_wav_mono(gb_sfx.render(job.rate), job.rate)
 				return true)
 	job._tasks.append(func() -> bool:
 		var lines: Array[String] = [
@@ -1155,7 +1162,7 @@ static func for_sfx(sounds: Dictionary, kit_name: String, options: Dictionary) -
 		for id in sounds:
 			var sfx: ChipSfx = sounds[id]
 			job._tasks.append(func() -> bool:
-				job.files["audio/%s.wav" % sanitize(id)] = ChipAudio.encode_wav_mono(sfx.render(MIX_RATE), MIX_RATE)
+				job.files["audio/%s.wav" % sanitize(id)] = ChipAudio.encode_wav_mono(sfx.render(job.rate), job.rate)
 				return true)
 	job._tasks.append(func() -> bool:
 		job.files["README.txt"] = job._sfx_readme(sounds, prefix).to_utf8_buffer()
@@ -1205,6 +1212,20 @@ func build_zip() -> PackedByteArray:
 	return bytes
 
 
+## Takes the "rate" option. The READMEs say 44.1 kHz, so a 48 kHz export
+## corrects them once they are written.
+func _use_rate(options: Dictionary) -> void:
+	var wanted := int(options.get("rate", MIX_RATE))
+	rate = wanted if RATES.has(wanted) else MIX_RATE
+	if rate == MIX_RATE:
+		return
+	_tasks.append(func() -> bool:
+		for path in files:
+			if path.get_file() == "README.txt":
+				files[path] = files[path].get_string_from_utf8().replace("44.1 kHz", ("%.1f kHz" % (rate / 1000.0)).replace(".0 ", " ")).to_utf8_buffer()
+		return true)
+
+
 func _queue_render(song: ChipSong, path: String, loops: int, muted: Array) -> void:
 	_tasks.append(func() -> bool:
 		if _r_path != path:
@@ -1221,36 +1242,36 @@ func _queue_render(song: ChipSong, path: String, loops: int, muted: Array) -> vo
 
 func _start_render(song: ChipSong, path: String, loops: int, muted: Array) -> void:
 	if _r_gb:
-		_r_seq = GbSequencer.new(_r_gb, MIX_RATE)
+		_r_seq = GbSequencer.new(_r_gb, rate)
 	elif _r_nes is OplSong:
-		_r_seq = OplSequencer.new(_r_nes, MIX_RATE)
+		_r_seq = OplSequencer.new(_r_nes, rate)
 	elif _r_nes is GusSong:
-		_r_seq = GusSequencer.new(_r_nes, MIX_RATE)
+		_r_seq = GusSequencer.new(_r_nes, rate)
 	elif _r_nes is GbaSong:
-		_r_seq = GbaSequencer.new(_r_nes, MIX_RATE)
+		_r_seq = GbaSequencer.new(_r_nes, rate)
 	elif _r_nes is SnesSong:
-		_r_seq = SnesSequencer.new(_r_nes, MIX_RATE)
+		_r_seq = SnesSequencer.new(_r_nes, rate)
 	elif _r_nes is PceSong:
-		_r_seq = PceSequencer.new(_r_nes, MIX_RATE)
+		_r_seq = PceSequencer.new(_r_nes, rate)
 	elif _r_nes is AySong:
-		_r_seq = AySequencer.new(_r_nes, MIX_RATE)
+		_r_seq = AySequencer.new(_r_nes, rate)
 	elif _r_nes is SidSong:
-		_r_seq = SidSequencer.new(_r_nes, MIX_RATE)
+		_r_seq = SidSequencer.new(_r_nes, rate)
 	elif _r_nes is MdSong:
-		_r_seq = MdSequencer.new(_r_nes, MIX_RATE)
+		_r_seq = MdSequencer.new(_r_nes, rate)
 	elif _r_nes is SmsSong:
-		_r_seq = SmsSequencer.new(_r_nes, MIX_RATE)
+		_r_seq = SmsSequencer.new(_r_nes, rate)
 	elif _r_nes is SpeakerSong:
-		_r_seq = SpeakerSequencer.new(_r_nes, MIX_RATE)
+		_r_seq = SpeakerSequencer.new(_r_nes, rate)
 	elif _r_nes:
-		_r_seq = NesSequencer.new(_r_nes, MIX_RATE)
+		_r_seq = NesSequencer.new(_r_nes, rate)
 	else:
-		_r_seq = ChipSongSequencer.new(song, MIX_RATE)
+		_r_seq = ChipSongSequencer.new(song, rate)
 	for c in muted:
 		_r_seq.set_channel_muted(c, true)
 	_r_total = _r_seq.get_loop_start_frame() + (_r_seq.get_loop_end_frame() - _r_seq.get_loop_start_frame()) * maxi(loops, 1)
 	if not _r_seq.looping:
-		_r_total = _r_seq.get_length_frames() + int(1.5 * MIX_RATE)
+		_r_total = _r_seq.get_length_frames() + int(1.5 * rate)
 	_r_seq.seek_step(0)
 	_r_path = path
 	_r_written = 0
@@ -1269,7 +1290,7 @@ func _finish_render() -> PackedByteArray:
 		var header := _wav_header(_r_written)
 		for i in header.size():
 			bytes[i] = header[i]
-	bytes.append_array(ChipAudio.wav_loop_chunk(MIX_RATE, _loop_begin(), _loop_end()))
+	bytes.append_array(ChipAudio.wav_loop_chunk(rate, _loop_begin(), _loop_end()))
 	_r_path = ""
 	_r_seq = null
 	_r_bytes = PackedByteArray()
@@ -1278,7 +1299,7 @@ func _finish_render() -> PackedByteArray:
 
 
 func _wav_header(frames: int) -> PackedByteArray:
-	return ChipAudio.wav_header(frames * 4, 2, MIX_RATE, _loop_begin(), _loop_end())
+	return ChipAudio.wav_header(frames * 4, 2, rate, _loop_begin(), _loop_end())
 
 
 func _loop_begin() -> int:

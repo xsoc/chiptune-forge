@@ -1,7 +1,8 @@
 extends SceneTree
 ## Captures the app at a given window size, for checking layouts.
 ##   godot --path . -s tools/screenshot.gd -- 390 844 2 out.png [sfx|music|gameboy|nes|sms|genesis|snes|pce|msx|c64|gba] [ScreenName] [scroll]
-## scroll moves the screen's scroll area down by that many pixels.
+## scroll moves the screen's scroll area down by that many pixels. The
+## ScreenName "About" opens the About dialog instead.
 ## "gameboy", "nes", "sms", "genesis", "snes", "pce", "msx", "c64", "gba" and "pc" show Music mode with that export target picked.
 
 func _initialize() -> void:
@@ -24,7 +25,9 @@ func _run() -> void:
 		root.get_node("AppState").mode = "sfx"
 	if args.size() > 4 and args[4] in ["gameboy", "nes", "sms", "genesis", "snes", "pce", "msx", "c64", "gba", "pc"]:
 		root.get_node("AppState").set_target(args[4])
-	if args.size() > 5:
+	if args.size() > 5 and args[5] == "About":
+		main.get_node("%About").pressed.emit()
+	elif args.size() > 5:
 		main._show_screen(args[5])
 	if args.size() > 6:
 		for i in 10:

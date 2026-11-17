@@ -45,6 +45,7 @@ func _ready() -> void:
 		_update_synth())
 	AppState.target_changed.connect(func(_t: String) -> void: _update_synth())
 	%Regenerate.pressed.connect(func() -> void: AppState.regenerate_unlocked())
+	%Surprise.pressed.connect(func() -> void: AppState.surprise_song())
 	%Save.pressed.connect(_on_save)
 	%SongView.seek_requested.connect(func(step: float) -> void: seek_requested.emit(step))
 
@@ -246,11 +247,6 @@ func _update_hint() -> void:
 	var s: SongSettings = AppState.settings
 	var vibe: Vibe = AppState.catalog.get_vibe(s.vibes[0]) if not s.vibes.is_empty() else null
 	var style: Style = AppState.catalog.get_style(s.style)
-	var text := ""
-	if vibe and style:
-		if vibe.tempo_max < style.tempo_min - 10 or vibe.tempo_min > style.tempo_max + 10:
-			text = "Unusual combo: %s and %s want different tempos, so they meet in the middle." % [vibe.display_name, style.display_name]
-		elif vibe.energy < 0.3 and style.drum_density > 0.75:
-			text = "Unusual combo: a calm vibe with a busy style. Try lowering Intensity."
+	var text := Catalog.combo_note(vibe, style)
 	%Hint.text = text
 	%Hint.visible = text != ""
