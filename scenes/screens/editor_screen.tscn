@@ -1,0 +1,535 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scenes/screens/editor_screen.gd" id="1"]
+[ext_resource type="Script" path="res://scenes/components/piano_roll.gd" id="2"]
+[ext_resource type="Script" path="res://scenes/components/keyboard_strip.gd" id="3"]
+[ext_resource type="Script" path="res://scripts/editing/live_synth.gd" id="4"]
+[ext_resource type="Script" path="res://scripts/editing/live_input.gd" id="5"]
+
+[node name="EditorScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1")
+
+[node name="Scroll" type="ScrollContainer" parent="."]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+horizontal_scroll_mode = 0
+
+[node name="Margin" type="MarginContainer" parent="Scroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 10
+
+[node name="Stack" type="VBoxContainer" parent="Scroll/Margin"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="TopRow" type="HFlowContainer" parent="Scroll/Margin/Stack"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/h_separation = 6
+theme_override_constants/v_separation = 6
+
+[node name="Title" type="Label" parent="Scroll/Margin/Stack/TopRow"]
+layout_mode = 2
+theme_type_variation = &"SectionLabel"
+text = "ADVANCED"
+vertical_alignment = 1
+
+[node name="SongToggle" type="Button" parent="Scroll/Margin/Stack/TopRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+theme_type_variation = &"Chip"
+text = "Song"
+tooltip_text = "Show the sections, tempo and loop"
+toggle_mode = true
+
+[node name="BarsToggle" type="Button" parent="Scroll/Margin/Stack/TopRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+theme_type_variation = &"Chip"
+text = "Edit"
+tooltip_text = "Show the bar and note tools"
+toggle_mode = true
+
+[node name="LiveToggle" type="Button" parent="Scroll/Margin/Stack/TopRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+theme_type_variation = &"Chip"
+text = "Live"
+tooltip_text = "Show live playing, MIDI and recording"
+toggle_mode = true
+
+[node name="Undo" type="Button" parent="Scroll/Margin/Stack/TopRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+theme_type_variation = &"Chip"
+text = "Undo"
+tooltip_text = "Undo (Ctrl+Z)"
+
+[node name="Redo" type="Button" parent="Scroll/Margin/Stack/TopRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+theme_type_variation = &"Chip"
+text = "Redo"
+tooltip_text = "Redo (Ctrl+Shift+Z)"
+
+[node name="PlaySection" type="Button" parent="Scroll/Margin/Stack/TopRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+theme_type_variation = &"PrimaryButton"
+text = "Play section"
+tooltip_text = "Play from the start of this section"
+
+[node name="LoopSection" type="Button" parent="Scroll/Margin/Stack/TopRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+theme_type_variation = &"Chip"
+text = "Loop section"
+tooltip_text = "Loop this section while it plays"
+toggle_mode = true
+
+[node name="SongPanel" type="PanelContainer" parent="Scroll/Margin/Stack"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"Inset"
+
+[node name="SongBox" type="VBoxContainer" parent="Scroll/Margin/Stack/SongPanel"]
+layout_mode = 2
+
+[node name="OrderScroll" type="ScrollContainer" parent="Scroll/Margin/Stack/SongPanel/SongBox"]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+vertical_scroll_mode = 0
+
+[node name="Order" type="HBoxContainer" parent="Scroll/Margin/Stack/SongPanel/SongBox/OrderScroll"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="SectionTools" type="HFlowContainer" parent="Scroll/Margin/Stack/SongPanel/SongBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/h_separation = 6
+theme_override_constants/v_separation = 6
+
+[node name="AddSection" type="Button" parent="Scroll/Margin/Stack/SongPanel/SongBox/SectionTools"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+theme_type_variation = &"Chip"
+text = "New"
+tooltip_text = "Add a silent section after this one"
+
+[node name="RepeatSection" type="Button" parent="Scroll/Margin/Stack/SongPanel/SongBox/SectionTools"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+theme_type_variation = &"Chip"
+text = "Repeat"
+tooltip_text = "Play this section again after it (edits change both)"
+
+[node name="CopySection" type="Button" parent="Scroll/Margin/Stack/SongPanel/SongBox/SectionTools"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+theme_type_variation = &"Chip"
+text = "Copy"
+tooltip_text = "Copy this section into a new one you can change on its own"
+
+[node name="RemoveSection" type="Button" parent="Scroll/Margin/Stack/SongPanel/SongBox/SectionTools"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+theme_type_variation = &"Chip"
+text = "Remove"
+tooltip_text = "Take this section out of the song"
+
+[node name="MoveEarlier" type="Button" parent="Scroll/Margin/Stack/SongPanel/SongBox/SectionTools"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+theme_type_variation = &"Chip"
+text = "<"
+tooltip_text = "Move this section earlier"
+
+[node name="MoveLater" type="Button" parent="Scroll/Margin/Stack/SongPanel/SongBox/SectionTools"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+theme_type_variation = &"Chip"
+text = ">"
+tooltip_text = "Move this section later"
+
+[node name="SectionName" type="LineEdit" parent="Scroll/Margin/Stack/SongPanel/SongBox/SectionTools"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(90, 40)
+layout_mode = 2
+tooltip_text = "Section name"
+placeholder_text = "Name"
+max_length = 16
+
+[node name="Bars" type="SpinBox" parent="Scroll/Margin/Stack/SongPanel/SongBox/SectionTools"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(120, 40)
+layout_mode = 2
+tooltip_text = "Section length in bars"
+min_value = 1.0
+max_value = 64.0
+value = 4.0
+suffix = "bars"
+
+[node name="LoopFrom" type="Button" parent="Scroll/Margin/Stack/SongPanel/SongBox/SectionTools"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+theme_type_variation = &"Chip"
+text = "Loop from here"
+tooltip_text = "Start the song's loop at this section"
+
+[node name="LoopTo" type="Button" parent="Scroll/Margin/Stack/SongPanel/SongBox/SectionTools"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+theme_type_variation = &"Chip"
+text = "Loop to here"
+tooltip_text = "End the song's loop after this section"
+
+[node name="Tempo" type="SpinBox" parent="Scroll/Margin/Stack/SongPanel/SongBox/SectionTools"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(130, 40)
+layout_mode = 2
+tooltip_text = "Tempo"
+min_value = 40.0
+max_value = 300.0
+value = 120.0
+suffix = "BPM"
+
+[node name="Swing" type="SpinBox" parent="Scroll/Margin/Stack/SongPanel/SongBox/SectionTools"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(140, 40)
+layout_mode = 2
+tooltip_text = "Swing"
+max_value = 100.0
+value = 0.0
+suffix = "% swing"
+
+[node name="NewSong" type="Button" parent="Scroll/Margin/Stack/SongPanel/SongBox/SectionTools"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+theme_type_variation = &"Chip"
+text = "New blank song"
+tooltip_text = "Start a song from scratch with these instruments"
+
+[node name="PartRow" type="HFlowContainer" parent="Scroll/Margin/Stack"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/h_separation = 6
+theme_override_constants/v_separation = 6
+
+[node name="PartPick" type="OptionButton" parent="Scroll/Margin/Stack/PartRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+tooltip_text = "Part"
+
+[node name="DrawTool" type="Button" parent="Scroll/Margin/Stack/PartRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+theme_type_variation = &"Chip"
+text = "Draw"
+tooltip_text = "Draw tool: tap to add, drag to lengthen, tap a note to remove it"
+toggle_mode = true
+
+[node name="SelectTool" type="Button" parent="Scroll/Margin/Stack/PartRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+theme_type_variation = &"Chip"
+text = "Select"
+tooltip_text = "Select tool: tap or drag a box, then move or stretch"
+toggle_mode = true
+
+[node name="EraseTool" type="Button" parent="Scroll/Margin/Stack/PartRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+theme_type_variation = &"Chip"
+text = "Erase"
+tooltip_text = "Erase tool: remove the notes you touch"
+toggle_mode = true
+
+[node name="LengthPick" type="OptionButton" parent="Scroll/Margin/Stack/PartRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+tooltip_text = "Length of new notes"
+
+[node name="ZoomOut" type="Button" parent="Scroll/Margin/Stack/PartRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+theme_type_variation = &"Chip"
+text = "-"
+tooltip_text = "Zoom out"
+
+[node name="ZoomIn" type="Button" parent="Scroll/Margin/Stack/PartRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+theme_type_variation = &"Chip"
+text = "+"
+tooltip_text = "Zoom in"
+
+[node name="Shared" type="Label" parent="Scroll/Margin/Stack/PartRow"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"MutedLabel"
+text = ""
+vertical_alignment = 1
+
+[node name="MakeUnique" type="Button" parent="Scroll/Margin/Stack/PartRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+theme_type_variation = &"Chip"
+text = "Edit only here"
+tooltip_text = "Give this section its own copy of the part"
+
+[node name="BarsPanel" type="HFlowContainer" parent="Scroll/Margin/Stack"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/h_separation = 6
+theme_override_constants/v_separation = 6
+
+[node name="BarsLabel" type="Label" parent="Scroll/Margin/Stack/BarsPanel"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"MutedLabel"
+text = "Bars or notes:"
+vertical_alignment = 1
+
+[node name="CopyBars" type="Button" parent="Scroll/Margin/Stack/BarsPanel"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+theme_type_variation = &"Chip"
+text = "Copy"
+tooltip_text = "Copy the picked bars or notes (Ctrl+C)"
+
+[node name="PasteBars" type="Button" parent="Scroll/Margin/Stack/BarsPanel"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+theme_type_variation = &"Chip"
+text = "Paste"
+tooltip_text = "Paste at the picked bar or the cursor (Ctrl+V)"
+
+[node name="DuplicateBars" type="Button" parent="Scroll/Margin/Stack/BarsPanel"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+theme_type_variation = &"Chip"
+text = "Duplicate"
+tooltip_text = "Copy the picked bars or notes to just after them (Ctrl+D)"
+
+[node name="ClearBars" type="Button" parent="Scroll/Margin/Stack/BarsPanel"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+theme_type_variation = &"Chip"
+text = "Clear"
+tooltip_text = "Remove the picked bars' or selected notes"
+
+[node name="OctaveDown" type="Button" parent="Scroll/Margin/Stack/BarsPanel"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+theme_type_variation = &"Chip"
+text = "-12"
+tooltip_text = "Down an octave"
+
+[node name="SemitoneDown" type="Button" parent="Scroll/Margin/Stack/BarsPanel"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+theme_type_variation = &"Chip"
+text = "-1"
+tooltip_text = "Down a semitone"
+
+[node name="SemitoneUp" type="Button" parent="Scroll/Margin/Stack/BarsPanel"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+theme_type_variation = &"Chip"
+text = "+1"
+tooltip_text = "Up a semitone"
+
+[node name="OctaveUp" type="Button" parent="Scroll/Margin/Stack/BarsPanel"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+theme_type_variation = &"Chip"
+text = "+12"
+tooltip_text = "Up an octave"
+
+[node name="Quantize" type="Button" parent="Scroll/Margin/Stack/BarsPanel"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+theme_type_variation = &"Chip"
+text = "Quantize"
+tooltip_text = "Snap note starts and lengths to the grid"
+
+[node name="GridPick" type="OptionButton" parent="Scroll/Margin/Stack/BarsPanel"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+tooltip_text = "Grid for Quantize and recording"
+
+[node name="VelocityToggle" type="Button" parent="Scroll/Margin/Stack/BarsPanel"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+theme_type_variation = &"Chip"
+text = "Velocity"
+tooltip_text = "Show the velocity lane"
+toggle_mode = true
+
+[node name="PianoRoll" type="Control" parent="Scroll/Margin/Stack"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 220)
+layout_mode = 2
+size_flags_vertical = 3
+script = ExtResource("2")
+
+[node name="LivePanel" type="VBoxContainer" parent="Scroll/Margin/Stack"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="LiveTools" type="HFlowContainer" parent="Scroll/Margin/Stack/LivePanel"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/h_separation = 6
+theme_override_constants/v_separation = 6
+
+[node name="Record" type="Button" parent="Scroll/Margin/Stack/LivePanel/LiveTools"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(96, 40)
+layout_mode = 2
+theme_type_variation = &"PrimaryButton"
+text = "Record"
+tooltip_text = "Record what you play into this part"
+toggle_mode = true
+
+[node name="RecordMode" type="OptionButton" parent="Scroll/Margin/Stack/LivePanel/LiveTools"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+tooltip_text = "Add to the notes, or replace them"
+
+[node name="CountIn" type="CheckBox" parent="Scroll/Margin/Stack/LivePanel/LiveTools"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Count in"
+tooltip_text = "One bar of clicks before recording"
+
+[node name="Metronome" type="CheckBox" parent="Scroll/Margin/Stack/LivePanel/LiveTools"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Click"
+tooltip_text = "Metronome while playing"
+
+[node name="StepInput" type="CheckBox" parent="Scroll/Margin/Stack/LivePanel/LiveTools"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Step input"
+tooltip_text = "While stopped, each note you play goes in at the cursor"
+
+[node name="KeysDown" type="Button" parent="Scroll/Margin/Stack/LivePanel/LiveTools"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+theme_type_variation = &"Chip"
+text = "Oct -"
+tooltip_text = "Keys an octave down"
+
+[node name="KeysUp" type="Button" parent="Scroll/Margin/Stack/LivePanel/LiveTools"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+theme_type_variation = &"Chip"
+text = "Oct +"
+tooltip_text = "Keys an octave up"
+
+[node name="Midi" type="Button" parent="Scroll/Margin/Stack/LivePanel/LiveTools"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+theme_type_variation = &"Chip"
+text = "Connect MIDI"
+tooltip_text = "Listen to MIDI keyboards and controllers"
+
+[node name="MidiStatus" type="Label" parent="Scroll/Margin/Stack/LivePanel/LiveTools"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"MutedLabel"
+text = ""
+vertical_alignment = 1
+
+[node name="Keys" type="Control" parent="Scroll/Margin/Stack/LivePanel"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 96)
+layout_mode = 2
+script = ExtResource("3")
+
+[node name="Fit" type="RichTextLabel" parent="Scroll/Margin/Stack"]
+unique_name_in_owner = true
+layout_mode = 2
+bbcode_enabled = true
+fit_content = true
+theme_type_variation = &"MutedLabel"
+
+[node name="Help" type="Label" parent="Scroll/Margin/Stack"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"MutedLabel"
+autowrap_mode = 3
+text = ""
+
+[node name="LiveSynth" type="Node" parent="."]
+unique_name_in_owner = true
+script = ExtResource("4")
+
+[node name="LiveInput" type="Node" parent="."]
+unique_name_in_owner = true
+script = ExtResource("5")
+
+[node name="FitTimer" type="Timer" parent="."]
+unique_name_in_owner = true
+wait_time = 0.8
+one_shot = true

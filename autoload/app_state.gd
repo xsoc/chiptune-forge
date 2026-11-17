@@ -33,6 +33,7 @@ var locked_layers := PackedStringArray()
 var song_edited := false
 ## Song data before each note edit, newest last, for Undo.
 var _undo: Array = []
+var _redo: Array = []
 
 var sfx_preset_id := "coin"
 var sfx_seed := 1
@@ -280,6 +281,7 @@ func generate() -> void:
 		return
 	song = SongGenerator.generate(settings, catalog)
 	_undo.clear()
+	_redo.clear()
 	song_edited = false
 	song_changed.emit(song)
 
@@ -296,6 +298,7 @@ func regenerate_unlocked() -> void:
 			settings.variations[layer] = settings.get_variation(layer) + 1
 	song = SongGenerator.generate(settings, catalog, song, locked_layers)
 	_undo.clear()
+	_redo.clear()
 	song_changed.emit(song)
 
 
@@ -310,21 +313,28 @@ func regenerate_layer(layer: String) -> void:
 			keep.append(other)
 	song = SongGenerator.generate(settings, catalog, song, keep)
 	_undo.clear()
+	_redo.clear()
 	song_changed.emit(song)
 
 
 ## Changes the song's notes with [param change] (it takes the song), keeping
 ## the old notes for Undo. Editing a layer locks it, so regenerating keeps
-## the edit.
+## the edit. Pass "*" for a change to the whole song (its sections, say),
+## which locks every layer, or "" for one that locks none (the tempo).
 func edit_song(layer: String, change: Callable) -> void:
 	if song == null:
 		return
 	_undo.append(song.data.duplicate(true))
 	if _undo.size() > 100:
 		_undo.pop_front()
+	_redo.clear()
 	change.call(song)
 	song_edited = true
-	if not locked_layers.has(layer):
+	if layer == "*":
+		for each in SongSettings.LAYERS:
+			if not locked_layers.has(each):
+				set_layer_locked(each, true)
+	elif layer != "" and not locked_layers.has(layer):
 		set_layer_locked(layer, true)
 	song_changed.emit(song)
 
@@ -333,10 +343,25 @@ func can_undo() -> bool:
 	return not _undo.is_empty()
 
 
+func can_redo() -> bool:
+	return not _redo.is_empty()
+
+
 func undo_edit() -> void:
 	if _undo.is_empty() or song == null:
 		return
+	_redo.append(song.data.duplicate(true))
 	song.data = _undo.pop_back()
+	_apply_engines()
+	song_changed.emit(song)
+
+
+## Puts back the last change Undo took away.
+func redo_edit() -> void:
+	if _redo.is_empty() or song == null:
+		return
+	_undo.append(song.data.duplicate(true))
+	song.data = _redo.pop_back()
 	_apply_engines()
 	song_changed.emit(song)
 
@@ -532,6 +557,7 @@ func open_library_entry(index: int) -> void:
 		if saved:
 			song = saved
 			_undo.clear()
+			_redo.clear()
 			song_edited = true
 			song_changed.emit(song)
 		else:

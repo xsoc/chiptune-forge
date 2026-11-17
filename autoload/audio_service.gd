@@ -11,6 +11,9 @@ var music: ChipMusicPlayer
 var sfx: ChipSfxPlayer
 ## Plays console sound effects, rendered through the emulated chip.
 var gb_sfx: AudioStreamPlayer
+## When set, songs loop these steps instead of their own loop (the editor
+## loops the section being edited). (-1, -1) for the song's own loop.
+var loop_steps := Vector2i(-1, -1)
 ## Web browsers block audio until the user taps. The UI shows a prompt and
 ## sets this once the user has.
 var audio_unlocked := not OS.has_feature("web")
@@ -34,10 +37,27 @@ func _ready() -> void:
 
 
 func play_song(song: ChipSong, from_step := 0.0) -> void:
+	if loop_steps.y > loop_steps.x and loop_steps.x >= 0:
+		song = _looped_view(song, loop_steps)
+		music.loop = true
 	music.song = song
 	music.adaptive = false
 	music.play(from_step)
 	playback_started.emit()
+
+
+## A copy of [param song] that loops steps [code]range.x[/code] to
+## [code]range.y[/code]. It shares the notes, so nothing is copied but the
+## timing.
+static func _looped_view(song: ChipSong, range: Vector2i) -> ChipSong:
+	var view := ChipSong.new()
+	view.data = song.data.duplicate(false)
+	var timing: Dictionary = (song.data["timing"] as Dictionary).duplicate()
+	timing["loop"] = true
+	timing["loop_start"] = clampi(range.x, 0, song.get_length_steps())
+	timing["loop_end"] = clampi(range.y, timing["loop_start"] + 1, song.get_length_steps())
+	view.data["timing"] = timing
+	return view
 
 
 func stop_song() -> void:

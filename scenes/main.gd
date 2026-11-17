@@ -10,7 +10,7 @@ const TABLET_MAX := 1100.0
 
 ## Navigation per mode: [label, screen node name].
 const NAV := {
-	"music": [["Generate", "GenerateScreen"], ["Layers", "LayersScreen"], ["Export", "ExportScreen"], ["Library", "LibraryScreen"]],
+	"music": [["Generate", "GenerateScreen"], ["Layers", "LayersScreen"], ["Advanced", "EditorScreen"], ["Export", "ExportScreen"], ["Library", "LibraryScreen"]],
 	"sfx": [["Create", "SfxScreen"], ["Kit", "KitScreen"], ["Export", "ExportScreen"], ["Library", "LibraryScreen"]],
 }
 
@@ -62,10 +62,12 @@ func _process(_delta: float) -> void:
 		var step := seconds / song.get_step_seconds()
 		%GenerateScreen.set_playhead(step)
 		%LayersScreen.set_playhead(step)
+		%EditorScreen.set_playhead(step)
 		%PlayerBar.set_time(seconds, song.get_length_seconds())
 	else:
 		%GenerateScreen.set_playhead(-1.0)
 		%LayersScreen.set_playhead(-1.0)
+		%EditorScreen.set_playhead(-1.0)
 
 
 func _detect_ui_scale() -> float:
