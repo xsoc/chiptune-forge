@@ -26,7 +26,7 @@ jobs:
       - name: Build the Chiptune Forge image
         run: docker build -t chiptune-forge .chiptune-forge
       - name: Make the music and sounds
-        run: docker run --rm -u "$(id -u):$(id -g)" -v "$PWD:/work" chiptune-forge batch music.manifest.json --json > audio-report.json || (cat audio-report.json; exit 1)
+        run: docker run --rm -u "$(id -u):$(id -g)" -v "$PWD:/work" chiptune-forge batch music.manifest.json --report audio-report.json
       - name: Build the NES examples
         run: |
           sudo apt-get install -y --no-install-recommends cc65

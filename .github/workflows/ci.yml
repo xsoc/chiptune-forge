@@ -594,7 +594,7 @@ jobs:
         run: |
           set -e
           cd examples/cli
-          docker run --rm -u "$(id -u):$(id -g)" -v "$PWD:/work" chiptune-forge batch music.manifest.json --json > report.json
+          docker run --rm -u "$(id -u):$(id -g)" -v "$PWD:/work" chiptune-forge batch music.manifest.json --report report.json
           cat report.json
           python3 -c "import json; r = json.load(open('report.json')); assert r['ok'] and len(r['jobs']) == 3, r"
       - name: Build the NES examples the exports include

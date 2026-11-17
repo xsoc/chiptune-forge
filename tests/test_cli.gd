@@ -164,3 +164,11 @@ func test_pack_flag() -> void:
 	var cli := _run(["generate", "--pack", "res://packs/seasons.chippack", "--vibe", "winter_frost", "--style", "harvest_dance", "--seed", "1", "--format", "project", "--out", out])
 	check_eq(_code(cli), 0, "a pack's vibe and style")
 	Catalog.get_default().remove_pack("Seasons")
+
+
+func test_report_file() -> void:
+	var out := _out_dir("report")
+	var cli := _run(["list", "targets", "--report", out.path_join("r/report.json")])
+	check_eq(_code(cli), 0, "listed")
+	var report: Variant = JSON.parse_string(FileAccess.get_file_as_string(out.path_join("r/report.json")))
+	check(report is Dictionary and report.get("ok") == true and (report.get("items", []) as Array).size() == ExportJob.TARGETS.size(), "the report in a file")

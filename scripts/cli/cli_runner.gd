@@ -84,11 +84,21 @@ func run(args: PackedStringArray) -> int:
 	var positional: PackedStringArray = parsed["positional"]
 	_json = flags.has("json")
 	var code := _dispatch(command, flags, positional)
+	_report["command"] = command
+	_report["ok"] = code == OK_CODE
+	_report["exit_code"] = code
 	if _json:
-		_report["command"] = command
-		_report["ok"] = code == OK_CODE
-		_report["exit_code"] = code
 		_say(JSON.stringify(_report, "  ", false))
+	if flags.has("report"):
+		# Godot prints its own banner on stdout first, so a file is the
+		# cleanest way for scripts to get the report.
+		var path := _path(str(flags["report"]))
+		DirAccess.make_dir_recursive_absolute(path.get_base_dir())
+		var file := FileAccess.open(path, FileAccess.WRITE)
+		if file == null:
+			_fail(FILE_ERROR, "cannot write %s" % path, command)
+			return FILE_ERROR
+		file.store_string(JSON.stringify(_report, "  ", false) + "\n")
 	return code
 
 
@@ -672,7 +682,7 @@ func _usage() -> String:
 		"  --settings file.json (flags override it).",
 		"Output: --format json,plugin,wav,stems,midi,console,project (default: json,plugin,wav,console,project),",
 		"  --out folder, --name prefix, --loops n.",
-		"Everywhere: --json for a machine-readable report, --strict to fail when the music does not fit a",
+		"Everywhere: --json for a machine-readable report (--report file.json writes it to a file), --strict to fail when the music does not fit a",
 		"  chip or had to change, --pack file.chippack to use a community pack.",
 		"",
 		"Exit codes: 0 success, 1 bad arguments, 2 chip limits (--strict), 3 file error, 4 invalid file.",
