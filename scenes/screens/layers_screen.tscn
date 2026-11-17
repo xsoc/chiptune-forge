@@ -39,6 +39,66 @@ script = ExtResource("2")
 min_column_width = 360
 max_columns = 2
 
+[node name="StructureCard" type="PanelContainer" parent="Scroll/Margin/Columns"]
+layout_mode = 2
+theme_type_variation = &"Card"
+
+[node name="Structure" type="VBoxContainer" parent="Scroll/Margin/Columns/StructureCard"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Title" type="Label" parent="Scroll/Margin/Columns/StructureCard/Structure"]
+layout_mode = 2
+theme_type_variation = &"SectionLabel"
+text = "STRUCTURE"
+
+[node name="Help" type="Label" parent="Scroll/Margin/Columns/StructureCard/Structure"]
+layout_mode = 2
+theme_type_variation = &"MutedLabel"
+text = "The sections in play order. Drag one onto another to move it, or pick one to lock, regenerate, duplicate or remove it. Repeats of a section share its notes."
+autowrap_mode = 3
+
+[node name="Timeline" type="HFlowContainer" parent="Scroll/Margin/Columns/StructureCard/Structure"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="SectionActions" type="HFlowContainer" parent="Scroll/Margin/Columns/StructureCard/Structure"]
+layout_mode = 2
+
+[node name="LockSection" type="Button" parent="Scroll/Margin/Columns/StructureCard/Structure/SectionActions"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+tooltip_text = "Keep this section's notes when regenerating"
+toggle_mode = true
+text = "Lock"
+
+[node name="RegenerateSection" type="Button" parent="Scroll/Margin/Columns/StructureCard/Structure/SectionActions"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+tooltip_text = "New notes for this section, keeping the rest of the song"
+text = "Regenerate"
+
+[node name="DuplicateSection" type="Button" parent="Scroll/Margin/Columns/StructureCard/Structure/SectionActions"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+tooltip_text = "Play this section again straight after"
+text = "Duplicate"
+
+[node name="RemoveSection" type="Button" parent="Scroll/Margin/Columns/StructureCard/Structure/SectionActions"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "Remove"
+
+[node name="AddSection" type="OptionButton" parent="Scroll/Margin/Columns/StructureCard/Structure/SectionActions"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+tooltip_text = "Add a section at the end (before the outro)"
+
 [node name="LayersCard" type="PanelContainer" parent="Scroll/Margin/Columns"]
 layout_mode = 2
 theme_type_variation = &"Card"
