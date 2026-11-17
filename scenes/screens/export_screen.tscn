@@ -147,7 +147,27 @@ text = "    Include the plugin"
 unique_name_in_owner = true
 layout_mode = 2
 button_pressed = true
-text = "Audio: WAV, 44.1 kHz"
+text = "Audio: WAV, 16-bit"
+
+[node name="RateRow" type="HBoxContainer" parent="Scroll/Margin/Columns/FormatsCard/Formats"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="RateLabel" type="Label" parent="Scroll/Margin/Columns/FormatsCard/Formats/RateRow"]
+layout_mode = 2
+text = "    Sample rate"
+
+[node name="Rate" type="OptionButton" parent="Scroll/Margin/Columns/FormatsCard/Formats/RateRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(150, 40)
+layout_mode = 2
+tooltip_text = "44.1 kHz suits most games and music players; 48 kHz matches video."
+selected = 0
+item_count = 2
+popup/item_0/text = "44.1 kHz"
+popup/item_0/id = 44100
+popup/item_1/text = "48 kHz"
+popup/item_1/id = 48000
 
 [node name="WavOptions" type="HBoxContainer" parent="Scroll/Margin/Columns/FormatsCard/Formats"]
 unique_name_in_owner = true

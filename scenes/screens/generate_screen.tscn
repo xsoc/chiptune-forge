@@ -59,6 +59,13 @@ column_weights = {
 layout_mode = 2
 theme_override_constants/separation = 16
 
+[node name="Surprise" type="Button" parent="Scroll/Margin/Stack/Columns/Browser"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+tooltip_text = "Pick a vibe and a style that suit each other"
+text = "Surprise me"
+
 [node name="VibeCard" type="PanelContainer" parent="Scroll/Margin/Stack/Columns/Browser"]
 layout_mode = 2
 size_flags_vertical = 3

@@ -70,6 +70,7 @@ changes nothing.
 | `--name prefix` | File name and C symbol prefix (default: the song's title, or `sounds` for a kit). |
 | `--format list` | Comma-separated, from `json` (files for the Godot plugin), `plugin` (the plugin itself), `wav`, `stems` (one WAV per layer), `midi`, `console` (the target's source, data and example project; `c` and `asm` mean the same) and `project` (a `.cforge` file to export again later). `all` means every one. The default is `json,plugin,wav,console,project`. |
 | `--loops n` | How many times a song's WAV plays the loop. |
+| `--rate hz` | The WAV sample rate: `44100` (default) or `48000`. |
 | `--json` | Prints a machine-readable report instead of the summary. Godot prints a one-line banner before it. |
 | `--report file.json` | Writes the same report to a file, for scripts. |
 | `--strict` | Fails with exit code 2 when the music is over a chip's limits, or when the arranger had to drop parts, move notes or merge drums to fit. |

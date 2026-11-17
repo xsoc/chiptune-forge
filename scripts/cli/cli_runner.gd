@@ -175,6 +175,8 @@ func _path(path: String) -> String:
 
 
 func _formats(flags: Dictionary) -> Variant:
+	if flags.has("rate") and not ExportJob.RATES.has(int(flags["rate"])):
+		return "unknown sample rate \"%s\". Rates: 44100, 48000" % flags["rate"]
 	var list := DEFAULT_FORMATS
 	if flags.has("format"):
 		list = PackedStringArray()
@@ -201,6 +203,7 @@ func _options(formats: PackedStringArray, prefix: String, flags: Dictionary) -> 
 		"plugin": formats.has("plugin"),
 		"wav": formats.has("wav") or formats.has("stems"),
 		"loops": int(flags.get("loops", 1)),
+		"rate": int(flags.get("rate", ExportJob.MIX_RATE)),
 		"stems": formats.has("stems"),
 		"midi": formats.has("midi"),
 		"console": formats.has("console"),
@@ -714,7 +717,7 @@ func _usage() -> String:
 		"  --settings file.json (flags override it).",
 		"For --target pc: --card speaker|tandy|adlib|sb|sbpro|sb16|mt32|gm|gus picks the sound card (default adlib).",
 		"Output: --format json,plugin,wav,stems,midi,console,project (default: json,plugin,wav,console,project),",
-		"  --out folder, --name prefix, --loops n.",
+		"  --out folder, --name prefix, --loops n, --rate 44100|48000 (WAV sample rate).",
 		"Everywhere: --json for a machine-readable report (--report file.json writes it to a file), --strict to fail when the music does not fit a",
 		"  chip or had to change, --pack file.chippack to use a community pack.",
 		"",

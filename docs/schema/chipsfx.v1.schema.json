@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://xsoc.github.io/chiptune-forge/schema/chipsfx.v1.schema.json",
+  "title": "Chiptune Forge sound effect (.chipsfx), version 1",
+  "description": "See docs/format.md. params follows the sfxr model; missing keys take the defaults in addons/chipforge/runtime/chip_sfx_synth.gd.",
+  "type": "object",
+  "required": ["format", "version", "params"],
+  "properties": {
+    "format": {"const": "chipforge-sfx"},
+    "version": {"const": 1},
+    "meta": {
+      "type": "object",
+      "properties": {
+        "name": {"type": "string"},
+        "preset": {"type": "string"},
+        "seed": {"type": ["integer", "string"]},
+        "variant": {"type": "string"},
+        "license": {"type": "string"}
+      }
+    },
+    "params": {"$ref": "#/$defs/params"},
+    "layer2": {"$ref": "#/$defs/params"}
+  },
+  "$defs": {
+    "params": {
+      "type": "object",
+      "properties": {
+        "wave": {"enum": ["square", "saw", "sine", "noise", "triangle", "noise_short"]}
+      },
+      "additionalProperties": {"type": ["number", "string", "boolean"]}
+    }
+  }
+}
