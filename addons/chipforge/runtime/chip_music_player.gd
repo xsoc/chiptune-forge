@@ -116,6 +116,12 @@ func play(from_step := 0.0) -> void:
 		push_warning("ChipMusicPlayer: no song assigned.")
 		return
 	stop()
+	if song.prerendered and not adaptive and not sequencer_factory.is_valid():
+		var stream: AudioStreamOggVorbis = song.prerendered.duplicate()
+		stream.loop = stream.loop and loop
+		_player.stream = stream
+		_player.play(from_step * song.get_step_seconds())
+		return
 	var rate := web_mix_rate if OS.has_feature("web") else mix_rate
 	if sequencer_factory.is_valid():
 		_sequencer = sequencer_factory.call(song, rate)

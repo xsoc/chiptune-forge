@@ -14,6 +14,26 @@ const VERSION := 1
 
 ## Raw song data. See [code]docs/format.md[/code] for the schema.
 @export var data: Dictionary = {}
+## The song rendered to a looping OGG Vorbis stream, when it was imported
+## with the "Pre-render" option. [ChipMusicPlayer] plays it instead of
+## synthesising the song live, unless adaptive layers are on.
+@export var prerendered: AudioStreamOggVorbis
+
+
+## Renders the song once and encodes it as a looping OGG Vorbis stream
+## (see [ChipVorbis]). Takes a few seconds per minute of music.
+func render_ogg(mix_rate := 44100) -> AudioStreamOggVorbis:
+	var sequencer := ChipSongSequencer.new(self, mix_rate)
+	sequencer.looping = sequencer.looping and bool(data.get("timing", {}).get("loop", true))
+	var frames := sequencer.render_all(1)
+	var loop_begin := sequencer.get_loop_start_frame() if sequencer.looping else -1
+	var loop_end := sequencer.get_loop_end_frame() if sequencer.looping else -1
+	var bytes := ChipVorbis.from_frames(frames, mix_rate, loop_begin, loop_end, PackedStringArray(["TITLE=%s" % get_title()])).run()
+	var stream := AudioStreamOggVorbis.load_from_buffer(bytes)
+	if stream and loop_begin >= 0:
+		stream.loop = true
+		stream.loop_offset = loop_begin / float(mix_rate)
+	return stream
 
 
 ## Parses JSON text into a song. Returns [code]null[/code] and pushes an

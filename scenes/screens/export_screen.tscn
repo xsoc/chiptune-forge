@@ -136,18 +136,21 @@ unique_name_in_owner = true
 layout_mode = 2
 button_pressed = true
 text = "Godot: data for the Chiptune Forge plugin"
+autowrap_mode = 3
 
 [node name="Plugin" type="CheckBox" parent="Scroll/Margin/Columns/FormatsCard/Formats"]
 unique_name_in_owner = true
 layout_mode = 2
 button_pressed = true
 text = "    Include the plugin"
+autowrap_mode = 3
 
 [node name="Wav" type="CheckBox" parent="Scroll/Margin/Columns/FormatsCard/Formats"]
 unique_name_in_owner = true
 layout_mode = 2
 button_pressed = true
 text = "Audio: WAV, 16-bit"
+autowrap_mode = 3
 
 [node name="RateRow" type="HBoxContainer" parent="Scroll/Margin/Columns/FormatsCard/Formats"]
 unique_name_in_owner = true
@@ -169,7 +172,7 @@ popup/item_0/id = 44100
 popup/item_1/text = "48 kHz"
 popup/item_1/id = 48000
 
-[node name="WavOptions" type="HBoxContainer" parent="Scroll/Margin/Columns/FormatsCard/Formats"]
+[node name="WavOptions" type="HFlowContainer" parent="Scroll/Margin/Columns/FormatsCard/Formats"]
 unique_name_in_owner = true
 layout_mode = 2
 
@@ -197,10 +200,18 @@ unique_name_in_owner = true
 layout_mode = 2
 text = "One file per layer"
 
+[node name="Ogg" type="CheckBox" parent="Scroll/Margin/Columns/FormatsCard/Formats"]
+unique_name_in_owner = true
+layout_mode = 2
+tooltip_text = "Compressed audio, about a seventh of the WAV's size."
+text = "Audio: OGG Vorbis, loop points as LOOPSTART and LOOPLENGTH tags"
+autowrap_mode = 3
+
 [node name="Midi" type="CheckBox" parent="Scroll/Margin/Columns/FormatsCard/Formats"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "MIDI: one track per channel"
+autowrap_mode = 3
 
 [node name="NameRow" type="HBoxContainer" parent="Scroll/Margin/Columns/FormatsCard/Formats"]
 layout_mode = 2

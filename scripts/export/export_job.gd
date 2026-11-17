@@ -70,8 +70,10 @@ static func arrange(target: String, song: ChipSong, gameboy_options := {}) -> Va
 ## Options as for each target's own export, plus "project": the .cforge
 ## text to include as <prefix>.cforge.
 static func for_target_song(target: String, song: ChipSong, options: Dictionary, arranged: Variant = null) -> ExportJob:
-	var job := _song_job(target, song, options, arranged)
+	var job := _song_job(target, song, _with_ogg(options), arranged)
 	job._use_rate(options)
+	var meta: Dictionary = song.data.get("meta", {})
+	job._use_ogg(options, song.get_title(), "Made with Chiptune Forge. Seed %s. %s" % [meta.get("seed", ""), meta.get("license", "")])
 	if options.has("project"):
 		job.files["%s.%s" % [sanitize(str(options.get("prefix", song.get_title()))), ProjectFile.EXTENSION]] = str(options["project"]).to_utf8_buffer()
 	return job
@@ -108,8 +110,9 @@ static func _song_job(target: String, song: ChipSong, options: Dictionary, arran
 
 ## The export of a set of sounds (id to [ChipSfx]) for any target.
 static func for_target_sfx(target: String, sounds: Dictionary, kit_name: String, options: Dictionary) -> ExportJob:
-	var job := _sfx_job(target, sounds, kit_name, options)
+	var job := _sfx_job(target, sounds, kit_name, _with_ogg(options))
 	job._use_rate(options)
+	job._use_ogg(options, kit_name, "Made with Chiptune Forge.")
 	if options.has("project"):
 		job.files["%s.%s" % [sanitize(kit_name), ProjectFile.EXTENSION]] = str(options["project"]).to_utf8_buffer()
 	return job
@@ -1224,6 +1227,67 @@ func _use_rate(options: Dictionary) -> void:
 			if path.get_file() == "README.txt":
 				files[path] = files[path].get_string_from_utf8().replace("44.1 kHz", ("%.1f kHz" % (rate / 1000.0)).replace(".0 ", " ")).to_utf8_buffer()
 		return true)
+
+
+## OGG files are made from the rendered WAVs, so an OGG export renders
+## them even when WAV is not asked for.
+static func _with_ogg(options: Dictionary) -> Dictionary:
+	if bool(options.get("ogg", false)) and not bool(options.get("wav", true)):
+		return options.merged({"wav": true}, true)
+	return options
+
+
+## Takes the "ogg" option: once everything else is built, each WAV under
+## audio/ gets an OGG Vorbis copy with its loop as LOOPSTART and LOOPLENGTH
+## tags. Without "wav", the OGG replaces the WAV.
+func _use_ogg(options: Dictionary, title: String, credit: String) -> void:
+	if not bool(options.get("ogg", false)):
+		return
+	var keep_wav := bool(options.get("wav", true))
+	var encoder: Array = [null, ""]
+	_tasks.append(func() -> bool:
+		if encoder[0] == null:
+			var next := ""
+			for path: String in files:
+				if path.begins_with("audio/") and path.ends_with(".wav") and not files.has(path.get_basename() + ".ogg"):
+					next = path
+					break
+			if next == "":
+				_ogg_readmes(keep_wav)
+				_r_fraction = 0.0
+				return true
+			var name := next.get_file().get_basename()
+			encoder[0] = ChipVorbis.from_wav(files[next], PackedStringArray(["TITLE=%s" % (title if name == sanitize(title) else name), "COMMENT=%s" % credit, "ENCODER=Chiptune Forge"]))
+			encoder[1] = next
+			status = "Encoding %s.ogg" % name
+			if encoder[0] == null:
+				files[next.get_basename() + ".ogg"] = PackedByteArray()
+				return false
+		var vorbis: ChipVorbis = encoder[0]
+		_r_fraction = vorbis.get_progress()
+		if not vorbis.step(2):
+			return false
+		var wav_path: String = encoder[1]
+		files[wav_path.get_basename() + ".ogg"] = vorbis.bytes
+		if not keep_wav:
+			files.erase(wav_path)
+		encoder[0] = null
+		return false)
+
+
+func _ogg_readmes(keep_wav: bool) -> void:
+	for path in files:
+		if path.get_file() != "README.txt":
+			continue
+		var lines: PackedStringArray = files[path].get_string_from_utf8().split("\n")
+		for i in lines.size():
+			if lines[i].strip_edges().begins_with("audio/") and lines[i].contains("WAV"):
+				if keep_wav:
+					lines.insert(i + 1, "        OGG Vorbis copies sit beside the WAVs, with the loop as LOOPSTART and LOOPLENGTH tags.")
+				else:
+					lines[i] = lines[i].replace(", 16-bit", "").replace("WAV", "OGG Vorbis").replace("in the smpl chunk", "as LOOPSTART and LOOPLENGTH tags")
+				break
+		files[path] = "\n".join(lines).to_utf8_buffer()
 
 
 func _queue_render(song: ChipSong, path: String, loops: int, muted: Array) -> void:

@@ -10,9 +10,8 @@ func _ready() -> void:
 	set_process(false)
 	_build_targets()
 	%Export.pressed.connect(_on_export)
-	%Wav.toggled.connect(func(on: bool) -> void:
-		%WavOptions.visible = on and AppState.mode == "music"
-		%RateRow.visible = on)
+	%Wav.toggled.connect(func(_on: bool) -> void: _show_audio_options())
+	%Ogg.toggled.connect(func(_on: bool) -> void: _show_audio_options())
 	%Godot.toggled.connect(func(on: bool) -> void: %Plugin.disabled = not on)
 	AppState.mode_changed.connect(func(_m: String) -> void: refresh())
 	AppState.song_changed.connect(func(_s: ChipSong) -> void: refresh())
@@ -27,6 +26,13 @@ func _ready() -> void:
 		if visible:
 			refresh())
 	refresh()
+
+
+## Loops, stems and sample rate apply to WAV and OGG alike.
+func _show_audio_options() -> void:
+	var audio: bool = %Wav.button_pressed or %Ogg.button_pressed
+	%WavOptions.visible = audio and AppState.mode == "music"
+	%RateRow.visible = audio
 
 
 func refresh() -> void:
@@ -45,8 +51,7 @@ func refresh() -> void:
 	var console := gameboy or nes or sms or genesis or snes or pce or msx or c64 or gba or pc
 	%Export.theme_type_variation = &"PrimaryButton" if music else &"SfxPrimaryButton"
 	%Midi.visible = music
-	%WavOptions.visible = music and %Wav.button_pressed
-	%RateRow.visible = %Wav.button_pressed
+	_show_audio_options()
 	%Stems.visible = not console
 	%Console.visible = console
 	%Console.text = "Game Boy: C project for GBDK-2020 and hUGEDriver"
@@ -210,6 +215,7 @@ func _on_export() -> void:
 		"rate": %Rate.get_selected_id(),
 		"stems": %Stems.button_pressed,
 		"midi": %Midi.button_pressed,
+		"ogg": %Ogg.button_pressed,
 		"console": %Console.button_pressed,
 		"card": AppState.pc_card,
 	}
