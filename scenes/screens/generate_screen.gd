@@ -82,7 +82,7 @@ func _fill_options() -> void:
 		%Mode.set_item_metadata(%Mode.item_count - 1, mode)
 	%Form.clear()
 	var form_names := {"auto": "Form: style picks", "loop": "Loop (A A)", "verse_chorus": "Verse-chorus", "aaba": "AABA",
-		"rondo": "Rondo (A B A C A)", "through": "Through-composed", "build": "Build", "boss": "Boss (two phases)", "jingle": "Jingle (stinger)"}
+		"rondo": "Rondo (A B A C A)", "through": "Through-composed", "build": "Build", "boss": "Boss (two phases)", "jingle": "Jingle (stinger)", "custom": "Custom (arrange on Layers)"}
 	for form in SongSettings.FORMS:
 		%Form.add_item(form_names.get(form, form))
 		%Form.set_item_metadata(%Form.item_count - 1, form)

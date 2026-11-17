@@ -10,6 +10,9 @@ const LENGTHS := [[1, "1 step"], [2, "2 steps"], [4, "1 beat"], [8, "2 beats"], 
 const VISIBLE_PITCHES := 24
 
 var _rows: Dictionary = {}
+## The picked section on the timeline, as a position in the play order.
+var _picked := 0
+const LETTER_TEXT := {"I": "Intro", "A": "A", "B": "B", "C": "C", "D": "D", "O": "Outro"}
 ## The pitch of the editor's bottom row, per tonal part.
 var _low_pitch: Dictionary = {}
 
@@ -34,6 +37,32 @@ func _ready() -> void:
 		if AppState.song:
 			_update_budget())
 	AppState.locks_changed.connect(_sync_locks)
+	%AddSection.add_item("Add a section")
+	for letter in SongSettings.SECTION_LETTERS:
+		%AddSection.add_item("Add %s" % LETTER_TEXT[letter])
+		%AddSection.set_item_metadata(%AddSection.item_count - 1, letter)
+	%AddSection.item_selected.connect(_on_add_section)
+	%LockSection.toggled.connect(func(on: bool) -> void:
+		var name := _picked_name()
+		if name != "":
+			AppState.set_section_locked(name, on)
+			_build_timeline(AppState.song))
+	%RegenerateSection.pressed.connect(func() -> void:
+		var name := _picked_name()
+		if name != "":
+			AppState.regenerate_section(name))
+	%DuplicateSection.pressed.connect(func() -> void:
+		var at := _picked
+		_picked = at + 1
+		AppState.edit_structure(func(letters: Array) -> void:
+			if at < letters.size():
+				letters.insert(at + 1, letters[at])))
+	%RemoveSection.pressed.connect(func() -> void:
+		var at := _picked
+		_picked = maxi(at - 1, 0)
+		AppState.edit_structure(func(letters: Array) -> void:
+			if at < letters.size():
+				letters.remove_at(at)))
 	%AddState.pressed.connect(_on_add_state)
 	%NewState.text_submitted.connect(func(_t: String) -> void: _on_add_state())
 	%ResetAdaptive.pressed.connect(func() -> void: AppState.reset_adaptive())
@@ -63,6 +92,7 @@ func set_playhead(step: float) -> void:
 
 func _on_song_changed(song: ChipSong) -> void:
 	%SongView.set_song(song)
+	_build_timeline(song)
 	var instruments: Array = song.data.get("instruments", [])
 	for i in SongSettings.LAYERS.size():
 		var layer: String = SongSettings.LAYERS[i]
@@ -98,6 +128,80 @@ static func _sound_text(layer: String, inst: Dictionary) -> String:
 func _sync_locks() -> void:
 	for layer in _rows:
 		_rows[layer].set_locked(AppState.locked_layers.has(layer))
+	if AppState.song:
+		_build_timeline(AppState.song)
+
+
+## The structure timeline: one chip per section in play order.
+func _build_timeline(song: ChipSong) -> void:
+	for child in %Timeline.get_children():
+		child.queue_free()
+	var order: Array = song.data.get("order", [])
+	_picked = clampi(_picked, 0, maxi(order.size() - 1, 0))
+	var group := ButtonGroup.new()
+	for i in order.size():
+		var section: Dictionary = song.data["sections"][int(order[i])]
+		var chip := SectionChip.new()
+		chip.index = i
+		var name := str(section["name"])
+		var bars := int(section["length"]) / maxi(song.get_steps_per_beat() * song.get_beats_per_bar(), 1)
+		chip.text = "%s%s · %d bars" % ["🔒 " if AppState.locked_sections.has(name) else "", name, bars]
+		chip.toggle_mode = true
+		chip.button_group = group
+		chip.button_pressed = i == _picked
+		chip.theme_type_variation = &"Chip"
+		chip.custom_minimum_size.y = 44
+		chip.tooltip_text = "Drag onto another section to move it"
+		chip.pressed.connect(func() -> void:
+			_picked = i
+			_sync_section_actions(song))
+		chip.moved.connect(_on_section_moved)
+		%Timeline.add_child(chip)
+	_sync_section_actions(song)
+
+
+func _picked_name() -> String:
+	var song: ChipSong = AppState.song
+	if song == null:
+		return ""
+	var order: Array = song.data.get("order", [])
+	if _picked >= order.size():
+		return ""
+	return str(song.data["sections"][int(order[_picked])]["name"])
+
+
+func _sync_section_actions(song: ChipSong) -> void:
+	var name := _picked_name()
+	%LockSection.set_pressed_no_signal(AppState.locked_sections.has(name))
+	%LockSection.text = "Locked" if AppState.locked_sections.has(name) else "Lock"
+	var jingle: bool = str(song.data.get("meta", {}).get("form", "")) == "jingle"
+	for button in [%LockSection, %RegenerateSection, %DuplicateSection, %RemoveSection]:
+		button.disabled = name == "" or jingle
+	%RemoveSection.disabled = %RemoveSection.disabled or song.data.get("order", []).size() <= 1
+	%AddSection.disabled = jingle
+
+
+func _on_section_moved(from_index: int, to_index: int) -> void:
+	_picked = to_index
+	AppState.edit_structure(func(letters: Array) -> void:
+		if from_index < letters.size() and to_index < letters.size():
+			var letter: String = letters[from_index]
+			letters.remove_at(from_index)
+			letters.insert(to_index, letter))
+
+
+func _on_add_section(index: int) -> void:
+	if index <= 0:
+		return
+	var letter := str(%AddSection.get_item_metadata(index))
+	%AddSection.select(0)
+	AppState.edit_structure(func(letters: Array) -> void:
+		if letter == "I":
+			letters.insert(0, letter)
+		elif not letters.is_empty() and letters[letters.size() - 1] == "O" and letter != "O":
+			letters.insert(letters.size() - 1, letter)
+		else:
+			letters.append(letter))
 
 
 func _build_grid(song: ChipSong) -> void:

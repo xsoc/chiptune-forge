@@ -86,6 +86,23 @@ autowrap_mode = 3
 unique_name_in_owner = true
 layout_mode = 2
 
+[node name="ProjectRow" type="HFlowContainer" parent="Scroll/Center/Margin/Cards/Card/Library"]
+layout_mode = 2
+
+[node name="OpenProject" type="Button" parent="Scroll/Center/Margin/Cards/Card/Library/ProjectRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+tooltip_text = "Open a .cforge project from an export, with its settings, seed, locks and edits"
+text = "Open project file"
+
+[node name="ProjectStatus" type="Label" parent="Scroll/Center/Margin/Cards/Card/Library/ProjectRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"MutedLabel"
+autowrap_mode = 3
+
 [node name="PacksCard" type="PanelContainer" parent="Scroll/Center/Margin/Cards"]
 layout_mode = 2
 theme_type_variation = &"Card"

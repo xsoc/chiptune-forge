@@ -350,6 +350,13 @@ func _apply_song_flags(s: SongSettings, flags: Dictionary) -> String:
 		if not SongSettings.FORMS.has(form):
 			return "unknown structure \"%s\" (see: list structures)" % form
 		s.form = form
+	if flags.has("sections"):
+		var letters := Array(str(flags["sections"]).to_upper().replace(" ", "").split(",", false))
+		for letter in letters:
+			if not SongSettings.SECTION_LETTERS.has(letter):
+				return "--sections takes a list of I (intro), A, B, C, D and O (outro), such as I,A,B,A,O"
+		s.custom_form = SongSettings.clean_custom_form(letters)
+		s.form = "custom"
 	if flags.has("energy"):
 		if not SongSettings.ENERGY_CURVES.has(flags["energy"]):
 			return "--energy should be one of %s" % ", ".join(SongSettings.ENERGY_CURVES)
@@ -741,6 +748,7 @@ func _usage() -> String:
 		"  --complexity 0-100, --tempo BPM|auto, --key C..B|auto, --mode name|auto, --length seconds|m:ss,",
 		"  --structure, --energy, --loop/--no-loop, --intro/--no-intro, --outro/--no-outro, --seed,",
 		"  --engine chip|auto|analog|fm|wavetable|sampled, --layer-engine Layer:engine (repeatable),",
+		"  --sections I,A,B,A,O (a custom structure),",
 		"  --swing 0-100|auto, --humanise 0-100, --volume Layer:percent and --instrument Layer:sound (repeatable),",
 		"  --settings file.json (flags override it).",
 		"For --target pc: --card speaker|tandy|adlib|sb|sbpro|sb16|mt32|gm|gus picks the sound card (default adlib).",

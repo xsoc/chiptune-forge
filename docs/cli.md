@@ -45,11 +45,12 @@ These flags match the Generate screen:
 | `--key` | `auto` or a note name: C, F#, Bb and so on. |
 | `--mode` | `auto` or a mode: `list modes`. |
 | `--length` | Seconds, or minutes and seconds as `1:30`. |
-| `--structure` | `auto`, `loop`, `verse_chorus`, `aaba`, `rondo`, `through`, `build`, `boss` or `jingle`. |
+| `--structure` | `auto`, `loop`, `verse_chorus`, `aaba`, `rondo`, `through`, `build`, `boss`, `jingle` or `custom` (with `--sections`). |
 | `--energy` | `flat`, `build`, `wave` or `peak_drop`. |
 | `--loop`, `--no-loop`, `--intro`, `--no-intro`, `--outro`, `--no-outro` | Song form switches. |
 | `--engine` | The synth: `chip` (default, the classic sound), `auto` (the style's engine), `analog`, `fm`, `wavetable` or `sampled`. `list engines` describes them. Console targets always use their own chip. |
 | `--layer-engine Layer:engine` | One layer's synth, such as `--layer-engine Pad:sampled`. Repeat it for more layers. |
+| `--sections list` | A custom structure, such as `I,A,B,A,C,A,O`: `I` is the intro, `A` to `D` are the main parts and `O` the outro. Sets `--structure custom`. |
 | `--swing n` | Swing from 0 to 100, or `auto` (the default) to take it from the vibe and style. |
 | `--humanise n` | How far velocities and note lengths wander, 0 (the default) to 100. |
 | `--volume Layer:percent` | One layer's volume, 0 to 150, such as `--volume Pad:60`. Repeatable. |

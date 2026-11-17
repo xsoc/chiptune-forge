@@ -4,7 +4,9 @@ extends RefCounted
 ## settings always produce the same song.
 
 ## Song forms the user can pick. "auto" lets the style choose.
-const FORMS: PackedStringArray = ["auto", "loop", "verse_chorus", "aaba", "rondo", "through", "build", "boss", "jingle"]
+const FORMS: PackedStringArray = ["auto", "loop", "verse_chorus", "aaba", "rondo", "through", "build", "boss", "jingle", "custom"]
+## Letters a custom structure is made of: intro, four main parts, outro.
+const SECTION_LETTERS: PackedStringArray = ["I", "A", "B", "C", "D", "O"]
 const ENERGY_CURVES: PackedStringArray = ["flat", "build", "wave", "peak_drop"]
 ## Layers in channel order, as in the mockups.
 const LAYERS: PackedStringArray = ["Lead", "Harmony", "Arp", "Pad", "Bass", "Drums"]
@@ -46,6 +48,14 @@ var layer_volumes: Dictionary = {}
 ## Drums have none.
 var instrument_swaps: Dictionary = {}
 
+## The sections of a custom structure (form "custom"), in play order, from
+## [constant SECTION_LETTERS].
+var custom_form: Array = []
+## "Regenerate" per section: {section name: count}.
+var section_variations: Dictionary = {}
+## Locks as the app last had them, {layers: [...], sections: [...]}, so
+## projects and the library keep them. Generation takes locks as arguments.
+var locks: Dictionary = {}
 ## Adaptive states, as the song stores them; empty means the defaults
 ## ([constant SongGenerator.STATES]). Set when the user edits a state.
 var states: Array = []
@@ -112,6 +122,12 @@ func to_dict() -> Dictionary:
 		dict["layer_volumes"] = layer_volumes.duplicate()
 	if not instrument_swaps.is_empty():
 		dict["instrument_swaps"] = instrument_swaps.duplicate()
+	if not custom_form.is_empty():
+		dict["custom_form"] = custom_form.duplicate()
+	if not section_variations.is_empty():
+		dict["section_variations"] = section_variations.duplicate()
+	if not locks.is_empty():
+		dict["locks"] = locks.duplicate(true)
 	if not states.is_empty():
 		dict["states"] = states.duplicate(true)
 	if not transitions.is_empty():
@@ -160,9 +176,38 @@ static func from_dict(dict: Dictionary) -> SongSettings:
 		for layer in swaps:
 			if LAYERS.has(str(layer)) and str(layer) != "Drums" and SWAPS.has(str(swaps[layer])):
 				s.instrument_swaps[str(layer)] = str(swaps[layer])
+	s.custom_form = clean_custom_form(dict.get("custom_form", [])) if dict.has("custom_form") else []
+	s.section_variations = {}
+	var section_vars: Variant = dict.get("section_variations", {})
+	if section_vars is Dictionary:
+		for key in section_vars:
+			s.section_variations[str(key)] = maxi(int(section_vars[key]), 0)
+	s.locks = {}
+	var given_locks: Variant = dict.get("locks", {})
+	if given_locks is Dictionary:
+		for key in ["layers", "sections"]:
+			if given_locks.get(key) is Array and not given_locks[key].is_empty():
+				s.locks[key] = given_locks[key].map(func(v: Variant) -> String: return str(v))
 	s.states = clean_states(dict.get("states", []))
 	s.transitions = clean_transitions(dict.get("transitions", []))
 	return s
+
+
+## A usable custom structure: known letters, at most 32 sections, and at
+## least one main section.
+static func clean_custom_form(value: Variant) -> Array:
+	var out: Array = []
+	if value is Array or value is PackedStringArray:
+		for letter in value:
+			if SECTION_LETTERS.has(str(letter)) and out.size() < 32:
+				out.append(str(letter))
+	var has_main := false
+	for letter in out:
+		if letter != "I" and letter != "O":
+			has_main = true
+	if not has_main:
+		out.insert(out.find("O") if out.has("O") else out.size(), "A")
+	return out
 
 
 ## Valid states only: a unique non-empty name, an intensity from 0 to 1 and

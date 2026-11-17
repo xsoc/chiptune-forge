@@ -17,8 +17,20 @@ func _ready() -> void:
 	AppState.catalog_changed.connect(_rebuild_packs)
 	%AddPack.pressed.connect(func() -> void:
 		FileDelivery.pick_text(PackedStringArray([ChipPack.EXTENSION, "json"]), "Chiptune Forge pack", self, add_pack))
+	%OpenProject.pressed.connect(func() -> void:
+		FileDelivery.pick_text(PackedStringArray([ProjectFile.EXTENSION]), "Chiptune Forge project", self, open_project))
 	_rebuild()
 	_rebuild_packs()
+
+
+## Opens a .cforge project's text and says how it went.
+func open_project(text: String, file_name := "") -> void:
+	var result := AppState.open_project(text)
+	if result.begins_with("error: "):
+		%ProjectStatus.text = "Could not open %s: %s" % [file_name if file_name != "" else "the project", result.trim_prefix("error: ")]
+		return
+	%ProjectStatus.text = "Opened %s." % (file_name if file_name != "" else "the project")
+	entry_opened.emit(result)
 
 
 ## Installs a pack from a file's text and says how it went.

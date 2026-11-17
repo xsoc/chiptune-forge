@@ -58,7 +58,37 @@ const STINGERS: PackedStringArray = ["rise", "fall", "hit"]
 
 ## Generates a song. When [param previous] is given, layers named in
 ## [param locked] keep their notes from it, provided the form is unchanged.
-static func generate(settings: SongSettings, catalog: Catalog = null, previous: ChipSong = null, locked: PackedStringArray = []) -> ChipSong:
+static func generate(settings: SongSettings, catalog: Catalog = null, previous: ChipSong = null, locked: PackedStringArray = [], locked_sections: PackedStringArray = []) -> ChipSong:
+	var ctx := _compose(settings, catalog)
+	# "Regenerate" on a section: that section's notes come from the same song
+	# written with other variations, so its form, key and chords match.
+	for section_name in settings.section_variations:
+		var n := int(settings.section_variations[section_name])
+		if n <= 0:
+			continue
+		var index := -1
+		for i in ctx.sections.size():
+			if ctx.sections[i]["name"] == section_name:
+				index = i
+		if index < 0:
+			continue
+		var alt_settings := settings.duplicate_settings()
+		for layer in SongSettings.LAYERS:
+			alt_settings.variations[layer] = settings.get_variation(layer) + n * 101
+		alt_settings.section_variations = {}
+		var alt := _compose(alt_settings, catalog)
+		if alt.sections.size() == ctx.sections.size():
+			ctx.parts[index] = alt.parts[index]
+	SoundDesigner.design(ctx)
+	apply_advanced(ctx)
+	var style: Style = ctx.catalog.get_style(settings.style)
+	var engine := SynthEngines.resolve(settings.engine, style)
+	ctx.instruments = SynthEngines.apply(ctx.instruments, engine, settings.layer_engines, style)
+	return assemble(ctx, previous, locked, locked_sections)
+
+
+## The form, harmony and every part's notes, before the sounds.
+static func _compose(settings: SongSettings, catalog: Catalog) -> GenContext:
 	var ctx := GenContext.new()
 	ctx.settings = settings
 	ctx.catalog = catalog if catalog else Catalog.get_default()
@@ -75,12 +105,7 @@ static func generate(settings: SongSettings, catalog: Catalog = null, previous: 
 	MelodyWriter.write(ctx)
 	PartWriter.write(ctx)
 	DrumWriter.write(ctx)
-	SoundDesigner.design(ctx)
-	apply_advanced(ctx)
-	var style: Style = ctx.catalog.get_style(settings.style)
-	var engine := SynthEngines.resolve(settings.engine, style)
-	ctx.instruments = SynthEngines.apply(ctx.instruments, engine, settings.layer_engines, style)
-	return assemble(ctx, previous, locked)
+	return ctx
 
 
 ## Blends the vibes, style and sliders into one parameter set.
@@ -204,6 +229,10 @@ static func build_form(ctx: GenContext) -> void:
 		ctx.order.append(0)
 		return
 
+	if ctx.form == "custom":
+		_build_custom_form(ctx, bar_seconds, energy)
+		return
+
 	var total_bars := maxi(4, int(roundf(s.length_seconds / bar_seconds)))
 	var intro_bars := 0
 	var outro_bars := 0
@@ -258,6 +287,44 @@ static func build_form(ctx: GenContext) -> void:
 		_add_section(ctx, letter, letter, "main", section_bars, e)
 	if outro_bars > 0:
 		_add_section(ctx, "Outro", "O", "outro", outro_bars, clampf(energy - 0.15, 0.05, 1.0))
+
+
+## Custom structure: the sections in [member SongSettings.custom_form]
+## order ("I" intro, "A" to "D", "O" outro), with main sections sized to fit
+## the asked length.
+static func _build_custom_form(ctx: GenContext, bar_seconds: float, energy: float) -> void:
+	var s := ctx.settings
+	var letters: Array = SongSettings.clean_custom_form(s.custom_form)
+	var mains := 0
+	for letter in letters:
+		if letter != "I" and letter != "O":
+			mains += 1
+	var total_bars := maxi(4, int(roundf(s.length_seconds / bar_seconds)))
+	var edge_bars := 4 if total_bars >= 40 else 2
+	var edges := letters.size() - mains
+	var section_bars := clampi(int(roundf((total_bars - edges * edge_bars) / float(mains) / 4.0)) * 4, 4, 16)
+	var main_index := 0
+	for letter in letters:
+		match letter:
+			"I":
+				_add_section(ctx, "Intro", "I", "intro", edge_bars, clampf(energy - 0.3, 0.05, 1.0))
+			"O":
+				_add_section(ctx, "Outro", "O", "outro", edge_bars, clampf(energy - 0.15, 0.05, 1.0))
+			_:
+				var progress := float(main_index) / maxf(mains - 1, 1)
+				var e := energy
+				match s.energy_curve:
+					"build":
+						e = lerpf(energy - 0.35, energy + 0.15, progress)
+					"wave":
+						e = energy + (0.15 if main_index % 2 == 1 else -0.15)
+					"peak_drop":
+						e = energy + 0.2 * sin(progress * PI * 0.85) - (0.3 if main_index == mains - 1 and mains > 2 else 0.0)
+					_:
+						if letter != "A":
+							e += 0.1
+				_add_section(ctx, letter, letter, "main", section_bars, snappedf(clampf(e, 0.05, 1.0), 0.1))
+				main_index += 1
 
 
 static func _add_section(ctx: GenContext, base_name: String, letter: String, kind: String, bars: int, energy: float) -> void:
@@ -364,8 +431,8 @@ static func _lay_chords(ctx: GenContext, progression: Array, chord_steps: int, t
 
 ## Builds the final song dictionary: deduplicated patterns, sections, order,
 ## layers, states and cues.
-static func assemble(ctx: GenContext, previous: ChipSong, locked: PackedStringArray) -> ChipSong:
-	var reuse := previous != null and not locked.is_empty() and _same_form(ctx, previous)
+static func assemble(ctx: GenContext, previous: ChipSong, locked: PackedStringArray, locked_sections: PackedStringArray = []) -> ChipSong:
+	var reuse := previous != null and (not locked.is_empty() or not locked_sections.is_empty()) and _same_form(ctx, previous)
 	var patterns: Array = []
 	var pattern_index := {}
 	var sections: Array = []
@@ -374,7 +441,7 @@ static func assemble(ctx: GenContext, previous: ChipSong, locked: PackedStringAr
 		var ids: Array = []
 		for c in GenContext.CHANNEL_COUNT:
 			var notes: Array = ctx.parts[i][c]
-			if reuse and _layer_of_channel(c) in locked:
+			if reuse and (_layer_of_channel(c) in locked or section["name"] in locked_sections):
 				notes = _previous_notes(previous, i, c)
 			notes.sort_custom(func(a: Array, b: Array) -> bool:
 				return a[0] < b[0] if a[0] != b[0] else a[2] < b[2])

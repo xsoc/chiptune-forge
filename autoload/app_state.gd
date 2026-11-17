@@ -34,6 +34,8 @@ var mode := "music":
 var settings := SongSettings.new()
 var song: ChipSong
 var locked_layers := PackedStringArray()
+## Sections (by name) whose notes stay when regenerating.
+var locked_sections := PackedStringArray()
 ## True once the notes of the song have been edited by hand.
 var song_edited := false
 ## Song data before each note edit, newest last, for Undo.
@@ -316,7 +318,7 @@ func regenerate_unlocked() -> void:
 	for layer in SongSettings.LAYERS:
 		if not locked_layers.has(layer):
 			settings.variations[layer] = settings.get_variation(layer) + 1
-	song = SongGenerator.generate(settings, catalog, song, locked_layers)
+	song = SongGenerator.generate(settings, catalog, song, locked_layers, locked_sections)
 	_undo.clear()
 	_redo.clear()
 	song_changed.emit(song)
@@ -428,7 +430,84 @@ func set_layer_locked(layer: String, locked: bool) -> void:
 		locked_layers.append(layer)
 	elif not locked and locked_layers.has(layer):
 		locked_layers.remove_at(locked_layers.find(layer))
+	_store_locks()
 	locks_changed.emit()
+
+
+func set_section_locked(section_name: String, locked: bool) -> void:
+	if locked and not locked_sections.has(section_name):
+		locked_sections.append(section_name)
+	elif not locked and locked_sections.has(section_name):
+		locked_sections.remove_at(locked_sections.find(section_name))
+	_store_locks()
+	locks_changed.emit()
+
+
+## Keeps the locks in the settings, so the library and projects save them.
+func _store_locks() -> void:
+	settings.locks = {}
+	if not locked_layers.is_empty():
+		settings.locks["layers"] = Array(locked_layers)
+	if not locked_sections.is_empty():
+		settings.locks["sections"] = Array(locked_sections)
+
+
+## Takes the locks back from loaded settings.
+func _load_locks() -> void:
+	locked_layers = PackedStringArray(settings.locks.get("layers", []))
+	locked_sections = PackedStringArray(settings.locks.get("sections", []))
+	locks_changed.emit()
+
+
+## New notes for one section (every unlocked layer in it, wherever it
+## repeats), keeping the rest of the song.
+func regenerate_section(section_name: String) -> void:
+	if song == null or not can_make_music():
+		return
+	settings.section_variations[section_name] = int(settings.section_variations.get(section_name, 0)) + 1
+	var keep := PackedStringArray()
+	for section in song.data.get("sections", []):
+		if str(section["name"]) != section_name:
+			keep.append(str(section["name"]))
+	song = SongGenerator.generate(settings, catalog, song, locked_layers, keep)
+	_undo.clear()
+	song_changed.emit(song)
+
+
+## The song's structure as section letters in play order (see
+## [constant SongSettings.SECTION_LETTERS]).
+func structure_letters() -> Array:
+	if settings.form == "custom" and not settings.custom_form.is_empty():
+		return settings.custom_form.duplicate()
+	var letters: Array = []
+	if song == null:
+		return letters
+	for index in song.data.get("order", []):
+		var name := str(song.data["sections"][int(index)]["name"])
+		if name.begins_with("Intro"):
+			letters.append("I")
+		elif name.begins_with("Outro"):
+			letters.append("O")
+		elif SongSettings.SECTION_LETTERS.has(name.left(1)):
+			letters.append(name.left(1))
+	return letters
+
+
+## Changes the structure: [param change] gets the letters in play order
+## and edits them in place. The song becomes a custom structure and is
+## made again with the same seed; the notes of sections that keep their
+## name stay when those sections are locked.
+func edit_structure(change: Callable) -> void:
+	if song == null or not can_make_music():
+		return
+	var letters := structure_letters()
+	change.call(letters)
+	settings.custom_form = SongSettings.clean_custom_form(letters)
+	settings.form = "custom"
+	settings_changed.emit()
+	song = SongGenerator.generate(settings, catalog, song, locked_layers, locked_sections)
+	_undo.clear()
+	song_changed.emit(song)
 
 
 ## Edits the adaptive states and transition rules. [param change] gets the
@@ -659,6 +738,7 @@ func open_library_entry(index: int) -> void:
 	var entry: Dictionary = library[index]
 	if entry["kind"] == "song":
 		settings = SongSettings.from_dict(entry["settings"])
+		_load_locks()
 		settings_changed.emit()
 		var saved: ChipSong = ChipSong.from_dict(entry["song"]) if entry.has("song") else null
 		if saved:
@@ -677,6 +757,42 @@ func open_library_entry(index: int) -> void:
 			sfx_preset_id = str(loaded.data.get("meta", {}).get("preset", sfx_preset_id))
 			sfx_changed.emit(sfx)
 		mode = "sfx"
+
+
+## Opens a .cforge project: the song (with its edits, settings, seed and
+## locks) or the kit, and the target. Returns "song" or "sfx", or
+## "error: " and the reason.
+func open_project(text: String) -> String:
+	var project := ProjectFile.parse(text)
+	if project.has("error"):
+		return "error: " + str(project["error"])
+	var project_target := str(project.get("target", "modern"))
+	if catalog.chips.has(project_target):
+		var options: Dictionary = project.get("gameboy", {})
+		var card := str(options.get("card", project.get("card", "")))
+		if project_target == "pc" and PcCards.is_card(card):
+			set_pc_card(card)
+		set_target(project_target)
+	if project["kind"] == "song":
+		settings = project["settings"]
+		_load_locks()
+		settings_changed.emit()
+		song = project["song"]
+		_undo.clear()
+		song_edited = true
+		song_changed.emit(song)
+		mode = "music"
+		return "song"
+	kit = ChipSfxKit.new()
+	kit.kit_name = str(project.get("name", "My kit"))
+	for id in project["sounds"]:
+		kit.sounds[id] = project["sounds"][id]
+	kit_changed.emit()
+	if not kit.sounds.is_empty():
+		sfx = kit.sounds[kit.sounds.keys()[0]]
+		sfx_changed.emit(sfx)
+	mode = "sfx"
+	return "sfx"
 
 
 # Community packs ---------------------------------------------------------------
