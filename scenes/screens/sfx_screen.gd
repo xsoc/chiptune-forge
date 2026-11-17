@@ -122,6 +122,8 @@ func _on_sfx_changed(sfx: ChipSfx) -> void:
 		where = "The PC Engine plays it on channel 5, over the music."
 	elif AppState.target == "msx":
 		where = "The MSX and Spectrum play it on channel B, over the music."
+	elif AppState.target == "c64":
+		where = "The Commodore 64 plays it on voice 2, over the music."
 	%Note.text = "%s · %s. %s" % [SfxGenerator.c_id(sfx.get_sound_name()), kind, where]
 	%Waveform.set_samples(sfx.render(22050), 22050)
 	var params := ChipSfxSynth.with_defaults(sfx.data.get("params", {}))

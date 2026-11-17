@@ -34,6 +34,8 @@ func refresh() -> void:
 		%Hint.text = "Previews play through the PC Engine's emulated sound chip: 6 wavetable channels, 2 with noise."
 	elif AppState.target == "msx":
 		%Hint.text = "Previews play through an emulated AY-3-8910, the MSX and ZX Spectrum 128 sound chip: 3 square and noise."
+	elif AppState.target == "c64":
+		%Hint.text = "Previews play through an emulated SID, the Commodore 64 sound chip: 3 voices with their own waveforms and envelopes."
 	else:
 		%Hint.text = "Plays on any voice, with no limits."
 	%Hint.text += _later

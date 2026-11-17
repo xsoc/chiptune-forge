@@ -482,9 +482,62 @@ jobs:
           name: msx-examples
           path: msx_examples/
 
+  c64:
+    name: Commodore 64 player checked and played with sidplayfp
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Godot, cc65 and sidplayfp
+        run: |
+          set -e
+          sudo apt-get install -y -q cc65 sidplayfp > /dev/null
+          mkdir -p "$RUNNER_TEMP/tools"
+          cd "$RUNNER_TEMP/tools"
+          curl -sSLo godot.zip "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+          unzip -q godot.zip && mv "Godot_v${GODOT_VERSION}-stable_linux.x86_64" godot
+          echo "$RUNNER_TEMP/tools" >> $GITHUB_PATH
+      - name: The bundled player binary is its source assembled
+        run: |
+          set -e
+          cd assets/c64
+          ca65 sid_player.s -o "$RUNNER_TEMP/sid_player.o"
+          ld65 -C sid_player.cfg "$RUNNER_TEMP/sid_player.o" -o "$RUNNER_TEMP/sid_player.bin"
+          cmp "$RUNNER_TEMP/sid_player.bin" sid_player.bin
+      - name: Export the examples
+        run: |
+          godot --headless --path . --import < /dev/null
+          godot --headless --path . -s tools/c64_examples.gd -- "$PWD/c64_examples" < /dev/null
+      - name: Build the example programs with ca65
+        run: |
+          set -e
+          for dir in c64_examples/project c64_examples/sfx; do
+            make -C "$dir"
+            ls -l "$dir"/*.prg
+          done
+      - name: Run the 6502 player and check every frame
+        run: |
+          set -e
+          cd c64_examples
+          python3 ../tools/sid_check.py song_happy_platformer.sid song_happy_platformer_expected.bin
+          python3 ../tools/sid_check.py song_happy_platformer.sid song_happy_platformer_expected.bin --sfx sfx.bin
+      - name: Play the PSID with sidplayfp
+        run: |
+          set -e
+          cd c64_examples
+          # sidplayfp (reSIDfp) playing our PSID should rise and fall with the
+          # app's own preview. Its WAV starts after about two seconds of
+          # silence, which --align skips.
+          sidplayfp -wsidplayfp.wav -t14 song_happy_platformer.sid > /dev/null
+          python3 ../tools/md_sound_check.py song_happy_platformer_preview.wav sidplayfp.wav --align
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: c64-examples
+          path: c64_examples/
+
   export:
     name: Export ${{ matrix.preset }}
-    needs: [test, gameboy, nes, sms, genesis, snes, pce, msx]
+    needs: [test, gameboy, nes, sms, genesis, snes, pce, msx, c64]
     runs-on: ubuntu-latest
     container:
       image: barichello/godot-ci:4.5.1

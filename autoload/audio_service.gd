@@ -67,6 +67,8 @@ func play_sfx(sound: ChipSfx) -> void:
 				samples = PceSfx.from_sfx(sound).render(rate)
 			"msx":
 				samples = AySfx.from_sfx(sound).render(rate)
+			"c64":
+				samples = SidSfx.from_sfx(sound).render(rate)
 			_:
 				samples = GbSfx.from_sfx(sound).render(rate)
 		gb_sfx.stream = ChipAudio.mono_to_stream(samples, rate)
@@ -108,6 +110,10 @@ func _make_sequencer(song: ChipSong, rate: int) -> ChipSongSequencer:
 		var ay := AppState.get_ay_song()
 		if ay:
 			return AySequencer.new(ay, rate, song.data["channels"].size())
+	if AppState.target == "c64" and song == AppState.song:
+		var sid := AppState.get_sid_song()
+		if sid:
+			return SidSequencer.new(sid, rate, song.data["channels"].size())
 	return ChipSongSequencer.new(song, rate)
 
 

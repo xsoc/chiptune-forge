@@ -27,6 +27,8 @@ MIT-compatible: no GPL or LGPL code, in the app or in the plugin.
 | libopenmpt and stable-retro (Snes9x) | CI only, to play the SNES exports | Various | Installed by CI to check the exports; never bundled or linked. |
 | HuCC (pce-devel/huc) and stable-retro (Mednafen PCE Fast) | CI only, to build and play the PC Engine example ROMs | Various | Cloned and built by CI; never bundled or linked. The PC Engine player (`assets/pce/pce_player.c`) is our own MIT code. |
 | Pasmo and libvgm (ValleyBell/libvgm) | CI only, to assemble the MSX and Spectrum examples and play the AY VGM | GPL-3.0 (Pasmo), libvgm's licence | Installed or built by CI; never bundled or linked. The Z80 player (`assets/msx/ay_player.asm`) and the Z80 emulator in `tools/ay_check.py` are our own MIT code. |
+| cc65 (ca65, ld65) and sidplayfp | CI only, to assemble the C64 player and example, and play the PSID | zlib (cc65), GPL-2.0 (sidplayfp) | Installed by CI; never bundled or linked. The 6502 player (`assets/c64/sid_player.s`, assembled as `sid_player.bin`) and the 6502 emulator in `tools/sid_check.py` are our own MIT code. |
+| SID behaviour (MOS datasheet, documented envelope rates and exponential decay) | `scripts/targets/c64/sid_chip.gd` | Public technique | Reimplemented from the documented behaviour (oscillators, noise register taps, ADSR rate periods); no emulator code is bundled. |
 | AY-3-8910 behaviour (General Instrument datasheet, measured volume table) | `scripts/targets/msx/ay_psg.gd` | Public technique | Reimplemented from the documented behaviour (tone and noise periods, mixer, 16 volume steps); no emulator code is bundled. |
 | HuC6280 PSG behaviour (Paul Clifford's PSG notes, Mednafen's documented volume steps) | `scripts/targets/pce/pce_psg.gd` | Public technique | Reimplemented from the documented behaviour (waveforms, noise, 1.5 dB volume and balance steps); no emulator code is bundled. |
 | PolyBLEP oscillator method | `addons/chipforge/runtime/chip_voice.gd` | Public technique | No code copied. |
@@ -62,6 +64,10 @@ compiles it into their game.
 MSX and ZX Spectrum 128 exports are data for our own Z80 player,
 `ay_player.asm`, which ships with them under the MIT licence, plus a VGM
 file.
+
+Commodore 64 exports are PSID files and data for our own 6502 player,
+`sid_player.s`, which ships with them (and inside each .sid) under the MIT
+licence.
 
 The icons in `assets/ui/` and `addons/chipforge/icons/` were drawn for this
 project and are MIT licensed with the rest of the code.

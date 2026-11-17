@@ -249,6 +249,33 @@ back when a sound ends.
 The planned Arkos Tracker 2 export was replaced by this player: its `.aks`
 format is not documented, and the data here can be checked end to end.
 
+## Commodore 64 export
+
+Commodore 64 exports are PSID files (`.sid`) holding Chiptune Forge's own
+player, `sid_player.s` (MIT-licensed 6502 assembly for ca65, assembled at
+$1000 as `sid_player.bin`), with the song after it: init at $1000, play at
+$1003, 50 times a second (PAL). Any SID player plays them, and games load
+them like other SID music. Voice 1 plays the lead, voice 2 the
+accompaniment, voice 3 the bass, and the drums borrow voice 2's noise for as
+long as each hit sounds. The SID has no per-voice volume, so every NES
+volume envelope becomes the closest hardware ADSR envelope, and each new
+note turns its gate off for one frame so the envelope restarts.
+
+The data is the SID's 25 registers frame by frame, in the same register
+stream format as the MSX player (each frame writes what changed; repeats
+play earlier stretches through a call command), described at the top of
+`sid_player.s`. The app's preview (`SidPlayer`) sets the registers that the
+data holds; the tests decode the data and check every frame, and CI runs
+the player in a small 6502 emulator (`tools/sid_check.py`) and compares the
+registers it writes on every frame, with and without sound effects, then
+compares sidplayfp playing the PSID with the preview.
+
+A song export's `c64/` folder holds the `.sid`, `song.bin`, the player
+(source, binary and ld65 config), an example program (`main.s`, `main.cfg`)
+and a `Makefile`. A sound kit export's `c64/` folder holds `sfx.bin` and the
+player; sounds play on voice 2 ($1006 with the sounds' address in A/X, then
+$1009 with the sound's number), which the music gets back when a sound ends.
+
 ## Game Boy export
 
 Game Boy exports are not a Chiptune Forge format: they are C source for
