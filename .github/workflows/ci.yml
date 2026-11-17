@@ -583,9 +583,41 @@ jobs:
           name: gba-examples
           path: gba_examples/
 
+  cli:
+    name: Command line in Docker
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the image
+        run: docker build -t chiptune-forge .
+      - name: Run the example manifest
+        run: |
+          set -e
+          cd examples/cli
+          docker run --rm -u "$(id -u):$(id -g)" -v "$PWD:/work" chiptune-forge batch music.manifest.json --report report.json
+          cat report.json
+          python3 -c "import json; r = json.load(open('report.json')); assert r['ok'] and len(r['jobs']) == 3, r"
+      - name: Build the NES examples the exports include
+        run: |
+          set -e
+          sudo apt-get update -q && sudo apt-get install -y -q --no-install-recommends cc65
+          for dir in examples/cli/build/audio/*/nes/; do make -C "$dir"; done
+          ls -l examples/cli/build/audio/*/nes/*.nes
+      - name: Check exit codes
+        run: |
+          set +e
+          docker run --rm chiptune-forge version
+          docker run --rm chiptune-forge generate --vibe nope; test $? -eq 1 || exit 1
+          docker run --rm chiptune-forge validate /opt/chiptune-forge/packs/seasons.chippack; test $? -eq 0 || exit 1
+          docker run --rm chiptune-forge generate --vibe happy --seed 1 --target gameboy --format project --out /tmp/x --strict; test $? -eq 2 || exit 1
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cli-example-output
+          path: examples/cli/build/
+
   export:
     name: Export ${{ matrix.preset }}
-    needs: [test, gameboy, nes, sms, genesis, snes, pce, msx, c64, gba]
+    needs: [test, gameboy, nes, sms, genesis, snes, pce, msx, c64, gba, cli]
     runs-on: ubuntu-latest
     container:
       image: barichello/godot-ci:4.5.1

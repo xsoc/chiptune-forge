@@ -2,14 +2,7 @@ extends Control
 ## Export flow: 1 target, 2 limits check, 3 formats. Works for the song in
 ## Music mode and for the kit (or the current sound) in Sound FX mode.
 
-## Songs at least this long get a note about WAV size and render time.
-const LONG_SONG_SECONDS := 270.0
-
 var _job: ExportJob
-# PSGlib data size per Master System arrangement, for the report.
-var _psg_sizes := {}
-# VGM size per Mega Drive arrangement, for the report.
-var _vgm_sizes := {}
 
 
 func _ready() -> void:
@@ -155,266 +148,13 @@ func _update_report() -> void:
 	var lines: Array[String] = []
 	if chip:
 		lines.append("[b]%s[/b]: %s" % [chip.display_name, chip.description])
-	if AppState.target == "gameboy":
-		lines.append_array(_gameboy_report())
-	elif AppState.target == "nes":
-		lines.append_array(_nes_report())
-	elif AppState.target == "sms":
-		lines.append_array(_sms_report())
-	elif AppState.target == "genesis":
-		lines.append_array(_md_report())
-	elif AppState.target == "snes":
-		lines.append_array(_snes_report())
-	elif AppState.target == "pce":
-		lines.append_array(_pce_report())
-	elif AppState.target == "msx":
-		lines.append_array(_ay_report())
-	elif AppState.target == "c64":
-		lines.append_array(_sid_report())
-	elif AppState.target == "gba":
-		lines.append_array(_gba_report())
-	elif AppState.mode == "music" and AppState.song:
-		var song: ChipSong = AppState.song
-		var used := 0
-		for c in song.data["channels"].size():
-			if _channel_has_notes(song, c):
-				used += 1
-		lines.append("")
-		lines.append("[color=#52d1c0]Fits.[/color] No limits on this target.")
-		lines.append("Uses %d of 7 channels, stereo and echo." % used)
-		lines.append("Length %d:%02d, loop from %s to %s." % [int(song.get_length_seconds()) / 60, int(song.get_length_seconds()) % 60, _clock(song, song.get_loop_start_step()), _clock(song, song.get_loop_end_step())])
-		var seconds := song.get_length_seconds()
-		if seconds >= LONG_SONG_SECONDS:
-			var mb := seconds * ExportJob.MIX_RATE * 4 / 1048576.0
-			lines.append("Long song: each WAV is about %d MB per loop and can take a few minutes to render, more with stems." % int(mb))
-	elif AppState.mode == "sfx":
-		lines.append("")
-		lines.append("[color=#52d1c0]Fits.[/color] Each sound plays on any voice.")
+	var music := AppState.mode == "music"
+	if music and AppState.song == null:
+		%Report.text = "\n".join(lines)
+		return
+	var arranged: Variant = AppState.get_arranged_song() if music else null
+	lines.append_array(TargetReport.lines(AppState.target, music, AppState.song, arranged, _sounds()))
 	%Report.text = "\n".join(lines)
-
-
-func _gameboy_report() -> Array[String]:
-	var lines: Array[String] = [""]
-	if AppState.mode == "music":
-		var gb := AppState.get_gameboy_song()
-		if gb == null:
-			return lines
-		var size := gb.data_size()
-		if size <= GbSong.BANK_BYTES:
-			lines.append("[color=#52d1c0]Fits[/color] after arranging for 4 channels.")
-		else:
-			lines.append("[color=#f0a050]Too big for one ROM bank.[/color] Shorten the song or pick fewer sections.")
-		for line in gb.report:
-			lines.append("•  " + line)
-		return lines
-	var sounds := _sounds()
-	lines.append("[color=#52d1c0]Fits.[/color] Each sound plays on one channel, one register update per frame.")
-	var ids := sounds.keys()
-	ids.sort()
-	for id in ids:
-		var gb_sfx := GbSfx.from_sfx(sounds[id], str(id))
-		var text := "•  %s: %s, %.2f s" % [id, "Pulse 2" if gb_sfx.channel == GbSfx.PULSE else "Noise", gb_sfx.frame_count() / GbSfx.FRAME_HZ]
-		if not gb_sfx.notes.is_empty():
-			text += " (%s)" % ", ".join(gb_sfx.notes)
-		lines.append(text)
-	lines.append("Sounds play over the music by pausing that channel's part, so reserve the channel your sounds use when you export the song.")
-	return lines
-
-
-func _nes_report() -> Array[String]:
-	var lines: Array[String] = [""]
-	if AppState.mode == "music":
-		var nes := AppState.get_nes_song()
-		if nes == null:
-			return lines
-		if nes.pattern_chunks().size() <= NesSong.MAX_PATTERNS:
-			lines.append("[color=#52d1c0]Fits[/color] after arranging for 4 channels.")
-		else:
-			lines.append("[color=#f0a050]Too long for one FamiStudio song.[/color] Shorten the song or pick fewer sections.")
-		for line in nes.report:
-			lines.append("•  " + line)
-		return lines
-	var sounds := _sounds()
-	lines.append("[color=#52d1c0]Fits.[/color] Each sound is one FamiStudio instrument, its envelopes updated once per frame.")
-	var ids := sounds.keys()
-	ids.sort()
-	for id in ids:
-		var nes_sfx := NesSfx.from_sfx(sounds[id], str(id))
-		var text := "•  %s: %s, %.2f s" % [id, "Pulse 2" if nes_sfx.channel == NesSong.PULSE2 else "Noise", nes_sfx.frame_count() / NesApu.FRAME_HZ]
-		if not nes_sfx.notes.is_empty():
-			text += " (%s)" % ", ".join(nes_sfx.notes)
-		lines.append(text)
-	lines.append("FamiStudio's engine plays sounds over the music and gives the channel back when they end.")
-	return lines
-
-
-func _sms_report() -> Array[String]:
-	var lines: Array[String] = [""]
-	if AppState.mode == "music":
-		var sms := AppState.get_sms_song()
-		if sms == null:
-			return lines
-		var key := sms.get_instance_id()
-		if not _psg_sizes.has(key):
-			_psg_sizes = {key: PsgWriter.song_bytes(sms).size()}
-		var size: int = _psg_sizes[key]
-		if size <= 16384:
-			lines.append("[color=#52d1c0]Fits[/color] after arranging for 4 channels: %.1f KB of PSGlib data, in one ROM bank." % (size / 1024.0))
-		else:
-			lines.append("[color=#f0a050]%.1f KB of PSGlib data, more than one 16 KB ROM bank.[/color] Compress it with PSGlib's psgcomp (about half the size) or build PSGlib with PSGLIB_MULTIBANK." % (size / 1024.0))
-		for line in sms.report:
-			lines.append("•  " + line)
-		return lines
-	var sounds := _sounds()
-	lines.append("[color=#52d1c0]Fits.[/color] Each sound is PSGlib data on one channel, one register update per frame.")
-	var ids := sounds.keys()
-	ids.sort()
-	for id in ids:
-		var sms_sfx := SmsSfx.from_sfx(sounds[id], str(id))
-		var text := "•  %s: %s, %.2f s" % [id, "Square 3" if sms_sfx.channel == SmsSong.SQUARE3 else "Noise", sms_sfx.frame_count() / SmsSong.FRAME_HZ]
-		if not sms_sfx.notes.is_empty():
-			text += " (%s)" % ", ".join(sms_sfx.notes)
-		lines.append(text)
-	lines.append("PSGlib plays sounds over the music and gives the channel back when they end.")
-	return lines
-
-
-func _md_report() -> Array[String]:
-	var lines: Array[String] = [""]
-	if AppState.mode == "music":
-		var md := AppState.get_md_song()
-		if md == null:
-			return lines
-		var key := md.get_instance_id()
-		if not _vgm_sizes.has(key):
-			_vgm_sizes = {key: MdVgmWriter.vgm_bytes(MdVgmWriter.record(md)).size()}
-		lines.append("[color=#52d1c0]Fits[/color] after arranging for 10 channels: a %.1f KB VGM, which SGDK packs into XGM music of about the same size." % (_vgm_sizes[key] / 1024.0))
-		for line in md.report:
-			lines.append("•  " + line)
-		return lines
-	var sounds := _sounds()
-	lines.append("[color=#52d1c0]Fits.[/color] Each sound is an 8-bit, 14 kHz sample for SGDK's XGM driver, which plays up to four over the music on FM 6.")
-	var ids := sounds.keys()
-	ids.sort()
-	var total := 0
-	for id in ids:
-		var md_sfx := MdSfx.from_sfx(sounds[id], str(id))
-		total += md_sfx.samples.size()
-		lines.append("•  %s: %.2f s, %.1f KB" % [id, md_sfx.seconds(), md_sfx.samples.size() / 1024.0])
-	lines.append("%.1f KB of samples in all." % (total / 1024.0))
-	return lines
-
-
-func _snes_report() -> Array[String]:
-	var lines: Array[String] = [""]
-	if AppState.mode == "music":
-		var snes := AppState.get_snes_song()
-		if snes == null:
-			return lines
-		var ram := snes.ram_use()
-		var patterns: int = ItWriter.pattern_layout(snes)["patterns"].size()
-		if int(ram["free"]) > 8192 and patterns <= ItWriter.MAX_PATTERNS:
-			lines.append("[color=#52d1c0]Fits[/color] after arranging for 7 voices: %d patterns, and %.1f KB of audio RAM left for them." % [patterns, int(ram["free"]) / 1024.0])
-		else:
-			lines.append("[color=#f0a050]Tight on SNESMod's limits[/color] (%d of 64 patterns). Shorten the song if smconv says it is too big." % patterns)
-		for line in snes.report:
-			lines.append("•  " + line)
-		return lines
-	var sounds := _sounds()
-	lines.append("[color=#52d1c0]Fits.[/color] Each sound is a 16 kHz BRR sample that SNESMod plays on voice 8, over the music.")
-	var ids := sounds.keys()
-	ids.sort()
-	var total := 0
-	for id in ids:
-		var snes_sfx := SnesSfx.from_sfx(sounds[id], str(id))
-		var bytes := int(ceil(snes_sfx.pcm.size() / 16.0)) * SnesBrr.BLOCK_BYTES
-		total += bytes
-		lines.append("•  %s: %.2f s, %.1f KB" % [id, snes_sfx.seconds(), bytes / 1024.0])
-	lines.append("%.1f KB of audio RAM in all, on top of the music." % (total / 1024.0))
-	return lines
-
-
-func _pce_report() -> Array[String]:
-	var lines: Array[String] = [""]
-	if AppState.mode == "music":
-		var pce := AppState.get_pce_song()
-		if pce == null:
-			return lines
-		var bytes := PceWriter.song_bytes(pce).size()
-		lines.append("[color=#52d1c0]Fits[/color] after arranging for 6 channels: %.1f KB of data for the player." % (bytes / 1024.0))
-		for line in pce.report:
-			lines.append("•  " + line)
-		return lines
-	var sounds := _sounds()
-	lines.append("[color=#52d1c0]Fits.[/color] Each sound plays on channel 5, over the music.")
-	var ids := sounds.keys()
-	ids.sort()
-	for id in ids:
-		var pce_sfx := PceSfx.from_sfx(sounds[id], str(id))
-		lines.append("•  %s: %.2f s, %s" % [id, pce_sfx.frame_count() / PceSong.FRAME_HZ, "noise" if pce_sfx.noise else pce_sfx.wave.replace("_", " ") + " wave"])
-	return lines
-
-
-func _ay_report() -> Array[String]:
-	var lines: Array[String] = [""]
-	if AppState.mode == "music":
-		var ay := AppState.get_ay_song()
-		if ay == null:
-			return lines
-		var bytes := AyWriter.song_bytes(ay).size()
-		lines.append("[color=#52d1c0]Fits[/color] after arranging for 3 channels: %.1f KB of data for the player." % (bytes / 1024.0))
-		for line in ay.report:
-			lines.append("•  " + line)
-		return lines
-	var sounds := _sounds()
-	lines.append("[color=#52d1c0]Fits.[/color] Each sound plays on channel B, over the music.")
-	var ids := sounds.keys()
-	ids.sort()
-	for id in ids:
-		var ay_sfx := AySfx.from_sfx(sounds[id], str(id))
-		lines.append("•  %s: %.2f s, %s" % [id, ay_sfx.frame_count() / AySong.FRAME_HZ, "noise" if ay_sfx.noise else "square"])
-	return lines
-
-
-func _sid_report() -> Array[String]:
-	var lines: Array[String] = [""]
-	if AppState.mode == "music":
-		var sid := AppState.get_sid_song()
-		if sid == null:
-			return lines
-		var bytes := SidWriter.song_bytes(sid).size()
-		lines.append("[color=#52d1c0]Fits[/color] after arranging for 3 voices: %.1f KB of data for the player." % (bytes / 1024.0))
-		for line in sid.report:
-			lines.append("•  " + line)
-		return lines
-	var sounds := _sounds()
-	lines.append("[color=#52d1c0]Fits.[/color] Each sound plays on voice 2, over the music.")
-	var ids := sounds.keys()
-	ids.sort()
-	for id in ids:
-		var sid_sfx := SidSfx.from_sfx(sounds[id], str(id))
-		lines.append("•  %s: %.2f s, %s" % [id, sid_sfx.frame_count() / SidSong.FRAME_HZ, "noise" if sid_sfx.noise else "pulse"])
-	return lines
-
-
-func _gba_report() -> Array[String]:
-	var lines: Array[String] = [""]
-	if AppState.mode == "music":
-		var gba := AppState.get_gba_song()
-		if gba == null:
-			return lines
-		lines.append("[color=#52d1c0]Fits[/color] after arranging for 7 of Maxmod's channels.")
-		for line in gba.report:
-			lines.append("•  " + line)
-		return lines
-	var sounds := _sounds()
-	lines.append("[color=#52d1c0]Fits.[/color] Each sound plays as an 8-bit sample on Maxmod's eighth channel, over the music.")
-	var ids := sounds.keys()
-	ids.sort()
-	for id in ids:
-		var gba_sfx := GbaSfx.from_sfx(sounds[id], str(id))
-		lines.append("•  %s: %.2f s, %.1f KB" % [GbaSfx.symbol(str(id)), gba_sfx.seconds(), gba_sfx.samples.size() / 1024.0])
-	return lines
 
 
 func _sounds() -> Dictionary:
@@ -422,19 +162,6 @@ func _sounds() -> Dictionary:
 	if sounds.is_empty() and AppState.sfx:
 		sounds[ExportJob.sanitize(AppState.sfx.get_sound_name())] = AppState.sfx
 	return sounds
-
-
-func _channel_has_notes(song: ChipSong, channel: int) -> bool:
-	for section in song.data["sections"]:
-		var ids: Array = section["patterns"]
-		if channel < ids.size() and int(ids[channel]) >= 0:
-			return true
-	return false
-
-
-func _clock(song: ChipSong, step: int) -> String:
-	var s := int(step * song.get_step_seconds())
-	return "%d:%02d" % [s / 60, s % 60]
 
 
 func _on_export() -> void:
@@ -452,50 +179,11 @@ func _on_export() -> void:
 	if AppState.mode == "music":
 		if AppState.song == null:
 			return
-		match AppState.target:
-			"gameboy":
-				_job = ExportJob.for_gameboy_song(AppState.get_gameboy_song(), options)
-			"nes":
-				_job = ExportJob.for_nes_song(AppState.get_nes_song(), options)
-			"sms":
-				_job = ExportJob.for_sms_song(AppState.get_sms_song(), options)
-			"genesis":
-				_job = ExportJob.for_md_song(AppState.get_md_song(), options)
-			"snes":
-				_job = ExportJob.for_snes_song(AppState.get_snes_song(), options)
-			"pce":
-				_job = ExportJob.for_pce_song(AppState.get_pce_song(), options)
-			"msx":
-				_job = ExportJob.for_ay_song(AppState.get_ay_song(), options)
-			"c64":
-				_job = ExportJob.for_sid_song(AppState.get_sid_song(), options)
-			"gba":
-				_job = ExportJob.for_gba_song(AppState.get_gba_song(), options)
-			_:
-				_job = ExportJob.for_song(AppState.song, options)
+		options["project"] = ProjectFile.for_song(AppState.song, AppState.settings, AppState.target, AppState.gameboy_options)
+		_job = ExportJob.for_target_song(AppState.target, AppState.song, options, AppState.get_arranged_song())
 	else:
-		var sounds := _sounds()
-		match AppState.target:
-			"gameboy":
-				_job = ExportJob.for_gameboy_sfx(sounds, prefix, options)
-			"nes":
-				_job = ExportJob.for_nes_sfx(sounds, prefix, options)
-			"sms":
-				_job = ExportJob.for_sms_sfx(sounds, prefix, options)
-			"genesis":
-				_job = ExportJob.for_md_sfx(sounds, prefix, options)
-			"snes":
-				_job = ExportJob.for_snes_sfx(sounds, prefix, options)
-			"pce":
-				_job = ExportJob.for_pce_sfx(sounds, prefix, options)
-			"msx":
-				_job = ExportJob.for_ay_sfx(sounds, prefix, options)
-			"c64":
-				_job = ExportJob.for_sid_sfx(sounds, prefix, options)
-			"gba":
-				_job = ExportJob.for_gba_sfx(sounds, prefix, options)
-			_:
-				_job = ExportJob.for_sfx(sounds, prefix, options)
+		options["project"] = ProjectFile.for_kit(prefix, _sounds(), AppState.target)
+		_job = ExportJob.for_target_sfx(AppState.target, _sounds(), prefix, options)
 	%Export.disabled = true
 	%Progress.visible = true
 	%Progress.value = 0.0

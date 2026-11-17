@@ -27,6 +27,128 @@ var _r_header := 0
 var _r_fraction := 0.0
 
 
+## Target ids, in the order the app lists them.
+const TARGETS: PackedStringArray = ["modern", "gameboy", "nes", "sms", "genesis", "snes", "pce", "gba", "msx", "c64"]
+
+
+## [param song] arranged for [param target], or null for "modern" (or an
+## unknown target). [param gameboy_options] are the Game Boy's sound effect
+## channel options (see [GbArranger]).
+static func arrange(target: String, song: ChipSong, gameboy_options := {}) -> Variant:
+	match target:
+		"gameboy":
+			return GbArranger.arrange(song, gameboy_options)
+		"nes":
+			return NesArranger.arrange(song)
+		"sms":
+			return SmsArranger.arrange(song)
+		"genesis":
+			return MdArranger.arrange(song)
+		"snes":
+			return SnesArranger.arrange(song)
+		"pce":
+			return PceArranger.arrange(song)
+		"msx":
+			return AyArranger.arrange(song)
+		"c64":
+			return SidArranger.arrange(song)
+		"gba":
+			return GbaArranger.arrange(song)
+	return null
+
+
+## The export of a song for any target, as the Export screen makes it.
+## [param arranged] is the song already arranged for the target, or null to
+## arrange it here.
+## Options as for each target's own export, plus "project": the .cforge
+## text to include as <prefix>.cforge.
+static func for_target_song(target: String, song: ChipSong, options: Dictionary, arranged: Variant = null) -> ExportJob:
+	var job := _song_job(target, song, options, arranged)
+	if options.has("project"):
+		job.files["%s.%s" % [sanitize(str(options.get("prefix", song.get_title()))), ProjectFile.EXTENSION]] = str(options["project"]).to_utf8_buffer()
+	return job
+
+
+static func _song_job(target: String, song: ChipSong, options: Dictionary, arranged: Variant) -> ExportJob:
+	if arranged == null:
+		arranged = arrange(target, song, options.get("gameboy", {}))
+	match target:
+		"gameboy":
+			return for_gameboy_song(arranged, options)
+		"nes":
+			return for_nes_song(arranged, options)
+		"sms":
+			return for_sms_song(arranged, options)
+		"genesis":
+			return for_md_song(arranged, options)
+		"snes":
+			return for_snes_song(arranged, options)
+		"pce":
+			return for_pce_song(arranged, options)
+		"msx":
+			return for_ay_song(arranged, options)
+		"c64":
+			return for_sid_song(arranged, options)
+		"gba":
+			return for_gba_song(arranged, options)
+	return for_song(song, options)
+
+
+## The export of a set of sounds (id to [ChipSfx]) for any target.
+static func for_target_sfx(target: String, sounds: Dictionary, kit_name: String, options: Dictionary) -> ExportJob:
+	var job := _sfx_job(target, sounds, kit_name, options)
+	if options.has("project"):
+		job.files["%s.%s" % [sanitize(kit_name), ProjectFile.EXTENSION]] = str(options["project"]).to_utf8_buffer()
+	return job
+
+
+static func _sfx_job(target: String, sounds: Dictionary, kit_name: String, options: Dictionary) -> ExportJob:
+	match target:
+		"gameboy":
+			return for_gameboy_sfx(sounds, kit_name, options)
+		"nes":
+			return for_nes_sfx(sounds, kit_name, options)
+		"sms":
+			return for_sms_sfx(sounds, kit_name, options)
+		"genesis":
+			return for_md_sfx(sounds, kit_name, options)
+		"snes":
+			return for_snes_sfx(sounds, kit_name, options)
+		"pce":
+			return for_pce_sfx(sounds, kit_name, options)
+		"msx":
+			return for_ay_sfx(sounds, kit_name, options)
+		"c64":
+			return for_sid_sfx(sounds, kit_name, options)
+		"gba":
+			return for_gba_sfx(sounds, kit_name, options)
+	return for_sfx(sounds, kit_name, options)
+
+
+## Runs the job to the end, for the command line and tests.
+func run() -> void:
+	while not done:
+		step(1000000)
+
+
+## Writes the files into a folder, as the zip would hold them. Returns the
+## paths written, or an error message as the only entry starting "error: ".
+func write_to(dir: String) -> PackedStringArray:
+	var written := PackedStringArray()
+	var names := files.keys()
+	names.sort()
+	for name in names:
+		var path := dir.path_join(name)
+		DirAccess.make_dir_recursive_absolute(path.get_base_dir())
+		var file := FileAccess.open(path, FileAccess.WRITE)
+		if file == null:
+			return PackedStringArray(["error: cannot write %s (%s)" % [path, error_string(FileAccess.get_open_error())]])
+		file.store_buffer(files[name])
+		file.close()
+		written.append(path)
+	return written
+
+
 ## Export for a song. Options: prefix, godot, plugin, wav, loops, stems, midi.
 static func for_song(song: ChipSong, options: Dictionary) -> ExportJob:
 	var job := ExportJob.new()

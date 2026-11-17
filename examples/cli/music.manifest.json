@@ -1,0 +1,35 @@
+{
+	"jobs": [
+		{
+			"command": "generate",
+			"name": "title_theme",
+			"vibe": ["heroic:70", "happy:30"],
+			"style": "platformer",
+			"seed": "title",
+			"length": 45,
+			"target": "nes",
+			"format": "console,wav,project",
+			"out": "build/audio/title"
+		},
+		{
+			"command": "generate",
+			"name": "boss",
+			"vibe": ["boss_fight"],
+			"style": "metal",
+			"seed": 666,
+			"structure": "boss",
+			"target": "modern",
+			"format": "json,wav,midi",
+			"out": "build/audio/boss"
+		},
+		{
+			"command": "sfx",
+			"name": "game_sounds",
+			"preset": ["jump", "coin", "hurt"],
+			"seed": 7,
+			"target": "nes",
+			"format": "console,wav",
+			"out": "build/audio/sfx"
+		}
+	]
+}
