@@ -64,10 +64,16 @@ func refresh() -> void:
 	elif c64:
 		%Console.text = "Commodore 64: a .sid file and a small 6502 player, with an example program" if music else "Commodore 64: sound data for the same 6502 player"
 	elif pc:
-		var names := Array(PcCards.music_formats(AppState.pc_card)).map(func(f: String) -> String: return f.to_upper())
-		var formats := "%s and %s" % [", ".join(names.slice(0, -1)), names[-1]]
-		var sfx_text := "FM sounds as DRO and IMF files" if AppState.pc_card == "adlib" else ("16-bit WAVs" if AppState.pc_card == "sb16" else "Creative Voice files (.voc)")
-		%Console.text = ("%s: %s files for DOS players and trackers" % [card, formats]) if music else ("%s: %s" % [card, sfx_text])
+		match AppState.pc_card:
+			"speaker":
+				%Console.text = "PC speaker: C data and a small DOS player, with an example program" if music else "PC speaker: C data for the same DOS player"
+			"tandy":
+				%Console.text = "Tandy 1000: VGM files for the SN76496"
+			_:
+				var names := Array(PcCards.music_formats(AppState.pc_card)).map(func(f: String) -> String: return f.to_upper())
+				var formats := "%s and %s" % [", ".join(names.slice(0, -1)), names[-1]]
+				var sfx_text := "FM sounds as DRO and IMF files" if AppState.pc_card == "adlib" else ("16-bit WAVs" if AppState.pc_card == "sb16" else "Creative Voice files (.voc)")
+				%Console.text = ("%s: %s files for DOS players and trackers" % [card, formats]) if music else ("%s: %s" % [card, sfx_text])
 	%Godot.visible = not console
 	_card.visible = pc
 	_card.select(maxi(PcCards.CARDS.find(AppState.pc_card), 0))

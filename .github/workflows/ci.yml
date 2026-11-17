@@ -536,11 +536,15 @@ jobs:
           path: c64_examples/
 
   pc:
-    name: DOS PC music played with AdPlug
+    name: DOS PC music played with AdPlug and libvgm, player built with Open Watcom
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install Godot, AdPlug and FFmpeg
+      - uses: actions/checkout@v4
+        with:
+          repository: ValleyBell/libvgm
+          path: libvgm
+      - name: Install Godot, AdPlug, FFmpeg, libvgm's vgm2wav and Open Watcom
         run: |
           set -e
           sudo apt-get install -y -q adplay ffmpeg > /dev/null
@@ -548,7 +552,16 @@ jobs:
           cd "$RUNNER_TEMP/tools"
           curl -sSLo godot.zip "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
           unzip -q godot.zip && mv "Godot_v${GODOT_VERSION}-stable_linux.x86_64" godot
+          cmake -S "$GITHUB_WORKSPACE/libvgm" -B libvgm-build -DCMAKE_BUILD_TYPE=Release \
+            -DBUILD_LIBAUDIO=OFF -DBUILD_PLAYER=OFF -DBUILD_TESTS=OFF -DUSE_SANITIZERS=OFF > /dev/null
+          cmake --build libvgm-build -j4 --target vgm2wav > /dev/null
+          cp "$(find libvgm-build -name vgm2wav -type f -perm -u+x | head -1)" .
+          mkdir -p watcom
+          curl -sSL https://github.com/open-watcom/open-watcom-v2/releases/download/Current-build/ow-snapshot.tar.xz | tar -xJ -C watcom
           echo "$RUNNER_TEMP/tools" >> $GITHUB_PATH
+          echo "$RUNNER_TEMP/tools/watcom/binl64" >> $GITHUB_PATH
+          echo "WATCOM=$RUNNER_TEMP/tools/watcom" >> $GITHUB_ENV
+          echo "INCLUDE=$RUNNER_TEMP/tools/watcom/h" >> $GITHUB_ENV
       - name: Export the examples
         run: |
           godot --headless --path . --import < /dev/null
@@ -563,6 +576,18 @@ jobs:
             card="${file%%.*}"
             timeout 120 adplay -O disk -d "$PWD/$file.wav" -o --stereo --16bit -f 44100 -e woody "$PWD/$file" > /dev/null
             python3 ../tools/md_sound_check.py "${card}_preview.wav" "$file.wav" --min-corr 0.85
+          done
+      - name: Play the Tandy VGM with libvgm
+        run: |
+          set -e
+          cd pc_examples
+          vgm2wav --loops 1 tandy.vgm libvgm_tandy.wav > /dev/null
+          python3 ../tools/md_sound_check.py tandy_preview.wav libvgm_tandy.wav --min-corr 0.85
+      - name: Build the PC speaker player and examples with Open Watcom
+        run: |
+          set -e
+          for dir in pc_examples/speaker pc_examples/speaker_sfx; do
+            (cd "$dir" && wcl -q -bt=dos -ml -fe=play.exe main.c speaker.c && ls -l play.exe)
           done
       - name: Decode the Sound Blaster effects
         run: |

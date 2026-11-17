@@ -21,6 +21,9 @@ var pitch := PackedInt32Array()
 ## Noise only: 1 for white noise, 0 for periodic.
 var white := 1
 var notes: PackedStringArray = []
+## The PSG's white noise (see [SmsPsg]): the Sega consoles' by default.
+var noise_taps := 0x0009
+var noise_width := 16
 
 
 func frame_count() -> int:
@@ -68,6 +71,8 @@ func instrument() -> Dictionary:
 ## The sound as a one-note [SmsSong] at one frame per row.
 func to_song() -> SmsSong:
 	var song := SmsSong.new()
+	song.noise_taps = noise_taps
+	song.noise_width = noise_width
 	song.title = name
 	song.groove = PackedInt32Array([1])
 	song.steps_per_beat = 4
@@ -89,6 +94,9 @@ func psglib_channel() -> String:
 ## mono samples.
 func render(mix_rate := 44100) -> PackedFloat32Array:
 	var psg := SmsPsg.new(float(mix_rate))
+	psg.noise_taps = noise_taps
+	psg.noise_width = noise_width
+	psg.reset()
 	var player := SmsPlayer.new(to_song(), psg)
 	player.channel_mask = 1 << channel
 	var frames := frame_count() + 6

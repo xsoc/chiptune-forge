@@ -168,3 +168,65 @@ func test_report_and_project_keep_the_card() -> void:
 	check_eq(project["gameboy"].get("card"), "sbpro", "the project remembers the card")
 	var kit := ProjectFile.parse(ProjectFile.for_kit("k", {}, "pc", "sb16"))
 	check_eq(kit["card"], "sb16", "and so does a kit")
+
+
+func test_pc_speaker() -> void:
+	var song := _song("platformer", "42")
+	var sp: SpeakerSong = PcCards.arrange(song, "speaker")
+	check(sp is SpeakerSong, "the speaker gets its own arrangement")
+	check_eq(sp.notes.size(), 3, "lead, bass and drums")
+	check((sp.notes[SpeakerSong.LEAD] as Array).size() > 20, "the lead plays")
+	for n in sp.notes[SpeakerSong.BASS]:
+		check(int(n["note"]) >= SpeakerSong.LOWEST, "the bass fits the speaker")
+		break
+	check_eq(SpeakerSong.divisor_of(440.0), 2712, "A4 is PIT divisor 2712")
+	var rec := SpeakerWriter.record(sp)
+	var slots: PackedInt32Array = rec["slots"]
+	check_eq(slots.size(), sp.frames_before(sp.row_count) * 2, "two tones a frame")
+	var sounding := 0
+	for d in slots:
+		if d > 0:
+			sounding += 1
+	check(sounding > slots.size() / 3, "the speaker is busy (%d of %d)" % [sounding, slots.size()])
+	var header := SpeakerWriter.c_header("song_test", slots, int(rec["loop_slot"]), "test")
+	check(header.contains("#define SONG_TEST_TICKS %d" % slots.size()), "the header gives the length")
+	check(header.contains("#define SONG_TEST_LOOP %d" % int(rec["loop_slot"])), "and the loop")
+	var bin := SpeakerWriter.bin_bytes(slots)
+	check_eq(bin.decode_u16(20), slots[10], "the binary holds the divisors")
+	var seq := SpeakerSequencer.new(sp, 22050, song.data["channels"].size())
+	var buf := seq.render(22050 * 3)
+	var peak := 0.0
+	for v in buf:
+		peak = maxf(peak, absf(v.x))
+	check(peak > 0.1 and peak <= 1.0, "the speaker preview plays (peak %.2f)" % peak)
+	var job := ExportJob.for_target_song("pc", song, {"prefix": "tune", "wav": false, "card": "speaker"}, sp)
+	job.run()
+	for path in ["pc/song_tune.h", "pc/song_tune.bin", "pc/speaker.c", "pc/speaker.h", "pc/main.c", "pc/makefile"]:
+		check(job.files.has(path), "speaker export has %s" % path)
+	var sfx := PcSfx.from_sfx(SfxGenerator.make_sfx(Catalog.get_default().get_sfx_preset("coin"), 3), "speaker")
+	check(not sfx.slots.is_empty(), "a speaker sound has tones")
+	check(_peak(sfx.render(22050)) > 0.1, "and sounds")
+
+
+func test_tandy() -> void:
+	var song := _song()
+	var sms: SmsSong = PcCards.arrange(song, "tandy")
+	check_eq(sms.noise_taps, 0x0006, "the SN76496's white noise")
+	check(not "\n".join(sms.report).contains("Master System"), "the report talks about the Tandy")
+	var rec := PsgWriter.record(sms)
+	var vgm := PsgWriter.vgm_bytes(rec, sms.noise_taps, sms.noise_width, OplWriter.gd3("t", "IBM PC, Tandy 1000", ""))
+	check_eq(vgm.decode_u16(0x28), 0x0006, "VGM noise feedback")
+	check_eq(vgm.decode_u32(0x04) + 4, vgm.size(), "the end-of-file offset covers the GD3 tag")
+	check(vgm.decode_u32(0x14) > 0, "with a GD3 tag")
+	var psg := SmsPsg.new(44100.0)
+	psg.noise_taps = 0x0006
+	psg.reset()
+	psg.write(0xE4)
+	psg.write(0xF0)
+	var out := PackedFloat32Array()
+	out.resize(4410)
+	psg.render(out, 0, 4410)
+	check(_peak(out) > 0.05, "white noise plays with the SN76496's taps")
+	var sfx := PcSfx.from_sfx(SfxGenerator.make_sfx(Catalog.get_default().get_sfx_preset("explosion"), 3), "tandy")
+	check(sfx.noisy, "an explosion on the noise channel")
+	check(_peak(sfx.render(22050)) > 0.05, "and it sounds")

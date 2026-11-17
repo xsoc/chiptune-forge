@@ -2,11 +2,25 @@ class_name PcCards
 extends RefCounted
 ## The PC sound cards of the late 1980s to the mid 1990s that the "pc"
 ## target can play and export for. Each card's music goes through one of
-## the arrangers: [OplArranger] for the FM cards.
+## the arrangers ([method arrange] picks): [SpeakerArranger] for the PC
+## speaker, [SmsArranger] for the Tandy's SN76496 and [OplArranger] for the
+## FM cards.
 
-const CARDS: PackedStringArray = ["adlib", "sb", "sbpro", "sb16"]
+const CARDS: PackedStringArray = ["speaker", "tandy", "adlib", "sb", "sbpro", "sb16"]
 const DEFAULT := "adlib"
 const INFO := {
+	"speaker": {
+		"name": "PC speaker",
+		"year": 1981,
+		"chip": "speaker",
+		"description": "The IBM PC's own speaker: one square wave from the 8253 timer, on or off. Exports C data and a small DOS player.",
+	},
+	"tandy": {
+		"name": "Tandy 1000",
+		"year": 1984,
+		"chip": "sn76496",
+		"description": "Texas Instruments SN76496: 3 square voices and noise, with volume. Exports VGM.",
+	},
 	"adlib": {
 		"name": "AdLib",
 		"year": 1987,
@@ -46,8 +60,44 @@ static func is_card(card: String) -> bool:
 	return CARDS.has(card)
 
 
-## Music export formats for a card: "imf" (OPL2 only), "dro" and "vgm".
+## Music export formats for a card: "imf" (OPL2 only), "dro" and "vgm";
+## "c" (data and player source) and "bin" for the PC speaker.
 static func music_formats(card: String) -> PackedStringArray:
+	match chip_of(card):
+		"speaker":
+			return PackedStringArray(["c", "bin"])
+		"sn76496":
+			return PackedStringArray(["vgm"])
 	if chip_of(card) == "opl2":
 		return PackedStringArray(["imf", "dro", "vgm"])
 	return PackedStringArray(["dro", "vgm"])
+
+
+## True for the cards with an FM chip.
+static func is_fm(card: String) -> bool:
+	return chip_of(card) in ["opl2", "dual_opl2", "opl3"]
+
+
+## [param song] arranged for [param card]: an [OplSong], an [SmsSong] (the
+## Tandy) or a [SpeakerSong].
+static func arrange(song: ChipSong, card: String) -> NesSong:
+	match chip_of(card):
+		"speaker":
+			return SpeakerArranger.arrange(song)
+		"sn76496":
+			return tandy(song)
+	return OplArranger.arrange(song, card)
+
+
+## The Master System arrangement, on the Tandy's SN76496: the same three
+## squares and noise, with the SN76496's white noise.
+static func tandy(song: ChipSong) -> SmsSong:
+	var sms := SmsArranger.arrange(song)
+	sms.noise_taps = 0x0006
+	sms.noise_width = 16
+	sms.source.data["meta"]["target"] = "pc"
+	var lines := PackedStringArray()
+	for line in sms.report:
+		lines.append(line.replace("PSGlib plays", "the driver plays").replace("the Master System has none", "the Tandy has none").replace("the SN76489 has", "the SN76496 has"))
+	sms.report = lines
+	return sms
