@@ -686,7 +686,7 @@ jobs:
       - name: Check the song, sound and kit files against the published JSON Schemas
         run: |
           set -e
-          pip install -q jsonschema
+          python3 -m pip install -q --user "jsonschema>=4.18"
           docker run --rm -u "$(id -u):$(id -g)" -v "$PWD:/work" chiptune-forge sfx --preset jump --preset coin --format json --out schema-check
           find examples/cli/build schema-check -name '*.chipsong' -o -name '*.chipsfx' -o -name '*.chipkit' | xargs python3 tools/check_schema.py
       - name: Build the NES examples the exports include
