@@ -32,6 +32,10 @@ var _att := PackedInt32Array([15, 15, 15, 15])
 var _noise := 0
 var _latch := 0
 var _lfsr := 0x8000
+## White noise taps and shift register width: 0x0009 and 16 on the Sega
+## consoles' PSG, 0x0006 and 16 on the SN76496 in the Tandy 1000.
+var noise_taps := 0x0009
+var noise_width := 16
 # Per channel: phase (0 to 1 of a waveform cycle, or of a noise step).
 var _phase := PackedFloat64Array([0.0, 0.0, 0.0, 0.0])
 var _noise_out := 0.0
@@ -62,7 +66,7 @@ func reset() -> void:
 	_att = PackedInt32Array([15, 15, 15, 15])
 	_noise = 0
 	_latch = 0
-	_lfsr = 0x8000
+	_lfsr = 1 << (noise_width - 1)
 	_noise_out = 0.0
 
 
@@ -90,7 +94,7 @@ func _store(bits: int, low: bool) -> void:
 	else:
 		# Any write to the noise register restarts the shift register.
 		_noise = bits & 0x07
-		_lfsr = 0x8000
+		_lfsr = 1 << (noise_width - 1)
 
 
 func tone_period(channel: int) -> int:
@@ -161,6 +165,7 @@ func _render_noise(out: PackedFloat32Array, offset: int, count: int) -> void:
 	var inc := CLOCK / (32.0 * period) / mix_rate
 	var white := (_noise & 4) != 0
 	var lfsr := _lfsr
+	var top := noise_width - 1
 	var held := _noise_out
 	var phase := _phase[3]
 	for i in count:
@@ -173,8 +178,8 @@ func _render_noise(out: PackedFloat32Array, offset: int, count: int) -> void:
 			while phase >= 1.0:
 				phase -= 1.0
 				var bit := lfsr & 1
-				var feedback := (bit ^ ((lfsr >> 3) & 1)) if white else bit
-				lfsr = (lfsr >> 1) | (feedback << 15)
+				var feedback := _parity(lfsr & noise_taps) if white else bit
+				lfsr = (lfsr >> 1) | (feedback << top)
 				sum += float(bit)
 				steps += 1
 			held = sum / steps
@@ -182,3 +187,11 @@ func _render_noise(out: PackedFloat32Array, offset: int, count: int) -> void:
 	_lfsr = lfsr
 	_noise_out = held
 	_phase[3] = phase
+
+
+static func _parity(value: int) -> int:
+	var p := 0
+	while value:
+		p ^= value & 1
+		value >>= 1
+	return p

@@ -331,6 +331,22 @@ static func _clock(song: ChipSong, step: int) -> String:
 
 static func _pc(music: bool, arranged: Variant, sounds: Dictionary, card: String) -> Array[String]:
 	var lines: Array[String] = [""]
+	if music and arranged is SpeakerSong:
+		var sp: SpeakerSong = arranged
+		var rec := SpeakerWriter.record(sp)
+		var size := (rec["slots"] as PackedInt32Array).size() * 2
+		lines.append("[color=#52d1c0]Fits[/color] after arranging for one square wave: %.1f KB of data for the player." % (size / 1024.0))
+		if size > 60000:
+			lines.append("[color=%s]Over 60 KB:[/color] in the small memory models one array can't be bigger than 64 KB; build with -ml or load the .bin file." % WARN)
+		for line in sp.report:
+			lines.append("•  " + line)
+		return lines
+	if music and arranged is SmsSong:
+		var sms: SmsSong = arranged
+		lines.append("[color=#52d1c0]Fits[/color] after arranging for the SN76496's 3 squares and noise.")
+		for line in sms.report:
+			lines.append("•  " + line)
+		return lines
 	if music:
 		var opl: OplSong = arranged
 		if opl == null:
@@ -346,7 +362,11 @@ static func _pc(music: bool, arranged: Variant, sounds: Dictionary, card: String
 		for line in opl.report:
 			lines.append("•  " + line)
 		return lines
-	if card == "adlib":
+	if card == "speaker":
+		lines.append("[color=#52d1c0]Fits.[/color] Each sound takes over the speaker while it plays; the music carries on underneath.")
+	elif card == "tandy":
+		lines.append("[color=#52d1c0]Fits.[/color] Each sound plays on Square 3 or the noise channel, over the music.")
+	elif card == "adlib":
 		lines.append("[color=#52d1c0]Fits.[/color] Each sound plays as FM on channel 2, in place of the harmony, which comes back when it ends.")
 	else:
 		lines.append("[color=#52d1c0]Fits.[/color] Each sound plays as a sample on the %s's DAC, over the FM music." % PcCards.name_of(card))
@@ -355,8 +375,8 @@ static func _pc(music: bool, arranged: Variant, sounds: Dictionary, card: String
 	var total := 0
 	for id in ids:
 		var pc_sfx := PcSfx.from_sfx(sounds[id], card, str(id))
-		if pc_sfx.is_fm():
-			lines.append("•  %s: %.2f s, FM %s" % [id, pc_sfx.seconds(), "noise" if pc_sfx.noisy else "square"])
+		if not pc_sfx.is_sample():
+			lines.append("•  %s: %.2f s, %s" % [id, pc_sfx.seconds(), "noise" if pc_sfx.noisy else "tone"])
 		else:
 			var size := pc_sfx.samples.size() * pc_sfx.bits / 8
 			total += size

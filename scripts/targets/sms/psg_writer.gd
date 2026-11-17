@@ -93,7 +93,7 @@ static func _flush_wait(out: PackedByteArray, frames: int) -> int:
 ## The same frames as a VGM 1.50 file for the SN76489 (NTSC), which VGM
 ## players, Furnace and DefleMask open, and from which PSGlib's own vgm2psg
 ## makes the same PSGlib data.
-static func vgm_bytes(recorded: Dictionary) -> PackedByteArray:
+static func vgm_bytes(recorded: Dictionary, noise_taps := 0x0009, noise_width := 16, gd3 := PackedByteArray()) -> PackedByteArray:
 	var frames: Array = recorded["frames"]
 	var loop_frame := int(recorded["loop_frame"])
 	var data := PackedByteArray()
@@ -119,10 +119,14 @@ static func vgm_bytes(recorded: Dictionary) -> PackedByteArray:
 		header.encode_u32(0x1C, 0x100 + loop_offset - 0x1C)
 		header.encode_u32(0x20, (frames.size() - loop_frame) * samples_per_frame)
 	header.encode_u32(0x24, 60)
-	header.encode_u16(0x28, 0x0009)
-	header[0x2A] = 16
+	header.encode_u16(0x28, noise_taps)
+	header[0x2A] = noise_width
 	header.encode_u32(0x34, 0x100 - 0x34)
 	header.append_array(data)
+	if not gd3.is_empty():
+		header.encode_u32(0x14, header.size() - 0x14)
+		header.append_array(gd3)
+		header.encode_u32(0x04, header.size() - 4)
 	return header
 
 

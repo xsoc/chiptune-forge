@@ -24,6 +24,11 @@ const FRAME_HZ := 59.922743
 const LOWEST_NOTE := 45
 const HIGHEST_NOTE := 108
 
+## The PSG's white noise taps and shift register width (see [SmsPsg]):
+## the Sega consoles' by default, the SN76496's for the Tandy 1000.
+var noise_taps := 0x0009
+var noise_width := 16
+
 
 func _init() -> void:
 	frame_hz = FRAME_HZ

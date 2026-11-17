@@ -37,7 +37,7 @@ const TARGETS: PackedStringArray = ["modern", "gameboy", "nes", "sms", "genesis"
 static func arrange(target: String, song: ChipSong, gameboy_options := {}) -> Variant:
 	match target:
 		"pc":
-			return OplArranger.arrange(SynthEngines.chip_song(song), str(gameboy_options.get("card", PcCards.DEFAULT)))
+			return PcCards.arrange(SynthEngines.chip_song(song), str(gameboy_options.get("card", PcCards.DEFAULT)))
 		"gameboy":
 			return GbArranger.arrange(SynthEngines.chip_song(song), gameboy_options)
 		"nes":
@@ -851,7 +851,12 @@ static func for_sid_sfx(sounds: Dictionary, kit_name: String, options: Dictionar
 ## only), DRO and VGM files, plus optional WAV (rendered through the
 ## emulated chip) and MIDI of the arranged parts.
 ## Options: prefix, wav, loops, midi, console.
-static func for_pc_song(opl: OplSong, options: Dictionary) -> ExportJob:
+static func for_pc_song(arranged: NesSong, options: Dictionary) -> ExportJob:
+	if arranged is SpeakerSong:
+		return _for_speaker_song(arranged, options)
+	if arranged is SmsSong:
+		return _for_tandy_song(arranged, options)
+	var opl: OplSong = arranged
 	var job := ExportJob.new()
 	var song := opl.source
 	var prefix := sanitize(str(options.get("prefix", opl.title)))
@@ -891,6 +896,78 @@ static func for_pc_song(opl: OplSong, options: Dictionary) -> ExportJob:
 	return job
 
 
+## The PC speaker: the song as C data and binary, the player
+## (speaker.c) and an example program for Open Watcom or Turbo C.
+static func _for_speaker_song(sp: SpeakerSong, options: Dictionary) -> ExportJob:
+	var job := ExportJob.new()
+	var song := sp.source
+	var prefix := sanitize(str(options.get("prefix", sp.title)))
+	var symbol := "song_" + PsgWriter.symbol(prefix)
+	if bool(options.get("console", true)):
+		job._tasks.append(func() -> bool:
+			var rec := SpeakerWriter.record(sp)
+			var slots: PackedInt32Array = rec["slots"]
+			job.files["pc/%s.h" % symbol] = SpeakerWriter.c_header(symbol, slots, int(rec["loop_slot"]), "%s, for the PC speaker" % sp.title).to_utf8_buffer()
+			job.files["pc/%s.bin" % symbol] = SpeakerWriter.bin_bytes(slots)
+			job.files["pc/speaker.c"] = SpeakerWriter.player_source().to_utf8_buffer()
+			job.files["pc/speaker.h"] = SpeakerWriter.player_header().to_utf8_buffer()
+			job.files["pc/main.c"] = SpeakerWriter.example_source("%s.h" % symbol, symbol, []).to_utf8_buffer()
+			job.files["pc/makefile"] = SpeakerWriter.makefile("play").to_utf8_buffer()
+			job.files["pc/README.txt"] = SpeakerWriter.readme(prefix, symbol, slots.size(), false).to_utf8_buffer()
+			return true)
+	_pc_common(job, sp, song, prefix, options, "pc/       The song as C data (%s.h) and binary, the player (speaker.c) and an example. See pc/README.txt." % symbol, "the PC speaker")
+	return job
+
+
+## The Tandy 1000: the song as a VGM for the SN76496.
+static func _for_tandy_song(sms: SmsSong, options: Dictionary) -> ExportJob:
+	var job := ExportJob.new()
+	var song := sms.source
+	var prefix := sanitize(str(options.get("prefix", sms.title)))
+	if bool(options.get("console", true)):
+		job._tasks.append(func() -> bool:
+			var rec := PsgWriter.record(sms)
+			job.files["pc/%s.vgm" % prefix] = PsgWriter.vgm_bytes(rec, sms.noise_taps, sms.noise_width, OplWriter.gd3(sms.title, "IBM PC, Tandy 1000", "Made with Chiptune Forge"))
+			job.files["pc/README.txt"] = "\n".join([
+				"%s: music for the Tandy 1000's SN76496" % prefix,
+				"",
+				"%s.vgm  The song as a VGM file (SN76496 at 3.58 MHz, 60 frames a second)." % prefix,
+				"         VGM players, Furnace and DefleMask open it. To play it in a DOS",
+				"         program, write each byte after a 0x50 command to port 0xC0 and wait",
+				"         1/60 s at each 0x62.",
+			]).to_utf8_buffer()
+			return true)
+	_pc_common(job, sms, song, prefix, options, "pc/       The song as a VGM file. See pc/README.txt.", "the Tandy 1000's SN76496")
+	return job
+
+
+## WAV, MIDI and the top README for the speaker and Tandy exports.
+static func _pc_common(job: ExportJob, arranged: NesSong, song: ChipSong, prefix: String, options: Dictionary, pc_line: String, sound: String) -> void:
+	if bool(options.get("midi", false)):
+		job._tasks.append(func() -> bool:
+			job.files["midi/%s.mid" % prefix] = MidiWriter.encode(song)
+			return true)
+	if bool(options.get("wav", true)):
+		job._r_nes = arranged
+		job._queue_render(song, "audio/%s.wav" % prefix, int(options.get("loops", 1)), [])
+	job._tasks.append(func() -> bool:
+		var meta: Dictionary = song.data.get("meta", {})
+		job.files["README.txt"] = "\n".join([
+			"%s, arranged for %s" % [arranged.title, sound],
+			"Made with Chiptune Forge. Seed %s, %s, %d BPM on the card." % [meta.get("seed", ""), meta.get("key", ""), int(arranged.get_bpm())],
+			"",
+			str(meta.get("license", "")),
+			"",
+			pc_line if bool(options.get("console", true)) else "",
+			"audio/    WAV, 44.1 kHz, 16-bit, rendered through an emulation of %s." % sound if bool(options.get("wav", true)) else "",
+			"midi/     The arranged parts, one track each." if bool(options.get("midi", false)) else "",
+			"",
+			"Arrangement:",
+			"\n".join(Array(arranged.report).map(func(line: String) -> String: return "  " + line)),
+		]).to_utf8_buffer()
+		return true)
+
+
 ## Export for sound effects on a PC sound card: Creative Voice files (or
 ## 16-bit WAVs on the Sound Blaster 16) for the Sound Blasters' DAC, or FM
 ## sounds as DRO and IMF files for the AdLib, and WAVs of how each sounds.
@@ -903,10 +980,27 @@ static func for_pc_sfx(sounds: Dictionary, kit_name: String, options: Dictionary
 	ids.sort()
 	for id in ids:
 		converted.append(PcSfx.from_sfx(sounds[id], card, sanitize(str(id))))
-	if bool(options.get("console", true)):
+	if bool(options.get("console", true)) and card == "speaker":
+		job._tasks.append(func() -> bool:
+			var symbols: Array = []
+			for pc_sfx: PcSfx in converted:
+				var symbol := "sfx_" + PsgWriter.symbol(pc_sfx.name)
+				job.files["pc/%s.h" % symbol] = SpeakerWriter.c_header(symbol, pc_sfx.slots, -1, "%s, for the PC speaker" % pc_sfx.name).to_utf8_buffer()
+				job.files["pc/%s.bin" % symbol] = SpeakerWriter.bin_bytes(pc_sfx.slots)
+				symbols.append(symbol)
+			job.files["pc/speaker.c"] = SpeakerWriter.player_source().to_utf8_buffer()
+			job.files["pc/speaker.h"] = SpeakerWriter.player_header().to_utf8_buffer()
+			job.files["pc/main.c"] = SpeakerWriter.example_source("", "", symbols).to_utf8_buffer()
+			job.files["pc/makefile"] = SpeakerWriter.makefile("sounds").to_utf8_buffer()
+			job.files["pc/README.txt"] = SpeakerWriter.readme(prefix, "", 0, true, symbols).to_utf8_buffer()
+			return true)
+	elif bool(options.get("console", true)):
 		for pc_sfx: PcSfx in converted:
 			job._tasks.append(func() -> bool:
-				if pc_sfx.is_fm():
+				if card == "tandy":
+					var rec := PsgWriter.record(pc_sfx.psg.to_song(), 1 << pc_sfx.psg.channel)
+					job.files["pc/%s.vgm" % pc_sfx.name] = PsgWriter.vgm_bytes(rec, 0x0006, 16)
+				elif pc_sfx.is_fm():
 					var recorded := pc_sfx.recorded()
 					job.files["pc/%s.dro" % pc_sfx.name] = OplWriter.dro_bytes(recorded, "opl2")
 					job.files["pc/%s.wlf" % pc_sfx.name] = OplWriter.imf_bytes(recorded, pc_sfx.name)
@@ -916,7 +1010,10 @@ static func for_pc_sfx(sounds: Dictionary, kit_name: String, options: Dictionary
 					job.files["pc/%s.voc" % pc_sfx.name] = pc_sfx.voc_bytes()
 				return true)
 		job._tasks.append(func() -> bool:
-			job.files["pc/README.txt"] = OplWriter.sfx_readme(prefix, card, converted).to_utf8_buffer()
+			if card == "tandy":
+				job.files["pc/README.txt"] = "Sound effects for the Tandy 1000's SN76496, one VGM file each. Each plays on\nSquare 3 or the noise channel, which the music gives up while it sounds.\n".to_utf8_buffer()
+			else:
+				job.files["pc/README.txt"] = OplWriter.sfx_readme(prefix, card, converted).to_utf8_buffer()
 			return true)
 	if bool(options.get("wav", true)):
 		for pc_sfx: PcSfx in converted:
@@ -1083,6 +1180,8 @@ func _start_render(song: ChipSong, path: String, loops: int, muted: Array) -> vo
 		_r_seq = MdSequencer.new(_r_nes, MIX_RATE)
 	elif _r_nes is SmsSong:
 		_r_seq = SmsSequencer.new(_r_nes, MIX_RATE)
+	elif _r_nes is SpeakerSong:
+		_r_seq = SpeakerSequencer.new(_r_nes, MIX_RATE)
 	elif _r_nes:
 		_r_seq = NesSequencer.new(_r_nes, MIX_RATE)
 	else:

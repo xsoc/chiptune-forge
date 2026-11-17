@@ -6,8 +6,8 @@
 script = ExtResource("1")
 id = "pc"
 display_name = "DOS PC"
-chip_name = "AdLib and Sound Blaster"
-description = "The sound cards of DOS games: the AdLib and Sound Blaster's OPL2 FM chip, the Sound Blaster Pro's two OPL2s and the Sound Blaster 16's OPL3. Exports IMF, DRO and VGM music, and VOC or FM sound effects."
+chip_name = "PC speaker, Tandy, AdLib, Sound Blaster"
+description = "The sound of DOS games: the PC speaker, the Tandy 1000's SN76496, the AdLib and Sound Blaster's OPL2 FM chip, the Sound Blaster Pro's two OPL2s and the Sound Blaster 16's OPL3. Exports C data for the speaker, VGM, IMF and DRO music, and VOC or FM sound effects."
 phase = 7
 available = true
 stereo = true
@@ -20,4 +20,4 @@ voices = Array[Dictionary]([{
 "name": "Rhythm",
 "waves": ["bd", "sd", "tom", "cym", "hh"]
 }])
-export_formats = PackedStringArray("wlf", "dro", "vgm", "voc", "wav")
+export_formats = PackedStringArray("c", "bin", "wlf", "dro", "vgm", "voc", "wav")

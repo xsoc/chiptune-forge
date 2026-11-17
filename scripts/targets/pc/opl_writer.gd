@@ -207,15 +207,15 @@ static func vgm_bytes(recorded: Dictionary, chip: String, title := "", system :=
 		_:
 			header.encode_u32(0x50, int(Opl.CLOCK))
 	header.append_array(data)
-	var gd3 := _gd3(title, system, credit)
-	if not gd3.is_empty():
+	var tag := gd3(title, system, credit)
+	if not tag.is_empty():
 		header.encode_u32(0x14, header.size() - 0x14)
-		header.append_array(gd3)
+		header.append_array(tag)
 	header.encode_u32(0x04, header.size() - 4)
 	return header
 
 
-static func _gd3(title: String, system: String, note: String) -> PackedByteArray:
+static func gd3(title: String, system: String, note: String) -> PackedByteArray:
 	if title == "" and note == "":
 		return PackedByteArray()
 	var strings := [title, "", "", "", system, "", "", "", "Chiptune Forge", "", "", note]

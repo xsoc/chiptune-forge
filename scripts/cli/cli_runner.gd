@@ -712,7 +712,7 @@ func _usage() -> String:
 		"  --structure, --energy, --loop/--no-loop, --intro/--no-intro, --outro/--no-outro, --seed,",
 		"  --engine chip|auto|analog|fm|wavetable|sampled, --layer-engine Layer:engine (repeatable),",
 		"  --settings file.json (flags override it).",
-		"For --target pc: --card adlib|sb|sbpro|sb16 picks the sound card (default adlib).",
+		"For --target pc: --card speaker|tandy|adlib|sb|sbpro|sb16 picks the sound card (default adlib).",
 		"Output: --format json,plugin,wav,stems,midi,console,project (default: json,plugin,wav,console,project),",
 		"  --out folder, --name prefix, --loops n.",
 		"Everywhere: --json for a machine-readable report (--report file.json writes it to a file), --strict to fail when the music does not fit a",

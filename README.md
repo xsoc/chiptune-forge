@@ -20,7 +20,8 @@ runs on phones, desktops and the web, and it exports straight into Godot.
   (wavetables for our own HuC6280 player), the Game Boy Advance (8-bit
   samples for Maxmod), the MSX and ZX Spectrum 128 (AY-3-8910, with our Z80
   player), the Commodore 64 (SID, as PSID files with our 6502 player) and
-  the DOS PC's sound cards (the AdLib and Sound Blasters' OPL2, dual OPL2
+  the DOS PC (the PC speaker, as C data with our DOS player; the Tandy
+  1000's SN76496 as VGM; and the AdLib and Sound Blasters' OPL2, dual OPL2
   and OPL3 FM chips, as IMF, DRO and VGM files, with VOC sound effects).
   Each one arranges the song for the chip, previews it through an emulated
   chip and exports source, data and an example project that builds.

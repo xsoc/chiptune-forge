@@ -8,6 +8,9 @@ extends NesSequencer
 
 func _make_chip(rate: int) -> void:
 	apu = SmsPsg.new(float(rate))
+	apu.noise_taps = nes.noise_taps
+	apu.noise_width = nes.noise_width
+	apu.reset()
 	driver = SmsPlayer.new(nes, apu)
 
 

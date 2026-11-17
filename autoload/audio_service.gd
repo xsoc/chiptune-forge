@@ -127,6 +127,10 @@ func _make_sequencer(song: ChipSong, rate: int) -> ChipSongSequencer:
 		var pc: Variant = AppState.get_pc_song()
 		if pc is OplSong:
 			return OplSequencer.new(pc, rate, song.data["channels"].size())
+		if pc is SpeakerSong:
+			return SpeakerSequencer.new(pc, rate, song.data["channels"].size())
+		if pc is SmsSong:
+			return SmsSequencer.new(pc, rate, song.data["channels"].size())
 	if AppState.ab_classic and song == AppState.song:
 		return ChipSongSequencer.new(SynthEngines.chip_song(song), rate)
 	return ChipSongSequencer.new(song, rate)
