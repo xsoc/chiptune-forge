@@ -40,16 +40,18 @@ const PANS := [32, 22, 42, 32, 18, 46, 32, 32]
 const ECHO_CHANNELS := (1 << SnesSong.LEAD) | (1 << SnesSong.HARMONY) | (1 << SnesSong.ARP) | (1 << SnesSong.PAD1) | (1 << SnesSong.PAD2)
 
 
-static func arrange(song: ChipSong) -> SnesSong:
+## Arranges [param song]. [param into] is the song to fill, for targets
+## that play the same arrangement on other hardware (the Game Boy Advance).
+static func arrange(song: ChipSong, into: SnesSong = null) -> SnesSong:
 	var md := MdArranger.arrange(song)
 	var src: ChipSong = md.source
-	var snes := SnesSong.new()
+	var snes := into if into else SnesSong.new()
 	var data := song.data
 	var spb := song.get_steps_per_beat()
 	snes.title = song.get_title()
 	snes.steps_per_beat = spb
 	snes.steps_per_bar = md.steps_per_bar
-	var speed := SnesSong.choose_tempo(song.get_bpm(), spb)
+	var speed := SnesSong.choose_tempo(song.get_bpm(), spb, snes.standard_ticks)
 	snes.set_tempo(int(speed["tempo"]), int(speed["speed"]))
 	snes.looping = md.looping
 	snes.pans = PackedInt32Array(PANS)

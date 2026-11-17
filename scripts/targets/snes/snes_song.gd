@@ -42,6 +42,9 @@ const MAX_PITCH := 0x3FFF
 ## Impulse Tracker tempo: SNESMod ticks [code]8000 / floor(20480 / tempo)[/code]
 ## times a second.
 var tempo := 150
+## True for players that tick at Impulse Tracker's own rate, tempo x 0.4 a
+## second (Maxmod on the Game Boy Advance), not SNESMod's.
+var standard_ticks := false
 ## Sample names from [SnesSamples], in module order.
 var samples: PackedStringArray = []
 ## Panning per channel, 0 (left) to 64 (right).
@@ -64,21 +67,23 @@ func _init() -> void:
 
 ## SNESMod's tick rate for an Impulse Tracker tempo: its timer runs at 8 kHz
 ## and counts [code]20480 / tempo[/code] steps per tick.
-static func tick_hz(it_tempo: int) -> float:
+static func tick_hz(it_tempo: int, standard := false) -> float:
+	if standard:
+		return clampi(it_tempo, 32, 255) * 0.4
 	return 8000.0 / floor(20480.0 / clampi(it_tempo, 32, 255))
 
 
 ## The speed and tempo that play [param bpm] most closely. Returns {speed,
 ## tempo, bpm}. Ties go to the tick rate nearest 60 Hz, which gives
 ## envelopes and vibrato a good resolution.
-static func choose_tempo(bpm: float, steps_per_beat: int) -> Dictionary:
+static func choose_tempo(bpm: float, steps_per_beat: int, standard := false) -> Dictionary:
 	var rows_per_second := bpm * steps_per_beat / 60.0
 	var best := {"speed": 6, "tempo": 150, "bpm": 0.0}
 	var best_score := INF
 	for speed in range(2, 16):
 		for t in range(32, 256):
-			var actual := tick_hz(t) / speed * 60.0 / maxf(steps_per_beat, 1)
-			var score := absf(actual - bpm) / maxf(bpm, 1.0) * 1000.0 + absf(tick_hz(t) - 60.0) * 0.001
+			var actual := tick_hz(t, standard) / speed * 60.0 / maxf(steps_per_beat, 1)
+			var score := absf(actual - bpm) / maxf(bpm, 1.0) * 1000.0 + absf(tick_hz(t, standard) - 60.0) * 0.001
 			if score < best_score:
 				best_score = score
 				best = {"speed": speed, "tempo": t, "bpm": actual}
@@ -87,7 +92,7 @@ static func choose_tempo(bpm: float, steps_per_beat: int) -> Dictionary:
 
 func set_tempo(it_tempo: int, speed: int) -> void:
 	tempo = it_tempo
-	frame_hz = tick_hz(it_tempo)
+	frame_hz = tick_hz(it_tempo, standard_ticks)
 	groove = PackedInt32Array([speed])
 
 

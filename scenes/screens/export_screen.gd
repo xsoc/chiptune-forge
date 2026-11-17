@@ -43,7 +43,8 @@ func refresh() -> void:
 	var pce := AppState.target == "pce"
 	var msx := AppState.target == "msx"
 	var c64 := AppState.target == "c64"
-	var console := gameboy or nes or sms or genesis or snes or pce or msx or c64
+	var gba := AppState.target == "gba"
+	var console := gameboy or nes or sms or genesis or snes or pce or msx or c64 or gba
 	%Export.theme_type_variation = &"PrimaryButton" if music else &"SfxPrimaryButton"
 	%Midi.visible = music
 	%WavOptions.visible = music and %Wav.button_pressed
@@ -62,6 +63,8 @@ func refresh() -> void:
 		%Console.text = "PC Engine: data and a small C player for HuCC, with a ROM project" if music else "PC Engine: sound data for the same C player"
 	elif msx:
 		%Console.text = "MSX / Spectrum: data and a small Z80 player, with cartridge and tape projects, and VGM" if music else "MSX / Spectrum: sound data for the same Z80 player"
+	elif gba:
+		%Console.text = "Game Boy Advance: Impulse Tracker module for Maxmod, with a ROM project" if music else "Game Boy Advance: 8-bit WAVs for Maxmod"
 	elif c64:
 		%Console.text = "Commodore 64: a .sid file and a small 6502 player, with an example program" if music else "Commodore 64: sound data for the same 6502 player"
 	%Godot.visible = not console
@@ -97,6 +100,9 @@ func refresh() -> void:
 		elif msx:
 			%Wav.text = "Audio: AY-3-8910 WAV, loop points included"
 			%Midi.text = "MIDI: the four AY parts"
+		elif gba:
+			%Wav.text = "Audio: GBA WAV, loop points included"
+			%Midi.text = "MIDI: the GBA's seven parts"
 		elif c64:
 			%Wav.text = "Audio: SID WAV, loop points included"
 			%Midi.text = "MIDI: the four SID parts"
@@ -110,7 +116,7 @@ func refresh() -> void:
 		%Godot.text = "Godot: .chipkit and .chipsfx for the plugin"
 		%Wav.text = "Audio: one WAV per sound"
 		if console:
-			%Wav.text = "Audio: one WAV per sound, as the %s plays it" % ("NES" if nes else "Master System" if sms else "Mega Drive" if genesis else "SNES" if snes else "PC Engine" if pce else "AY-3-8910" if msx else "SID" if c64 else "Game Boy")
+			%Wav.text = "Audio: one WAV per sound, as the %s plays it" % ("NES" if nes else "Master System" if sms else "Mega Drive" if genesis else "SNES" if snes else "PC Engine" if pce else "AY-3-8910" if msx else "SID" if c64 else "Game Boy Advance" if gba else "Game Boy")
 		%Export.disabled = AppState.sfx == null and count == 0
 	_update_report()
 
@@ -165,6 +171,8 @@ func _update_report() -> void:
 		lines.append_array(_ay_report())
 	elif AppState.target == "c64":
 		lines.append_array(_sid_report())
+	elif AppState.target == "gba":
+		lines.append_array(_gba_report())
 	elif AppState.mode == "music" and AppState.song:
 		var song: ChipSong = AppState.song
 		var used := 0
@@ -389,6 +397,26 @@ func _sid_report() -> Array[String]:
 	return lines
 
 
+func _gba_report() -> Array[String]:
+	var lines: Array[String] = [""]
+	if AppState.mode == "music":
+		var gba := AppState.get_gba_song()
+		if gba == null:
+			return lines
+		lines.append("[color=#52d1c0]Fits[/color] after arranging for 7 of Maxmod's channels.")
+		for line in gba.report:
+			lines.append("•  " + line)
+		return lines
+	var sounds := _sounds()
+	lines.append("[color=#52d1c0]Fits.[/color] Each sound plays as an 8-bit sample on Maxmod's eighth channel, over the music.")
+	var ids := sounds.keys()
+	ids.sort()
+	for id in ids:
+		var gba_sfx := GbaSfx.from_sfx(sounds[id], str(id))
+		lines.append("•  %s: %.2f s, %.1f KB" % [GbaSfx.symbol(str(id)), gba_sfx.seconds(), gba_sfx.samples.size() / 1024.0])
+	return lines
+
+
 func _sounds() -> Dictionary:
 	var sounds: Dictionary = AppState.kit.sounds.duplicate()
 	if sounds.is_empty() and AppState.sfx:
@@ -441,6 +469,8 @@ func _on_export() -> void:
 				_job = ExportJob.for_ay_song(AppState.get_ay_song(), options)
 			"c64":
 				_job = ExportJob.for_sid_song(AppState.get_sid_song(), options)
+			"gba":
+				_job = ExportJob.for_gba_song(AppState.get_gba_song(), options)
 			_:
 				_job = ExportJob.for_song(AppState.song, options)
 	else:
@@ -462,6 +492,8 @@ func _on_export() -> void:
 				_job = ExportJob.for_ay_sfx(sounds, prefix, options)
 			"c64":
 				_job = ExportJob.for_sid_sfx(sounds, prefix, options)
+			"gba":
+				_job = ExportJob.for_gba_sfx(sounds, prefix, options)
 			_:
 				_job = ExportJob.for_sfx(sounds, prefix, options)
 	%Export.disabled = true

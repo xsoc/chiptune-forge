@@ -7,11 +7,35 @@ script = ExtResource("1")
 id = "gba"
 display_name = "Game Boy Advance"
 chip_name = "DMG + 2 PCM"
-description = "Game Boy channels plus 2 sample channels. Exports for Maxmod."
+description = "Maxmod mixes 8-bit samples into the 2 Direct Sound channels; the Game Boy channels stay free. Exports an Impulse Tracker module with a devkitARM ROM project."
 phase = 5
-available = false
+available = true
 stereo = true
 echo = false
-max_voices = 6
-voices = Array[Dictionary]([])
-export_formats = PackedStringArray("mod")
+max_voices = 8
+voices = Array[Dictionary]([{
+"name": "Channel 1",
+"waves": ["sample"]
+},{
+"name": "Channel 2",
+"waves": ["sample"]
+},{
+"name": "Channel 3",
+"waves": ["sample"]
+},{
+"name": "Channel 4",
+"waves": ["sample"]
+},{
+"name": "Channel 5",
+"waves": ["sample"]
+},{
+"name": "Channel 6",
+"waves": ["sample"]
+},{
+"name": "Channel 7",
+"waves": ["sample"]
+},{
+"name": "Channel 8",
+"waves": ["sample"]
+}])
+export_formats = PackedStringArray("it", "wav")

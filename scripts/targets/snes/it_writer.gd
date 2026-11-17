@@ -18,7 +18,9 @@ const VERSION := 0x0214
 
 
 ## The module's bytes.
-static func module_bytes(snes: SnesSong) -> PackedByteArray:
+## With [param eight_bit], samples are 8-bit (for Maxmod on the GBA, which
+## mixes 8-bit samples) instead of 16-bit.
+static func module_bytes(snes: SnesSong, eight_bit := false) -> PackedByteArray:
 	var layout := pattern_layout(snes)
 	var patterns: Array = layout["patterns"]
 	var orders: Array = layout["orders"]
@@ -62,7 +64,7 @@ static func module_bytes(snes: SnesSong) -> PackedByteArray:
 	for i in smp_count:
 		put.call(pointers_at + (ins_count + i) * 4, out.size())
 		sample_headers.append(out.size())
-		out.append_array(_sample_header(snes.samples[i]))
+		out.append_array(_sample_header(snes.samples[i], eight_bit))
 	for i in patterns.size():
 		put.call(pointers_at + (ins_count + smp_count + i) * 4, out.size())
 		out.append_array(_pattern(patterns[i]))
@@ -73,9 +75,12 @@ static func module_bytes(snes: SnesSong) -> PackedByteArray:
 		out.encode_u32(sample_headers[i] + 0x48, out.size())
 		var pcm: PackedInt32Array = SnesSamples.get_sample(snes.samples[i])["pcm"]
 		var data := PackedByteArray()
-		data.resize(pcm.size() * 2)
-		for k in pcm.size():
-			data.encode_s16(k * 2, pcm[k])
+		if eight_bit:
+			data = eight_bit_pcm(pcm)
+		else:
+			data.resize(pcm.size() * 2)
+			for k in pcm.size():
+				data.encode_s16(k * 2, pcm[k])
 		out.append_array(data)
 	return out
 
@@ -253,7 +258,16 @@ static func _envelope(env: Dictionary) -> PackedByteArray:
 	return out
 
 
-static func _sample_header(sample_name: String) -> PackedByteArray:
+## 16-bit samples rounded to signed 8-bit.
+static func eight_bit_pcm(pcm: PackedInt32Array) -> PackedByteArray:
+	var data := PackedByteArray()
+	data.resize(pcm.size())
+	for k in pcm.size():
+		data[k] = clampi(roundi(pcm[k] / 256.0), -128, 127) & 0xFF
+	return data
+
+
+static func _sample_header(sample_name: String, eight_bit := false) -> PackedByteArray:
 	var sample := SnesSamples.get_sample(sample_name)
 	var pcm: PackedInt32Array = sample["pcm"]
 	var looped := int(sample["loop_length"]) > 0
@@ -263,7 +277,7 @@ static func _sample_header(sample_name: String) -> PackedByteArray:
 	out.append(0)
 	out.append(64)
 	# Has data, 16-bit, and loops if it does.
-	out.append(1 | 2 | (16 if looped else 0))
+	out.append(1 | (0 if eight_bit else 2) | (16 if looped else 0))
 	out.append(64)
 	out.append_array(_text(sample_name.replace("_", " "), 26))
 	# Signed samples; default pan unused.
