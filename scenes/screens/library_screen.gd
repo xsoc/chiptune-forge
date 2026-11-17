@@ -1,5 +1,6 @@
 extends Control
-## Saved songs and sounds, with search, favourites and delete.
+## Saved songs and sounds, with search, favourites and delete, and the
+## community packs installed.
 
 signal entry_opened(kind: String)
 
@@ -8,10 +9,60 @@ const TRASH_ICON := preload("res://assets/ui/icon_trash.svg")
 
 
 func _ready() -> void:
+	if %Kind.selected < 0:
+		%Kind.select(0)
 	%Search.text_changed.connect(func(_t: String) -> void: _rebuild())
 	%Kind.item_selected.connect(func(_i: int) -> void: _rebuild())
 	AppState.library_changed.connect(_rebuild)
+	AppState.catalog_changed.connect(_rebuild_packs)
+	%AddPack.pressed.connect(func() -> void:
+		FileDelivery.pick_text(PackedStringArray([ChipPack.EXTENSION, "json"]), "Chiptune Forge pack", self, add_pack))
 	_rebuild()
+	_rebuild_packs()
+
+
+## Installs a pack from a file's text and says how it went.
+func add_pack(text: String, file_name := "") -> void:
+	var error := AppState.install_pack(text)
+	%PackStatus.visible = true
+	if error != "":
+		%PackStatus.text = "Could not add %s: %s" % [file_name if file_name != "" else "the pack", error]
+	else:
+		var pack: ChipPack = AppState.catalog.packs[-1]
+		%PackStatus.text = "Added %s: %s." % [pack.name, pack.summary()]
+
+
+func _rebuild_packs() -> void:
+	for child in %PackRows.get_children():
+		child.queue_free()
+	for pack in AppState.catalog.packs:
+		var row := HBoxContainer.new()
+		var text := VBoxContainer.new()
+		text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		var title := Label.new()
+		title.text = pack.name
+		title.clip_text = true
+		text.add_child(title)
+		var info := Label.new()
+		var by := " by %s" % pack.author if pack.author != "" else ""
+		var licence := " · %s" % pack.license if pack.license != "" else ""
+		info.text = "%s%s%s" % [pack.summary(), by, licence]
+		info.theme_type_variation = &"MutedLabel"
+		info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		text.add_child(info)
+		row.add_child(text)
+		var remove := Button.new()
+		remove.icon = TRASH_ICON
+		remove.theme_type_variation = &"FlatButton"
+		remove.tooltip_text = "Remove this pack"
+		remove.custom_minimum_size = Vector2(44, 44)
+		var pack_name := pack.name
+		remove.pressed.connect(func() -> void:
+			AppState.remove_pack(pack_name)
+			%PackStatus.visible = true
+			%PackStatus.text = "Removed %s." % pack_name)
+		row.add_child(remove)
+		%PackRows.add_child(row)
 
 
 func _rebuild() -> void:

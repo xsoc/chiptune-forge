@@ -33,29 +33,33 @@ theme_override_constants/margin_top = 16
 theme_override_constants/margin_right = 16
 theme_override_constants/margin_bottom = 16
 
-[node name="Card" type="PanelContainer" parent="Scroll/Center/Margin"]
+[node name="Cards" type="VBoxContainer" parent="Scroll/Center/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="Card" type="PanelContainer" parent="Scroll/Center/Margin/Cards"]
 layout_mode = 2
 theme_type_variation = &"Card"
 
-[node name="Library" type="VBoxContainer" parent="Scroll/Center/Margin/Card"]
+[node name="Library" type="VBoxContainer" parent="Scroll/Center/Margin/Cards/Card"]
 layout_mode = 2
 
-[node name="Title" type="Label" parent="Scroll/Center/Margin/Card/Library"]
+[node name="Title" type="Label" parent="Scroll/Center/Margin/Cards/Card/Library"]
 layout_mode = 2
 theme_type_variation = &"SectionLabel"
 text = "LIBRARY"
 
-[node name="Filters" type="HBoxContainer" parent="Scroll/Center/Margin/Card/Library"]
+[node name="Filters" type="HBoxContainer" parent="Scroll/Center/Margin/Cards/Card/Library"]
 layout_mode = 2
 
-[node name="Search" type="LineEdit" parent="Scroll/Center/Margin/Card/Library/Filters"]
+[node name="Search" type="LineEdit" parent="Scroll/Center/Margin/Cards/Card/Library/Filters"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 placeholder_text = "Search saved songs and sounds"
 clear_button_enabled = true
 
-[node name="Kind" type="OptionButton" parent="Scroll/Center/Margin/Card/Library/Filters"]
+[node name="Kind" type="OptionButton" parent="Scroll/Center/Margin/Cards/Card/Library/Filters"]
 clip_text = true
 fit_to_longest_item = false
 unique_name_in_owner = true
@@ -71,13 +75,59 @@ popup/item_2/id = 2
 popup/item_3/text = "Favourites"
 popup/item_3/id = 3
 
-[node name="Empty" type="Label" parent="Scroll/Center/Margin/Card/Library"]
+[node name="Empty" type="Label" parent="Scroll/Center/Margin/Cards/Card/Library"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"MutedLabel"
 text = "Nothing saved yet. Use Save to library on a song or a sound. Saved items keep their settings and seed, so they can be made again exactly."
 autowrap_mode = 3
 
-[node name="Rows" type="VBoxContainer" parent="Scroll/Center/Margin/Card/Library"]
+[node name="Rows" type="VBoxContainer" parent="Scroll/Center/Margin/Cards/Card/Library"]
 unique_name_in_owner = true
 layout_mode = 2
+
+[node name="PacksCard" type="PanelContainer" parent="Scroll/Center/Margin/Cards"]
+layout_mode = 2
+theme_type_variation = &"Card"
+
+[node name="Packs" type="VBoxContainer" parent="Scroll/Center/Margin/Cards/PacksCard"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="Scroll/Center/Margin/Cards/PacksCard/Packs"]
+layout_mode = 2
+theme_type_variation = &"SectionLabel"
+text = "COMMUNITY PACKS"
+
+[node name="Help" type="Label" parent="Scroll/Center/Margin/Cards/PacksCard/Packs"]
+layout_mode = 2
+theme_type_variation = &"MutedLabel"
+text = "Packs add vibes, styles and sound presets that other people made. They hold only settings, never code."
+autowrap_mode = 3
+
+[node name="PackRows" type="VBoxContainer" parent="Scroll/Center/Margin/Cards/PacksCard/Packs"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="PackStatus" type="Label" parent="Scroll/Center/Margin/Cards/PacksCard/Packs"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_type_variation = &"MutedLabel"
+autowrap_mode = 3
+
+[node name="PackButtons" type="HFlowContainer" parent="Scroll/Center/Margin/Cards/PacksCard/Packs"]
+layout_mode = 2
+
+[node name="AddPack" type="Button" parent="Scroll/Center/Margin/Cards/PacksCard/Packs/PackButtons"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+theme_type_variation = &"PrimaryButton"
+text = "Add a pack"
+
+[node name="PackGuide" type="LinkButton" parent="Scroll/Center/Margin/Cards/PacksCard/Packs/PackButtons"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 4
+text = "Find and make packs"
+uri = "https://github.com/xsoc/chiptune-forge/tree/main/packs"

@@ -18,6 +18,9 @@ func _ready() -> void:
 	%VibePicker.setup(catalog, catalog.vibes, Catalog.VIBE_GROUPS)
 	%StylePicker.setup(catalog, catalog.styles, Catalog.STYLE_GROUPS)
 	_fill_options()
+	AppState.catalog_changed.connect(func() -> void:
+		%VibePicker.setup(catalog, catalog.vibes, Catalog.VIBE_GROUPS)
+		%StylePicker.setup(catalog, catalog.styles, Catalog.STYLE_GROUPS))
 
 	%VibePicker.selection_changed.connect(func(_ids: PackedStringArray) -> void: _on_changed())
 	%VibePicker.strengths_changed.connect(func(_s: Array[float]) -> void: _on_changed())

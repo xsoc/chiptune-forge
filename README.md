@@ -11,6 +11,9 @@ runs on phones, desktops and the web, and it exports straight into Godot.
 - **Sound FX mode.** About 160 presets in 12 categories, from menu clicks to
   boss roars. Every tap gives a new take; mutate it, tweak it and collect the
   keepers into a sound kit.
+- **Community packs.** Add vibes, styles and sound presets that other
+  people made, from one `.chippack` file each. See [packs/](packs/README.md)
+  to find packs or make your own.
 - **Adaptive music.** Every song has layers and four states (Explore,
   Tension, Combat, Boss) that the Godot plugin can fade between by intensity.
 - **Exports.** `.chipsong`, `.chipsfx` and `.chipkit` JSON for the Godot
