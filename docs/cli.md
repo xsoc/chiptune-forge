@@ -50,6 +50,10 @@ These flags match the Generate screen:
 | `--loop`, `--no-loop`, `--intro`, `--no-intro`, `--outro`, `--no-outro` | Song form switches. |
 | `--engine` | The synth: `chip` (default, the classic sound), `auto` (the style's engine), `analog`, `fm`, `wavetable` or `sampled`. `list engines` describes them. Console targets always use their own chip. |
 | `--layer-engine Layer:engine` | One layer's synth, such as `--layer-engine Pad:sampled`. Repeat it for more layers. |
+| `--swing n` | Swing from 0 to 100, or `auto` (the default) to take it from the vibe and style. |
+| `--humanise n` | How far velocities and note lengths wander, 0 (the default) to 100. |
+| `--volume Layer:percent` | One layer's volume, 0 to 150, such as `--volume Pad:60`. Repeatable. |
+| `--instrument Layer:sound` | Swaps a layer's sound for `pulse12`, `pulse25`, `square`, `triangle`, `saw` or `sine`, such as `--instrument Lead:saw`. Drums have none. Repeatable. |
 | `--seed` | A number or a word. Without it the command picks one and prints it, so a run can always be repeated. |
 | `--settings file.json` | Loads every setting from a JSON file: a `.cforge` project, or an object like a project's `settings`. Flags override it. |
 

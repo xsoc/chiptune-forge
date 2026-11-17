@@ -7,7 +7,7 @@ extends RefCounted
 ## then sound design. The same settings and seed always give the same song.
 
 ## Bump when a change alters the output for existing seeds.
-const ENGINE_VERSION := "1.2.0"
+const ENGINE_VERSION := "1.3.0"
 const LICENSE := "Generated with Chiptune Forge. You own this music and may use it for any purpose, including commercially, with no royalties or credit required."
 
 ## Most main sections a song can have. Enough for 15 minutes of 16-bar
@@ -42,6 +42,20 @@ const STATES := [
 ]
 
 
+## How the music moves between states, per route: "*" means any state.
+## The first rule that matches wins, most specific first (see
+## [method ChipMusicPlayer.transition_for]).
+const TRANSITIONS := [
+	{"from": "*", "to": "Combat", "when": "bar", "how": "stinger", "stinger": "rise"},
+	{"from": "*", "to": "Boss", "when": "phrase", "how": "stinger", "stinger": "rise"},
+	{"from": "*", "to": "Explore", "when": "bar", "how": "crossfade"},
+	{"from": "*", "to": "*", "when": "beat", "how": "crossfade"},
+]
+const WHEN: PackedStringArray = ["now", "beat", "bar", "phrase"]
+const HOW: PackedStringArray = ["crossfade", "cut", "stinger"]
+const STINGERS: PackedStringArray = ["rise", "fall", "hit"]
+
+
 ## Generates a song. When [param previous] is given, layers named in
 ## [param locked] keep their notes from it, provided the form is unchanged.
 static func generate(settings: SongSettings, catalog: Catalog = null, previous: ChipSong = null, locked: PackedStringArray = []) -> ChipSong:
@@ -62,6 +76,7 @@ static func generate(settings: SongSettings, catalog: Catalog = null, previous: 
 	PartWriter.write(ctx)
 	DrumWriter.write(ctx)
 	SoundDesigner.design(ctx)
+	apply_advanced(ctx)
 	var style: Style = ctx.catalog.get_style(settings.style)
 	var engine := SynthEngines.resolve(settings.engine, style)
 	ctx.instruments = SynthEngines.apply(ctx.instruments, engine, settings.layer_engines, style)
@@ -118,6 +133,8 @@ static func resolve(ctx: GenContext) -> void:
 	p["complexity"] = complexity
 	p["energy"] = clampf(float(p["energy"]) * 0.5 + intensity * 0.5, 0.0, 1.0)
 	p["swing"] = maxf(float(p["swing"]), style.swing)
+	if s.swing >= 0.0:
+		p["swing"] = clampf(s.swing / 100.0, 0.0, 1.0)
 	p["chord_colour"] = clampf(float(p["chord_colour"]) + style.chord_colour + complexity * 0.15, 0.0, 1.0)
 	p["melody_density"] = clampf(style.melody_density * 0.6 + float(p["energy"]) * 0.3 + complexity * 0.2 - 0.05, 0.05, 1.0)
 	p["syncopation"] = clampf(style.syncopation + complexity * 0.2, 0.0, 1.0)
@@ -402,7 +419,7 @@ static func assemble(ctx: GenContext, previous: ChipSong, locked: PackedStringAr
 			"name": GenContext.CHANNEL_NAMES[c],
 			"instrument": c,
 			"layer": _layer_of_channel(c),
-			"volume": 1.0,
+			"volume": snappedf(float(ctx.settings.layer_volumes.get(_layer_of_channel(c), 100.0)) / 100.0, 0.01),
 			"pan": [0.0, -0.35, 0.3, -0.15, 0.0, 0.0, 0.1][c],
 			"polyphony": 3 if c == GenContext.Channel.PAD else (2 if c == GenContext.Channel.NOISE else 1),
 		})
@@ -445,12 +462,84 @@ static func assemble(ctx: GenContext, previous: ChipSong, locked: PackedStringAr
 		"sections": sections,
 		"order": ctx.order.duplicate(),
 		"layers": layers,
-		"states": STATES.duplicate(true),
+		"states": (s.states if not s.states.is_empty() else STATES).duplicate(true),
+		"transitions": (s.transitions if not s.transitions.is_empty() else TRANSITIONS).duplicate(true),
+		"stingers": make_stingers(ctx),
 		"cues": cues,
 	}
 	var song := ChipSong.new()
 	song.data = data
 	return song
+
+
+## Short phrases in the song's key the game (or a transition) can play over
+## the music: "rise" climbs the tonic chord, "fall" drops down it, "hit" is
+## one accented chord. Each is {name, length, notes: [[channel, step,
+## length, pitch, velocity, instrument?], ...]}, using the song's channels.
+static func make_stingers(ctx: GenContext) -> Array:
+	var spb := ctx.steps_per_beat
+	var bar := spb * ctx.beats_per_bar
+	var half := maxi(spb / 2, 1)
+	var root := MusicTheory.pitch_at_or_above(ctx.key, 67)
+	var third := root + (3 if MusicTheory.is_minor_mode(ctx.mode) else 4)
+	var chord := [root, third, root + 7, root + 12]
+	var lead := GenContext.Channel.LEAD
+	var harmony := GenContext.Channel.HARMONY
+	var bass := GenContext.Channel.BASS
+	var drums := GenContext.Channel.DRUMS
+	var noise := GenContext.Channel.NOISE
+	var result: Array = []
+	for name in STINGERS:
+		var notes: Array = []
+		var land := 0
+		match name:
+			"rise", "fall":
+				var line: Array = chord.duplicate()
+				if name == "fall":
+					line.reverse()
+				for i in line.size():
+					var last := i == line.size() - 1
+					notes.append([lead, i * half, bar - i * half if last else half, line[i], 100 + i * 5])
+				land = (line.size() - 1) * half
+				notes.append([harmony, land, bar - land, (root + 7) if name == "rise" else third, 95])
+				notes.append([bass, 0, bar, root - 24, 110])
+			"hit":
+				notes.append([lead, 0, spb * 2, root + 12, 120])
+				notes.append([harmony, 0, spb * 2, root + 7, 110])
+				notes.append([bass, 0, spb * 2, root - 24, 120])
+		notes.append([drums, 0, 1, DrumWriter.PITCH[DrumWriter.KICK], 120, DrumWriter.KICK])
+		notes.append([drums, land, 1, DrumWriter.PITCH[DrumWriter.KICK], 120, DrumWriter.KICK])
+		notes.append([noise, land, 2, DrumWriter.PITCH[DrumWriter.CRASH], 110, DrumWriter.CRASH])
+		result.append({"name": name, "length": bar if name != "hit" else spb * 2, "notes": notes})
+	return result
+
+
+## The Advanced controls: instrument swaps and humanise. (Swing is taken
+## in [method resolve]; layer volumes in [method assemble].) With every
+## control at its default this changes nothing.
+static func apply_advanced(ctx: GenContext) -> void:
+	var s := ctx.settings
+	for layer in s.instrument_swaps:
+		var swap: Array = SongSettings.SWAPS.get(s.instrument_swaps[layer], [])
+		if swap.is_empty() or not LAYER_CHANNELS.has(layer) or layer == "Drums":
+			continue
+		for c in LAYER_CHANNELS[layer]:
+			var inst: Dictionary = ctx.instruments[c]
+			inst["wave"] = swap[0]
+			inst["duty"] = swap[1]
+			inst.erase("table")
+	var amount := clampf(s.humanise / 100.0, 0.0, 1.0)
+	if amount <= 0.0:
+		return
+	for i in ctx.parts.size():
+		for c in GenContext.CHANNEL_COUNT:
+			var rng := ctx.rng("humanise:%d:%d" % [i, c], _layer_of_channel(c))
+			for note in ctx.parts[i][c]:
+				var velocity := float(note[3]) * (1.0 + (rng.next_float() - 0.5) * 0.5 * amount)
+				note[3] = clampi(roundi(velocity), 1, 127)
+				# Melodic notes sometimes let go a step early, like a player lifting off.
+				if c < GenContext.Channel.DRUMS and int(note[1]) > 2 and rng.chance(0.25 * amount):
+					note[1] = int(note[1]) - 1
 
 
 static func _layer_of_channel(channel: int) -> String:

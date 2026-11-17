@@ -2,7 +2,8 @@ extends SceneTree
 ## Captures the app at a given window size, for checking layouts.
 ##   godot --path . -s tools/screenshot.gd -- 390 844 2 out.png [sfx|music|gameboy|nes|sms|genesis|snes|pce|msx|c64|gba] [ScreenName] [scroll]
 ## scroll moves the screen's scroll area down by that many pixels. The
-## ScreenName "About" opens the About dialog instead.
+## ScreenName "About" opens the About dialog instead, and "Advanced" opens
+## the Generate screen's Advanced controls.
 ## "gameboy", "nes", "sms", "genesis", "snes", "pce", "msx", "c64", "gba" and "pc" show Music mode with that export target picked.
 
 func _initialize() -> void:
@@ -25,14 +26,16 @@ func _run() -> void:
 		root.get_node("AppState").mode = "sfx"
 	if args.size() > 4 and args[4] in ["gameboy", "nes", "sms", "genesis", "snes", "pce", "msx", "c64", "gba", "pc"]:
 		root.get_node("AppState").set_target(args[4])
+	if args.size() > 5 and args[5] == "Advanced":
+		main.get_node("%GenerateScreen").get_node("%AdvancedToggle").button_pressed = true
 	if args.size() > 5 and args[5] == "About":
 		main.get_node("%About").pressed.emit()
-	elif args.size() > 5:
+	elif args.size() > 5 and args[5] != "Advanced":
 		main._show_screen(args[5])
 	if args.size() > 6:
 		for i in 10:
 			await process_frame
-		var screen: Node = main.find_child(args[5], true, false)
+		var screen: Node = main.find_child("GenerateScreen" if args[5] == "Advanced" else args[5], true, false)
 		var scroll: ScrollContainer = screen.find_child("Scroll", true, false) if screen else null
 		if scroll:
 			scroll.scroll_vertical = int(args[6])

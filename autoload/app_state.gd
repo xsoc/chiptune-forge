@@ -15,6 +15,8 @@ signal mode_changed(mode: String)
 signal target_changed(target: String)
 ## The preview should restart with another sound (the A/B switch).
 signal preview_changed
+## A state or transition rule was edited (the song is patched in place).
+signal adaptive_changed
 ## The reduced-motion preference changed.
 signal prefs_changed
 
@@ -404,6 +406,59 @@ func set_layer_locked(layer: String, locked: bool) -> void:
 	locks_changed.emit()
 
 
+## Edits the adaptive states and transition rules. [param change] gets the
+## states and rules (copies of the song's) and changes them in place; they
+## are kept in the settings, so they survive regenerating, and patched into
+## the playing song.
+func edit_adaptive(change: Callable) -> void:
+	if song == null:
+		return
+	var states: Array = song.data.get("states", []).duplicate(true)
+	var rules: Array = song.data.get("transitions", []).duplicate(true)
+	change.call(states, rules)
+	settings.states = SongSettings.clean_states(states)
+	settings.transitions = SongSettings.clean_transitions(rules)
+	song.data["states"] = settings.states.duplicate(true)
+	song.data["transitions"] = settings.transitions.duplicate(true)
+	adaptive_changed.emit()
+
+
+## Puts the default states and transitions back.
+func reset_adaptive() -> void:
+	if song == null:
+		return
+	settings.states = []
+	settings.transitions = []
+	song.data["states"] = SongGenerator.STATES.duplicate(true)
+	song.data["transitions"] = SongGenerator.TRANSITIONS.duplicate(true)
+	adaptive_changed.emit()
+
+
+## How many parts each state keeps sounding, against the target's voices:
+## [{name, voices, limit}] with limit 0 for no limit. Each layer that is not
+## Off needs a voice of its own; a chip arranger merges or drops the rest.
+func state_budgets() -> Array:
+	var out: Array = []
+	if song == null:
+		return out
+	var limit := 0
+	var chip: ChipProfile = catalog.chips.get(target)
+	if chip and target != "modern":
+		limit = chip.max_voices
+		if target == "pc":
+			limit = PcCards.voice_count(pc_card)
+	for state in song.data.get("states", []):
+		var voices := 0
+		var levels: Dictionary = state.get("levels", {})
+		for layer in SongSettings.LAYERS:
+			var level: Variant = levels.get(layer, "full")
+			if (level is String and level == "off") or ((level is float or level is int) and float(level) <= 0.0):
+				continue
+			voices += 1
+		out.append({"name": str(state.get("name", "")), "voices": voices, "limit": limit})
+	return out
+
+
 func notify_settings_changed() -> void:
 	settings_changed.emit()
 
@@ -473,10 +528,33 @@ func reset_sfx_tweaks() -> void:
 func set_sfx_params(params: Dictionary) -> void:
 	if sfx == null:
 		return
-	var next := ChipSfx.from_params(params, sfx.get_sound_name(), sfx.data.get("layer2", {}))
+	set_sfx_layers(params, sfx.data.get("layer2", {}))
+
+
+## Replaces both layers of the current sound. An empty [param layer2]
+## removes the second layer.
+func set_sfx_layers(params: Dictionary, layer2: Dictionary) -> void:
+	if sfx == null:
+		return
+	var next := ChipSfx.from_params(params, sfx.get_sound_name(), layer2)
 	next.data["meta"] = sfx.data["meta"].duplicate()
 	sfx = next
 	sfx_changed.emit(sfx)
+
+
+## Imports jsfxr settings (JSON or a share code) as the current sound's
+## first layer. Returns "" or the reason it could not.
+func import_jsfxr(text: String) -> String:
+	var result := JsfxrImport.parse(text)
+	if result.has("error"):
+		return str(result["error"])
+	if sfx == null:
+		select_sfx_preset(sfx_preset_id)
+	var params: Dictionary = ChipSfxSynth.with_defaults(result["params"])
+	sfx = ChipSfx.from_params(params, "imported", {})
+	sfx.data["meta"] = {"name": "imported", "preset": "", "seed": 0, "variant": "jsfxr", "license": SongGenerator.LICENSE}
+	sfx_changed.emit(sfx)
+	return ""
 
 
 func recall_recent(index: int) -> void:

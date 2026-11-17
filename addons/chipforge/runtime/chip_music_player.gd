@@ -5,14 +5,18 @@ extends Node
 ##
 ## Add it to a scene, assign a song and call [method play]. For adaptive
 ## music, set [member intensity] (0 to 1) or call [method set_state] with one
-## of the song's states, such as [code]"combat"[/code]. Layers fade on the
-## beat, and [method transition_to] jumps to a section on the next beat, bar
-## or phrase.
+## of the song's states, such as [code]"combat"[/code]. The song's transition
+## rules decide when the change lands (now, or on the next beat, bar or
+## phrase) and how (crossfade, cut, or a stinger over the music).
+## [method play_stinger] plays a stinger on demand, and
+## [method transition_to] jumps to a section on the next beat, bar or phrase.
 
 signal beat(index: int)
 signal bar(index: int)
 signal section_changed(section_name: String)
 signal cue_reached(cue_name: String)
+## A state change has landed (after its quantise wait).
+signal state_changed(state_name: String)
 signal looped
 signal finished
 
@@ -41,7 +45,9 @@ const LEVELS := {"off": 0.0, "low": 0.35, "mid": 0.65, "full": 1.0}
 		intensity = clampf(value, 0.0, 1.0)
 		if adaptive and song:
 			var state := state_for_intensity(intensity)
-			if state != "" and state != _state:
+			if state == _state:
+				_pending_state = []
+			elif state != "" and (_pending_state.is_empty() or _pending_state[0] != state):
 				set_state(state)
 @export_group("Advanced")
 @export var mix_rate := 44100
@@ -62,6 +68,10 @@ var _sequencer: ChipSongSequencer
 var _state := ""
 var _pending_section := -1
 var _pending_quantize := "bar"
+## A state change waiting for its beat, bar or phrase: [name, rule].
+var _pending_state: Array = []
+var _stinger: ChipSongSequencer
+var _stinger_left := 0
 
 
 func _ready() -> void:
@@ -75,14 +85,29 @@ func _ready() -> void:
 
 
 func _process(_delta: float) -> void:
-	if _playback == null or _sequencer == null:
+	if _playback == null or (_sequencer == null and _stinger == null):
 		return
 	var frames := _playback.get_frames_available()
 	if frames <= 0:
 		return
-	var buffer := _sequencer.render(frames)
+	var buffer := PackedVector2Array()
+	if _sequencer:
+		buffer = _sequencer.render(frames)
+	else:
+		buffer.resize(mini(frames, _stinger_left))
+	if _stinger:
+		var extra := _stinger.render(mini(frames, _stinger_left))
+		for i in extra.size():
+			buffer[i] += extra[i]
+		_stinger_left -= extra.size()
+		if _stinger_left <= 0 or extra.is_empty():
+			_stinger = null
 	_playback.push_buffer(buffer)
-	_dispatch(_sequencer.events)
+	if _sequencer:
+		_dispatch(_sequencer.events)
+	elif _stinger == null:
+		# A stinger played on its own has finished.
+		_playback = null
 
 
 ## Starts playing from [param from_step] (16th-note steps by default).
@@ -123,7 +148,9 @@ func stop() -> void:
 		_player.stop()
 	_playback = null
 	_sequencer = null
+	_stinger = null
 	_pending_section = -1
+	_pending_state = []
 
 
 func is_playing() -> bool:
@@ -153,13 +180,130 @@ func state_for_intensity(value: float) -> String:
 	return best
 
 
-## Switches to a named state, such as [code]"combat"[/code], fading layers over
-## [param fade_beats].
-func set_state(state_name: String, fade_beats := 2.0) -> void:
+## Switches to a named state, such as [code]"combat"[/code]. With
+## [param fade_beats] left out, the song's transition rule for this route
+## decides when and how (see [method transition_for]); with it, layers fade
+## over that many beats straight away.
+func set_state(state_name: String, fade_beats := -1.0) -> void:
 	adaptive = true
+	if fade_beats >= 0.0 or _sequencer == null:
+		_pending_state = []
+		_land_state(state_name, _beats_to_frames(maxf(fade_beats, 0.0)) if _sequencer else 0)
+		return
+	var rule := transition_for(_state, state_name)
+	if str(rule.get("when", "beat")) == "now":
+		_run_transition(state_name, rule)
+	else:
+		_pending_state = [state_name, rule]
+
+
+## The transition rule for going from [param from_state] to
+## [param to_state]: {when, how, stinger?}. An exact route beats "*" to a
+## state, which beats a state to "*", which beats "*" to "*". With no rule
+## the change crossfades on the next beat.
+func transition_for(from_state: String, to_state: String) -> Dictionary:
+	var best := {}
+	var best_score := -1
+	for rule in song.data.get("transitions", []) if song else []:
+		var rule_from := str(rule.get("from", "*")).to_lower()
+		var rule_to := str(rule.get("to", "*")).to_lower()
+		var from_ok := rule_from == "*" or rule_from == from_state.to_lower()
+		var to_ok := rule_to == "*" or rule_to == to_state.to_lower()
+		if not from_ok or not to_ok:
+			continue
+		var score := (2 if rule_to != "*" else 0) + (1 if rule_from != "*" else 0)
+		if score > best_score:
+			best = rule
+			best_score = score
+	return best if best_score >= 0 else {"when": "beat", "how": "crossfade"}
+
+
+## Plays one of the song's stingers (such as "rise") over the music, from
+## now. Returns false when the song has no stinger by that name.
+func play_stinger(stinger_name: String) -> bool:
+	var data := stinger_song(stinger_name)
+	if data == null:
+		push_warning("ChipMusicPlayer: no stinger named %s." % stinger_name)
+		return false
+	var rate := _sequencer.mix_rate if _sequencer else (web_mix_rate if OS.has_feature("web") else mix_rate)
+	_stinger = ChipSongSequencer.new(data, rate)
+	_stinger.looping = false
+	_stinger_left = _stinger.get_length_frames() + int(rate * 0.6)
+	if _sequencer == null and _player:
+		# Nothing playing: the stinger plays on its own.
+		var generator := AudioStreamGenerator.new()
+		generator.mix_rate = rate
+		generator.buffer_length = maxf(buffer_length, 0.25) if OS.has_feature("web") else buffer_length
+		_player.stream = generator
+		_player.play()
+		_playback = _player.get_stream_playback()
+	return true
+
+
+## The stinger as a playable one-section song, or null.
+func stinger_song(stinger_name: String) -> ChipSong:
+	if song == null:
+		return null
+	for stinger in song.data.get("stingers", []):
+		if str(stinger.get("name", "")).to_lower() != stinger_name.to_lower():
+			continue
+		var data := song.data.duplicate()
+		var channel_count: int = song.data.get("channels", []).size()
+		var per_channel: Array = []
+		for c in channel_count:
+			per_channel.append([])
+		for note in stinger.get("notes", []):
+			var c := int(note[0])
+			if c >= 0 and c < channel_count:
+				per_channel[c].append(note.slice(1))
+		var patterns: Array = []
+		var ids: Array = []
+		for c in channel_count:
+			if per_channel[c].is_empty():
+				ids.append(-1)
+			else:
+				ids.append(patterns.size())
+				patterns.append({"notes": per_channel[c]})
+		var length := int(stinger.get("length", 16))
+		data["patterns"] = patterns
+		data["sections"] = [{"name": str(stinger["name"]), "length": length, "patterns": ids}]
+		data["order"] = [0]
+		var timing: Dictionary = song.data.get("timing", {}).duplicate()
+		timing["loop"] = false
+		timing["loop_start"] = 0
+		timing["loop_end"] = length
+		data["timing"] = timing
+		data["cues"] = []
+		var result := ChipSong.new()
+		result.data = data
+		return result
+	return null
+
+
+func get_stinger_names() -> PackedStringArray:
+	var names := PackedStringArray()
+	for stinger in song.data.get("stingers", []) if song else []:
+		names.append(str(stinger.get("name", "")))
+	return names
+
+
+func _run_transition(state_name: String, rule: Dictionary) -> void:
+	_pending_state = []
+	match str(rule.get("how", "crossfade")):
+		"cut":
+			_land_state(state_name, 0)
+		"stinger":
+			play_stinger(str(rule.get("stinger", "rise")))
+			_land_state(state_name, 0)
+		_:
+			_land_state(state_name, _beats_to_frames(float(rule.get("fade_beats", 2.0))))
+
+
+func _land_state(state_name: String, fade_frames: int) -> void:
 	_state = state_name
 	if _sequencer:
-		_apply_state(state_name, _beats_to_frames(fade_beats))
+		_apply_state(state_name, fade_frames)
+	state_changed.emit(state_name)
 
 
 ## Leaves adaptive mode and fades every layer back to full.
@@ -242,10 +386,16 @@ func _dispatch(events: Array) -> void:
 				beat.emit(event[1])
 				if _pending_section >= 0 and _pending_quantize == "beat":
 					_do_transition()
+				if not _pending_state.is_empty() and str(_pending_state[1].get("when", "beat")) == "beat":
+					_run_transition(_pending_state[0], _pending_state[1])
 			ChipSongSequencer.EventType.BAR:
 				bar.emit(event[1])
 				if _pending_section >= 0 and (_pending_quantize == "bar" or (_pending_quantize == "phrase" and int(event[1]) % 4 == 0)):
 					_do_transition()
+				if not _pending_state.is_empty():
+					var when := str(_pending_state[1].get("when", "beat"))
+					if when == "bar" or (when == "phrase" and int(event[1]) % 4 == 0):
+						_run_transition(_pending_state[0], _pending_state[1])
 			ChipSongSequencer.EventType.SECTION:
 				section_changed.emit(event[1])
 			ChipSongSequencer.EventType.CUE:

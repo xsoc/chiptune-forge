@@ -9,8 +9,11 @@ extends Control
 signal seek_requested(step: float)
 
 const LENGTHS := [30, 60, 90, 120, 300, 600, 900]
+const SLIDER_ROW := preload("res://scenes/components/slider_row.tscn")
 
 var _loading := false
+## Advanced controls per layer: {layer: [SliderRow volume, OptionButton or null]}.
+var _mix := {}
 
 
 func _ready() -> void:
@@ -32,6 +35,13 @@ func _ready() -> void:
 		option.item_selected.connect(func(_i: int) -> void: _on_changed())
 	for check in [%Intro, %Loop, %Outro]:
 		check.toggled.connect(func(_on: bool) -> void: _on_changed())
+	for row in [%Swing, %Humanise]:
+		row.value_changed.connect(func(_v: float) -> void: _on_changed())
+	%AutoSwing.toggled.connect(func(_on: bool) -> void: _on_changed())
+	%AdvancedToggle.toggled.connect(func(on: bool) -> void:
+		%AdvancedBox.visible = on
+		%AdvancedToggle.text = "Advanced  ▾" if on else "Advanced  ▸")
+	_build_mix()
 	%CustomLength.value_changed.connect(func(_v: float) -> void: _on_length_changed())
 	%Debounce.timeout.connect(func() -> void: AppState.generate())
 	%SeedField.seed_submitted.connect(_on_seed_submitted)
@@ -97,6 +107,39 @@ func _fill_options() -> void:
 		%Lengths.move_child(chip, %Lengths.get_child_count() - 2)
 
 
+## One row per layer: a volume slider and, for melodic layers, a sound menu.
+func _build_mix() -> void:
+	for layer in SongSettings.LAYERS:
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 8)
+		var volume: SliderRow = SLIDER_ROW.instantiate()
+		volume.label_text = layer
+		volume.max_value = 150.0
+		volume.value = 100.0
+		volume.value_format = "%d%%"
+		volume.tooltip_text = "%s volume" % layer
+		volume.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		row.add_child(volume)
+		var sound: OptionButton = null
+		if layer != "Drums":
+			sound = OptionButton.new()
+			sound.custom_minimum_size = Vector2(150, 44)
+			sound.clip_text = true
+			sound.fit_to_longest_item = false
+			sound.tooltip_text = "Swap the %s's sound" % layer.to_lower()
+			sound.size_flags_vertical = Control.SIZE_SHRINK_END
+			sound.add_item("Style's sound")
+			sound.set_item_metadata(0, "")
+			for swap in SongSettings.SWAPS:
+				sound.add_item(SongSettings.SWAP_NAMES[swap])
+				sound.set_item_metadata(sound.item_count - 1, swap)
+			sound.item_selected.connect(func(_i: int) -> void: _on_changed())
+			row.add_child(sound)
+		volume.value_changed.connect(func(_v: float) -> void: _on_changed())
+		%Mix.add_child(row)
+		_mix[layer] = [volume, sound]
+
+
 func _load_settings() -> void:
 	_loading = true
 	var s: SongSettings = AppState.settings
@@ -124,6 +167,17 @@ func _load_settings() -> void:
 	%CustomLength.set_value_no_signal(s.length_seconds)
 	_sync_length_chips(s.length_seconds)
 	%SeedField.set_seed_text(s.seed_text)
+	%AutoSwing.button_pressed = s.swing < 0.0
+	%Swing.value = maxf(s.swing, 0.0)
+	%Humanise.value = s.humanise
+	for layer in _mix:
+		_mix[layer][0].value = float(s.layer_volumes.get(layer, 100.0))
+		var sound: OptionButton = _mix[layer][1]
+		if sound:
+			sound.selected = 0
+			for i in sound.item_count:
+				if str(sound.get_item_metadata(i)) == str(s.instrument_swaps.get(layer, "")):
+					sound.selected = i
 	_update_enabled()
 	_loading = false
 
@@ -147,6 +201,17 @@ func _store_settings() -> void:
 	s.loop = %Loop.button_pressed
 	s.outro = %Outro.button_pressed
 	s.length_seconds = %CustomLength.value
+	s.swing = -1.0 if %AutoSwing.button_pressed else %Swing.value
+	s.humanise = %Humanise.value
+	s.layer_volumes.clear()
+	s.instrument_swaps.clear()
+	for layer in _mix:
+		var volume: float = _mix[layer][0].value
+		if not is_equal_approx(volume, 100.0):
+			s.layer_volumes[layer] = volume
+		var sound: OptionButton = _mix[layer][1]
+		if sound and sound.selected > 0:
+			s.instrument_swaps[layer] = str(sound.get_item_metadata(sound.selected))
 
 
 func _update_enabled() -> void:
@@ -154,6 +219,9 @@ func _update_enabled() -> void:
 	%Tempo.modulate.a = 0.45 if auto else 1.0
 	%Tempo.get_node("Slider").editable = not auto
 	%Key.disabled = auto
+	var auto_swing: bool = %AutoSwing.button_pressed
+	%Swing.modulate.a = 0.45 if auto_swing else 1.0
+	%Swing.get_node("Slider").editable = not auto_swing
 	var no_vibe := not AppState.can_make_music()
 	for button in [%Generate, %Regenerate, %Save]:
 		button.disabled = no_vibe

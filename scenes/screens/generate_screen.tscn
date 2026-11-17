@@ -224,6 +224,52 @@ tooltip_text = "Plays after the loop when the song does not loop"
 button_pressed = true
 text = "Outro"
 
+[node name="AdvancedToggle" type="Button" parent="Scroll/Margin/Stack/Columns/ControlsCard/Controls"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+tooltip_text = "Swing, humanise, and each layer's volume and sound"
+theme_type_variation = &"FlatButton"
+toggle_mode = true
+text = "Advanced  ▸"
+alignment = 0
+
+[node name="AdvancedBox" type="VBoxContainer" parent="Scroll/Margin/Stack/Columns/ControlsCard/Controls"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="AutoSwing" type="CheckButton" parent="Scroll/Margin/Stack/Columns/ControlsCard/Controls/AdvancedBox"]
+unique_name_in_owner = true
+layout_mode = 2
+button_pressed = true
+text = "Let the vibe pick the swing"
+
+[node name="Swing" parent="Scroll/Margin/Stack/Columns/ControlsCard/Controls/AdvancedBox" instance=ExtResource("4")]
+unique_name_in_owner = true
+layout_mode = 2
+tooltip_text = "Delays every other step, for a shuffle feel"
+label_text = "Swing"
+value = 0.0
+
+[node name="Humanise" parent="Scroll/Margin/Stack/Columns/ControlsCard/Controls/AdvancedBox" instance=ExtResource("4")]
+unique_name_in_owner = true
+layout_mode = 2
+tooltip_text = "Lets velocities and note lengths wander a little, like a player"
+label_text = "Humanise"
+value = 0.0
+
+[node name="MixLabel" type="Label" parent="Scroll/Margin/Stack/Columns/ControlsCard/Controls/AdvancedBox"]
+layout_mode = 2
+theme_type_variation = &"SectionLabel"
+text = "LAYER VOLUME AND SOUND"
+
+[node name="Mix" type="VBoxContainer" parent="Scroll/Margin/Stack/Columns/ControlsCard/Controls/AdvancedBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 8
+
 [node name="SynthBox" type="VBoxContainer" parent="Scroll/Margin/Stack/Columns/ControlsCard/Controls"]
 unique_name_in_owner = true
 layout_mode = 2
