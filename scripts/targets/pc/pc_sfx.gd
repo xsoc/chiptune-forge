@@ -11,8 +11,7 @@ extends RefCounted
 ## The MIDI modules play music only: DOS games played their sounds on a
 ## Sound Blaster beside them, so those cards get the Pro's 22 kHz samples.
 ##
-## The PC speaker plays effects the way it plays music: a divisor per 1/140
-## s, with noisy sounds as random pitches. The Tandy plays them on its
+## The Tandy plays them on its
 ## SN76496 as the Master System does, on Square 3 or the noise channel.
 ##
 ## The AdLib has no DAC, so its effects are FM: one OPL channel, keyed once,
@@ -38,8 +37,6 @@ var note := 69
 var pitch := PackedInt32Array()
 var volume := PackedInt32Array()
 var noisy := false
-## PC speaker: a divisor per 1/140 s (0 is silence).
-var slots := PackedInt32Array()
 ## Tandy: the sound on the SN76496.
 var psg: SmsSfx
 
@@ -53,25 +50,6 @@ static func from_sfx(sfx: ChipSfx, card: String, sound_name := "") -> PcSfx:
 		out.psg.noise_taps = 0x0006
 		out.psg.noise_width = 16
 		out.noisy = out.psg.channel == SmsSong.NOISE
-		return out
-	if card == "speaker":
-		var nes := NesSfx.from_sfx(sfx, out.name)
-		out.noisy = nes.channel == NesSong.NOISE
-		var count := int(ceilf(nes.frame_count() * SpeakerWriter.RATE / 60.0))
-		var rng := 0x2468
-		for t in count:
-			var src := mini(int(t * 60.0 / SpeakerWriter.RATE), nes.frame_count() - 1)
-			var p: int = nes.pitch[src] if src < nes.pitch.size() else 0
-			if nes.volume[src] < SpeakerArranger.GATE:
-				out.slots.append(0)
-			elif out.noisy:
-				rng = (rng * 1103515245 + 12345) & 0x7FFFFFFF
-				var r := float((rng >> 8) & 0xFFFF) / 65535.0
-				# Brighter noise for higher noise notes: 0.5 to 12 kHz.
-				var top := 500.0 * pow(2.0, clampi(nes.note + p - 16, 0, 15) / 3.3)
-				out.slots.append(SpeakerSong.divisor_of(top * (0.4 + r * 0.6)))
-			else:
-				out.slots.append(SpeakerSong.divisor_of(SpeakerSong.midi_hz(clampi(NesSong.midi_of(NesSong.PULSE2, nes.note) + p, 24, 108))))
 		return out
 	if card == "adlib":
 		var nes := NesSfx.from_sfx(sfx, out.name)
@@ -111,8 +89,6 @@ func is_sample() -> bool:
 func seconds() -> float:
 	if is_fm():
 		return volume.size() / OplSong.FRAME_HZ
-	if card == "speaker":
-		return slots.size() / float(SpeakerWriter.RATE)
 	if card == "tandy":
 		return psg.frame_count() / SmsSong.FRAME_HZ
 	return samples.size() / float(rate)
@@ -152,22 +128,6 @@ func opl_frames() -> Array:
 func render(mix_rate := 44100) -> PackedFloat32Array:
 	if card == "tandy":
 		return psg.render(mix_rate)
-	if card == "speaker":
-		var speaker := SpeakerSound.new(float(mix_rate))
-		var per_frame := mix_rate / SpeakerSong.FRAME_HZ
-		var frames := slots.size() / SpeakerSong.SLOTS + 1 + 6
-		var total := int(frames * per_frame)
-		var out := PackedFloat32Array()
-		out.resize(total)
-		var at := 0
-		for f in frames:
-			var a := slots[f * 2] if f * 2 < slots.size() else 0
-			var b := slots[f * 2 + 1] if f * 2 + 1 < slots.size() else 0
-			speaker.write_frame(a, b)
-			var end := mini(int((f + 1) * per_frame), total)
-			speaker.render(out, at, end - at)
-			at = end
-		return out
 	if is_fm():
 		var chip := Opl.new(float(mix_rate))
 		var left := PackedFloat32Array()

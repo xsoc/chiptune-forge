@@ -73,8 +73,6 @@ func refresh() -> void:
 		%Console.text = "Commodore 64: a .sid file and a small 6502 player, with an example program" if music else "Commodore 64: sound data for the same 6502 player"
 	elif pc:
 		match AppState.pc_card:
-			"speaker":
-				%Console.text = "PC speaker: C data and a small DOS player, with an example program" if music else "PC speaker: C data for the same DOS player"
 			"tandy":
 				%Console.text = "Tandy 1000: VGM files for the SN76496"
 			"mt32":

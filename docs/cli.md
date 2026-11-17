@@ -39,7 +39,7 @@ These flags match the Generate screen:
 | `--vibe id[:strength]` | Up to three, each with a blend strength from 1 to 100 (default 100). `list vibes` shows the ids. |
 | `--style id` | `list styles` shows the ids. |
 | `--target id` | `modern` (default), `gameboy`, `nes`, `sms`, `genesis`, `snes`, `pce`, `gba`, `msx`, `c64`, `pc`. |
-| `--card id` | For `--target pc`: `speaker`, `tandy`, `adlib` (default), `sb`, `sbpro`, `sb16`, `mt32`, `gm` or `gus`. A project remembers its card. |
+| `--card id` | For `--target pc`: `tandy`, `adlib` (default), `sb`, `sbpro`, `sb16`, `mt32`, `gm` or `gus`. A project remembers its card. |
 | `--intensity`, `--complexity` | 0 to 100. |
 | `--tempo` | `auto` or 40 to 240 BPM. |
 | `--key` | `auto` or a note name: C, F#, Bb and so on. |

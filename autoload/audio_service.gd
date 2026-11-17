@@ -151,8 +151,6 @@ func _make_sequencer(song: ChipSong, rate: int) -> ChipSongSequencer:
 			return GusSequencer.new(pc, rate, song.data["channels"].size())
 		if pc is ModuleSong:
 			return ChipSongSequencer.new(pc.preview, rate)
-		if pc is SpeakerSong:
-			return SpeakerSequencer.new(pc, rate, song.data["channels"].size())
 		if pc is SmsSong:
 			return SmsSequencer.new(pc, rate, song.data["channels"].size())
 	if AppState.ab_classic and song == AppState.song:

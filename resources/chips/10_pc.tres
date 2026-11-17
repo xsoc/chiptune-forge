@@ -6,8 +6,8 @@
 script = ExtResource("1")
 id = "pc"
 display_name = "DOS PC"
-chip_name = "PC speaker to Gravis Ultrasound"
-description = "The sound of DOS games: the PC speaker, the Tandy 1000's SN76496, the AdLib and Sound Blaster's OPL2 FM chip, the Sound Blaster Pro's two OPL2s, the Sound Blaster 16's OPL3, the Roland MT-32 and Sound Canvas MIDI modules, and the Gravis Ultrasound. Exports C data for the speaker, VGM, IMF, DRO, MIDI and Impulse Tracker music, and VOC, WAV or FM sound effects."
+chip_name = "Tandy 1000 to Gravis Ultrasound"
+description = "The sound of DOS games: the Tandy 1000's SN76496, the AdLib and Sound Blaster's OPL2 FM chip, the Sound Blaster Pro's two OPL2s, the Sound Blaster 16's OPL3, the Roland MT-32 and Sound Canvas MIDI modules, and the Gravis Ultrasound. Exports VGM, IMF, DRO, MIDI and Impulse Tracker music, and VOC, WAV or FM sound effects."
 phase = 7
 available = true
 stereo = true

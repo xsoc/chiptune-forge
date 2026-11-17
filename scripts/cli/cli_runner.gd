@@ -756,7 +756,7 @@ func _usage() -> String:
 		"  --sections I,A,B,A,O (a custom structure),",
 		"  --swing 0-100|auto, --humanise 0-100, --volume Layer:percent and --instrument Layer:sound (repeatable),",
 		"  --settings file.json (flags override it).",
-		"For --target pc: --card speaker|tandy|adlib|sb|sbpro|sb16|mt32|gm|gus picks the sound card (default adlib).",
+		"For --target pc: --card tandy|adlib|sb|sbpro|sb16|mt32|gm|gus picks the sound card (default adlib).",
 		"Output: --format json,plugin,wav,stems,midi,console,project (default: json,plugin,wav,console,project),",
 		"  --out folder, --name prefix, --loops n, --rate 44100|48000 (WAV sample rate).",
 		"Everywhere: --json for a machine-readable report (--report file.json writes it to a file), --strict to fail when the music does not fit a",

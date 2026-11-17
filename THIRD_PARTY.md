@@ -34,10 +34,9 @@ MIT-compatible: no GPL or LGPL code, in the app or in the plugin.
 | HuC6280 PSG behaviour (Paul Clifford's PSG notes, Mednafen's documented volume steps) | `scripts/targets/pce/pce_psg.gd` | Public technique | Reimplemented from the documented behaviour (waveforms, noise, 1.5 dB volume and balance steps); no emulator code is bundled. |
 | PolyBLEP oscillator method | `addons/chipforge/runtime/chip_voice.gd` | Public technique | No code copied. |
 | OPL2 and OPL3 behaviour (Yamaha YM3812 and YMF262 documentation, AdLib programming guide) | `scripts/targets/pc/opl.gd` | Public technique | Reimplemented from the documented behaviour (phase generator, envelopes, waveforms, rhythm mode); no emulator code is bundled. |
-| PC speaker and Tandy behaviour (Intel 8253 datasheet, SN76489 documentation) | `scripts/targets/pc/speaker_sound.gd`, `scripts/targets/sms/sms_psg.gd` | Public technique | No code copied. The speaker player (`speaker.c`, written by `speaker_writer.gd`) is our own MIT code. |
+| Tandy behaviour (SN76489 documentation) | `scripts/targets/sms/sms_psg.gd` | Public technique | No code copied. |
 | Roland MT-32 and General MIDI program lists (Roland manuals, MIDI 1.0 and GM 1 specifications) | `scripts/targets/pc/module_arranger.gd` | Public technique | Program numbers, SysEx layout and checksum only; no ROM or emulator is bundled. |
 | AdPlug (adplay), FluidSynth with the fluid-soundfont-gm sound font, libvgm and libopenmpt | CI only, to play the DOS PC exports | LGPL-2.1 (AdPlug, FluidSynth), MIT (sound font), BSD (libopenmpt) | Installed by CI to check the exports; never bundled or linked. |
-| Open Watcom C/C++ v2 | CI only, to build the PC speaker player | Sybase Open Watcom Public License | Downloaded by CI; never bundled. |
 
 Game Boy ROMs are built with GBDK-2020 and RGBDS, which users install
 themselves and CI downloads; neither is bundled. Exported Game Boy projects
@@ -79,9 +78,8 @@ Commodore 64 exports are PSID files and data for our own 6502 player,
 `sid_player.s`, which ships with them (and inside each .sid) under the MIT
 licence.
 
-DOS PC exports are IMF, DRO, VGM, MIDI and Impulse Tracker files, plus our
-own MIT C player for the PC speaker; none of them carries licence terms
-from another project.
+DOS PC exports are IMF, DRO, VGM, MIDI and Impulse Tracker files; none of
+them carries licence terms from another project.
 
 The icons in `assets/ui/` and `addons/chipforge/icons/` were drawn for this
 project and are MIT licensed with the rest of the code.
