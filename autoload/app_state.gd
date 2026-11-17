@@ -25,6 +25,10 @@ var mode := "music":
 var settings := SongSettings.new()
 var song: ChipSong
 var locked_layers := PackedStringArray()
+## True once the notes of the song have been edited by hand.
+var song_edited := false
+## Song data before each note edit, newest last, for Undo.
+var _undo: Array = []
 
 var sfx_preset_id := "coin"
 var sfx_seed := 1
@@ -215,6 +219,8 @@ func generate() -> void:
 	if not can_make_music():
 		return
 	song = SongGenerator.generate(settings, catalog)
+	_undo.clear()
+	song_edited = false
 	song_changed.emit(song)
 
 
@@ -229,6 +235,7 @@ func regenerate_unlocked() -> void:
 		if not locked_layers.has(layer):
 			settings.variations[layer] = settings.get_variation(layer) + 1
 	song = SongGenerator.generate(settings, catalog, song, locked_layers)
+	_undo.clear()
 	song_changed.emit(song)
 
 
@@ -242,6 +249,34 @@ func regenerate_layer(layer: String) -> void:
 		if other != layer:
 			keep.append(other)
 	song = SongGenerator.generate(settings, catalog, song, keep)
+	_undo.clear()
+	song_changed.emit(song)
+
+
+## Changes the song's notes with [param change] (it takes the song), keeping
+## the old notes for Undo. Editing a layer locks it, so regenerating keeps
+## the edit.
+func edit_song(layer: String, change: Callable) -> void:
+	if song == null:
+		return
+	_undo.append(song.data.duplicate(true))
+	if _undo.size() > 100:
+		_undo.pop_front()
+	change.call(song)
+	song_edited = true
+	if not locked_layers.has(layer):
+		set_layer_locked(layer, true)
+	song_changed.emit(song)
+
+
+func can_undo() -> bool:
+	return not _undo.is_empty()
+
+
+func undo_edit() -> void:
+	if _undo.is_empty() or song == null:
+		return
+	song.data = _undo.pop_back()
 	song_changed.emit(song)
 
 
@@ -371,6 +406,9 @@ func save_song_to_library() -> void:
 		"settings": settings.to_dict(),
 		"engine_version": SongGenerator.ENGINE_VERSION,
 	})
+	# Edited notes cannot be made again from the settings: keep the song.
+	if song_edited:
+		library[0]["song"] = song.data.duplicate(true)
 	_save_library()
 
 
@@ -392,7 +430,14 @@ func open_library_entry(index: int) -> void:
 	if entry["kind"] == "song":
 		settings = SongSettings.from_dict(entry["settings"])
 		settings_changed.emit()
-		generate()
+		var saved: ChipSong = ChipSong.from_dict(entry["song"]) if entry.has("song") else null
+		if saved:
+			song = saved
+			_undo.clear()
+			song_edited = true
+			song_changed.emit(song)
+		else:
+			generate()
 		mode = "music"
 	else:
 		var loaded := ChipSfx.from_dict(entry["sfx"])

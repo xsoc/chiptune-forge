@@ -6,7 +6,8 @@ runs on phones, desktops and the web, and it exports straight into Godot.
 
 - **Music mode.** 147 vibes in 11 categories and 100 styles in 9 families.
   Blend up to three vibes, set intensity, complexity, tempo, key, form and
-  length, then lock the layers you like and regenerate the rest.
+  length, then lock the layers you like and regenerate the rest. Tap notes
+  in or out of any part on the Layers screen's note grid.
 - **Sound FX mode.** About 160 presets in 12 categories, from menu clicks to
   boss roars. Every tap gives a new take; mutate it, tweak it and collect the
   keepers into a sound kit.
