@@ -5,11 +5,12 @@
 
 smconv (PVSnesLib) converts our Impulse Tracker modules into a soundbank,
 encoding every sample as BRR on the way. The app previews songs with its own
-port of that encoder, so each BRR file the app wrote must appear in the bank
-byte for byte. The bank is LoROM: a table of 128 module pointers and one
+port of that encoder, so every source in the bank must be one of the BRR
+files the app wrote, byte for byte (files for samples this bank's module
+does not use are listed and skipped). The bank is LoROM: a table of 128 module pointers and one
 source pointer per sample (16-bit address from $8000 and an 8-bit bank of
 32 KB), then the modules, then each source as length, loop offset and data.
-Exits 1 if a sample is missing or differs.
+Exits 1 if a bank source matches none of the files.
 """
 import struct
 import sys
@@ -34,19 +35,23 @@ def main():
     modules, bank = sources(sys.argv[1])
     print(f"{sys.argv[1]}: {modules} module(s), {len(bank)} BRR sources")
     blobs = [b for b, _ in bank]
+    mine = {path: open(path, "rb").read() for path in sys.argv[2:]}
+    for path, data in mine.items():
+        if data in blobs:
+            print(f"  {path}: {len(data)} bytes, identical in the bank")
+        else:
+            print(f"  {path}: not in this bank")
     failed = 0
-    for path in sys.argv[2:]:
-        mine = open(path, "rb").read()
-        if mine in blobs:
-            print(f"  {path}: {len(mine)} bytes, identical in the bank")
+    for i, blob in enumerate(blobs):
+        if blob in mine.values():
             continue
         failed += 1
-        same_size = [b for b in blobs if len(b) == len(mine)]
+        same_size = [(p, d) for p, d in mine.items() if len(d) == len(blob)]
         if same_size:
-            diff = sum(1 for a, b in zip(mine, same_size[0]) if a != b)
-            print(f"  {path}: differs from the bank's {len(mine)}-byte source in {diff} bytes")
+            diffs = ", ".join(f"{p} in {sum(1 for a, b in zip(d, blob) if a != b)} bytes" for p, d in same_size)
+            print(f"  source {i} ({len(blob)} bytes) matches no file; same size: {diffs}")
         else:
-            print(f"  {path}: no source of {len(mine)} bytes in the bank")
+            print(f"  source {i} ({len(blob)} bytes) matches no file")
     sys.exit(1 if failed else 0)
 
 
