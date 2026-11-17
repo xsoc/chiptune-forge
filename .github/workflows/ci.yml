@@ -348,7 +348,7 @@ jobs:
           # smconv must encode every sample exactly as the app's preview does.
           python3 ../tools/snes_check.py project/res/soundbank.bnk sample_*.brr
           for it in song_*.it; do
-            openmpt123 --render --force "$it" > /dev/null
+            openmpt123 --render --force --no-float --samplerate 44100 "$it" > /dev/null
             [ -s "$it.wav" ] || { echo "libopenmpt could not render $it"; exit 1; }
           done
           # libopenmpt playing the module at Impulse Tracker's speed should
