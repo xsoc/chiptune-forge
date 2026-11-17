@@ -13,6 +13,8 @@ signal catalog_changed
 signal mode_changed(mode: String)
 ## The export target changed, or its options did. Previews follow it.
 signal target_changed(target: String)
+## The preview should restart with another sound (the A/B switch).
+signal preview_changed
 
 const LIBRARY_PATH := "user://library.json"
 const MAX_RECENT := 8
@@ -65,6 +67,13 @@ var _sid_key := []
 var _gba_song: GbaSong
 var _gba_key := []
 
+## True while the A/B switch plays the song on the classic chip synth.
+var ab_classic := false:
+	set(value):
+		if ab_classic != value:
+			ab_classic = value
+			preview_changed.emit()
+
 ## Saved entries: {kind, name, favourite, created, settings | sfx}.
 var library: Array = []
 
@@ -96,7 +105,7 @@ func get_gameboy_song() -> GbSong:
 		return null
 	var key := [song.get_instance_id(), song.to_json().hash(), gameboy_options.hash()]
 	if _gb_song == null or key != _gb_key:
-		_gb_song = GbArranger.arrange(song, gameboy_options)
+		_gb_song = GbArranger.arrange(SynthEngines.chip_song(song), gameboy_options)
 		_gb_key = key
 	return _gb_song
 
@@ -108,7 +117,7 @@ func get_nes_song() -> NesSong:
 		return null
 	var key := [song.get_instance_id(), song.to_json().hash()]
 	if _nes_song == null or key != _nes_key:
-		_nes_song = NesArranger.arrange(song)
+		_nes_song = NesArranger.arrange(SynthEngines.chip_song(song))
 		_nes_key = key
 	return _nes_song
 
@@ -120,7 +129,7 @@ func get_sms_song() -> SmsSong:
 		return null
 	var key := [song.get_instance_id(), song.to_json().hash()]
 	if _sms_song == null or key != _sms_key:
-		_sms_song = SmsArranger.arrange(song)
+		_sms_song = SmsArranger.arrange(SynthEngines.chip_song(song))
 		_sms_key = key
 	return _sms_song
 
@@ -132,7 +141,7 @@ func get_md_song() -> MdSong:
 		return null
 	var key := [song.get_instance_id(), song.to_json().hash()]
 	if _md_song == null or key != _md_key:
-		_md_song = MdArranger.arrange(song)
+		_md_song = MdArranger.arrange(SynthEngines.chip_song(song))
 		_md_key = key
 	return _md_song
 
@@ -144,7 +153,7 @@ func get_snes_song() -> SnesSong:
 		return null
 	var key := [song.get_instance_id(), song.to_json().hash()]
 	if _snes_song == null or key != _snes_key:
-		_snes_song = SnesArranger.arrange(song)
+		_snes_song = SnesArranger.arrange(SynthEngines.chip_song(song))
 		_snes_key = key
 	return _snes_song
 
@@ -156,7 +165,7 @@ func get_pce_song() -> PceSong:
 		return null
 	var key := [song.get_instance_id(), song.to_json().hash()]
 	if _pce_song == null or key != _pce_key:
-		_pce_song = PceArranger.arrange(song)
+		_pce_song = PceArranger.arrange(SynthEngines.chip_song(song))
 		_pce_key = key
 	return _pce_song
 
@@ -168,7 +177,7 @@ func get_ay_song() -> AySong:
 		return null
 	var key := [song.get_instance_id(), song.to_json().hash()]
 	if _ay_song == null or key != _ay_key:
-		_ay_song = AyArranger.arrange(song)
+		_ay_song = AyArranger.arrange(SynthEngines.chip_song(song))
 		_ay_key = key
 	return _ay_song
 
@@ -180,7 +189,7 @@ func get_sid_song() -> SidSong:
 		return null
 	var key := [song.get_instance_id(), song.to_json().hash()]
 	if _sid_song == null or key != _sid_key:
-		_sid_song = SidArranger.arrange(song)
+		_sid_song = SidArranger.arrange(SynthEngines.chip_song(song))
 		_sid_key = key
 	return _sid_song
 
@@ -192,7 +201,7 @@ func get_gba_song() -> GbaSong:
 		return null
 	var key := [song.get_instance_id(), song.to_json().hash()]
 	if _gba_song == null or key != _gba_key:
-		_gba_song = GbaArranger.arrange(song)
+		_gba_song = GbaArranger.arrange(SynthEngines.chip_song(song))
 		_gba_key = key
 	return _gba_song
 
@@ -304,7 +313,45 @@ func undo_edit() -> void:
 	if _undo.is_empty() or song == null:
 		return
 	song.data = _undo.pop_back()
+	_apply_engines()
 	song_changed.emit(song)
+
+
+## Sets the song's synth engine ([constant SynthEngines.CHOICES]). Only the
+## sound changes: the notes stay as they are.
+func set_engine(choice: String) -> void:
+	if settings.engine == choice:
+		return
+	settings.engine = choice
+	settings_changed.emit()
+	if song:
+		_apply_engines()
+		song_changed.emit(song)
+
+
+## Sets one layer's engine, or "" to follow the song's.
+func set_layer_engine(layer: String, choice: String) -> void:
+	if str(settings.layer_engines.get(layer, "")) == choice:
+		return
+	if choice == "":
+		settings.layer_engines.erase(layer)
+	else:
+		settings.layer_engines[layer] = choice
+	settings_changed.emit()
+	if song:
+		_apply_engines()
+		song_changed.emit(song)
+
+
+## The engine "Style's pick" gives for the current style.
+func get_style_engine() -> String:
+	return SynthEngines.style_engine(catalog.get_style(settings.style) if catalog else null)
+
+
+func _apply_engines() -> void:
+	var style: Style = catalog.get_style(settings.style) if catalog else null
+	var engine := SynthEngines.resolve(settings.engine, style)
+	song.data["instruments"] = SynthEngines.apply(song.data.get("instruments", []), engine, settings.layer_engines, style)
 
 
 func set_layer_locked(layer: String, locked: bool) -> void:

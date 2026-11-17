@@ -8,6 +8,11 @@ runs on phones, desktops and the web, and it exports straight into Godot.
   Blend up to three vibes, set intensity, complexity, tempo, key, form and
   length, then lock the layers you like and regenerate the rest. Tap notes
   in or out of any part on the Layers screen's note grid.
+- **Synth engines.** Besides the classic chip sound, songs can play on an
+  analog-style subtractive synth, two-operator FM, a wavetable synth or
+  samples made in the app (plucked strings, electric piano, strings, brass
+  and a drum kit). Pick one per song or per layer, let the style choose, and
+  press A/B to compare with the classic chip.
 - **Sound FX mode.** About 160 presets in 12 categories, from menu clicks to
   boss roars. Every tap gives a new take; mutate it, tweak it and collect the
   keepers into a sound kit.
@@ -162,7 +167,8 @@ playing the VGM and with the ROM running in Genesis Plus GX. The SNES and
 PC Engine followed, then the Game Boy Advance, the MSX and ZX Spectrum, and
 the Commodore 64, with the note editor and community packs. Phase 6 is the
 headless command line and its Docker image. The last phase gives the modern
-synth several new engines and adds the PC's sound cards as targets.
+synth several new engines (analog, FM, wavetable and sampled) and adds the
+PC's sound cards as targets.
 [docs/release.md](docs/release.md) covers releasing to the app stores, and
 [docs/privacy.md](docs/privacy.md) is the privacy policy: the app collects
 no data.

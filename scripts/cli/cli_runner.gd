@@ -31,7 +31,7 @@ const FORMATS := {
 const DEFAULT_FORMATS: PackedStringArray = ["json", "plugin", "wav", "console", "project"]
 ## Flags that take no value.
 const SWITCHES: PackedStringArray = ["json", "strict", "stems", "layers", "loop", "no-loop", "intro", "no-intro", "outro", "no-outro", "help", "quiet"]
-const LIST_KINDS: PackedStringArray = ["vibes", "styles", "targets", "presets", "formats", "packs", "modes", "keys", "structures"]
+const LIST_KINDS: PackedStringArray = ["vibes", "styles", "targets", "presets", "formats", "packs", "modes", "keys", "structures", "engines"]
 const KEYS: PackedStringArray = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
 
 ## Everything printed, for tests.
@@ -159,7 +159,7 @@ func _parse(args: PackedStringArray) -> Dictionary:
 				return {"error": "--%s needs a value" % name}
 			value = args[i]
 			i += 1
-		if name in ["vibe", "preset", "pack"]:
+		if name in ["vibe", "preset", "pack", "layer-engine"]:
 			if not flags.has(name):
 				flags[name] = []
 			flags[name].append(value)
@@ -347,6 +347,20 @@ func _apply_song_flags(s: SongSettings, flags: Dictionary) -> String:
 		if not SongSettings.ENERGY_CURVES.has(flags["energy"]):
 			return "--energy should be one of %s" % ", ".join(SongSettings.ENERGY_CURVES)
 		s.energy_curve = flags["energy"]
+	if flags.has("engine"):
+		var engine := str(flags["engine"]).to_lower()
+		if not SynthEngines.CHOICES.has(engine):
+			return "--engine should be one of %s" % ", ".join(SynthEngines.CHOICES)
+		s.engine = engine
+	if flags.has("layer-engine"):
+		for entry in flags["layer-engine"]:
+			var layer := str(entry).get_slice(":", 0).capitalize()
+			var engine := str(entry).get_slice(":", 1).to_lower()
+			if not SongSettings.LAYERS.has(layer):
+				return "--layer-engine layer should be one of %s" % ", ".join(SongSettings.LAYERS)
+			if not SynthEngines.CHOICES.has(engine):
+				return "--layer-engine engine should be one of %s" % ", ".join(SynthEngines.CHOICES)
+			s.layer_engines[layer] = engine
 	for name in ["loop", "intro", "outro"]:
 		if flags.has(name):
 			s.set(name, true)
@@ -591,6 +605,9 @@ func _list(_flags: Dictionary, positional: PackedStringArray) -> int:
 		"structures":
 			for f in SongSettings.FORMS:
 				items.append({"id": f})
+		"engines":
+			for e in SynthEngines.CHOICES:
+				items.append({"id": e, "name": SynthEngines.NAMES[e], "description": SynthEngines.DESCRIPTIONS[e]})
 	_report["items"] = items
 	for item in items:
 		var line := str(item["id"])
@@ -673,12 +690,13 @@ func _usage() -> String:
 		"  export     export again:  export level1.cforge --target nes --format console",
 		"  batch      run a manifest of jobs: batch music.manifest.json",
 		"  validate   check a file against the format and a target's limits: validate theme.chipsong --target snes --strict",
-		"  list       list vibes, styles, targets, presets, formats, packs, modes, keys or structures",
+		"  list       list vibes, styles, targets, presets, formats, packs, modes, keys, structures or engines",
 		"  version    print the app, engine and format versions",
 		"",
 		"Flags for generate: --vibe id[:strength] (up to three), --style, --target, --intensity 0-100,",
 		"  --complexity 0-100, --tempo BPM|auto, --key C..B|auto, --mode name|auto, --length seconds|m:ss,",
 		"  --structure, --energy, --loop/--no-loop, --intro/--no-intro, --outro/--no-outro, --seed,",
+		"  --engine chip|auto|analog|fm|wavetable|sampled, --layer-engine Layer:engine (repeatable),",
 		"  --settings file.json (flags override it).",
 		"Output: --format json,plugin,wav,stems,midi,console,project (default: json,plugin,wav,console,project),",
 		"  --out folder, --name prefix, --loops n.",

@@ -35,6 +35,9 @@ extends Resource
 @export var lead_wave := ""
 @export var bass_wave := "triangle"
 @export var lead_glide := false
+## Synth engine when the song's engine is "auto": "chip", "analog", "fm",
+## "wavetable", "sampled", or "" for the group's (see [SynthEngines]).
+@export var engine := ""
 @export_group("Form")
 ## Relative weight of each song form.
 @export var forms: Dictionary = {"verse_chorus": 1.0}

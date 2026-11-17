@@ -30,6 +30,16 @@ unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"MutedLabel"
 text = "Pulse 25%"
+text_overrun_behavior = 3
+
+[node name="Engine" type="OptionButton" parent="."]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(108, 40)
+layout_mode = 2
+size_flags_vertical = 4
+tooltip_text = "Synth engine for this layer"
+clip_text = true
+fit_to_longest_item = false
 
 [node name="Play" type="CheckButton" parent="."]
 unique_name_in_owner = true

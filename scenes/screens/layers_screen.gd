@@ -23,6 +23,7 @@ func _ready() -> void:
 		row.lock_toggled.connect(func(name: String, on: bool) -> void: AppState.set_layer_locked(name, on))
 		row.regenerate_pressed.connect(func(name: String) -> void: AppState.regenerate_layer(name))
 		row.mute_toggled.connect(_on_mute_toggled)
+		row.engine_selected.connect(func(name: String, choice: String) -> void: AppState.set_layer_engine(name, choice))
 		_rows[layer] = row
 	%RegenerateAll.pressed.connect(func() -> void: AppState.regenerate_unlocked())
 	%Preview.toggled.connect(_on_preview_toggled)
@@ -56,17 +57,32 @@ func _on_song_changed(song: ChipSong) -> void:
 	for i in SongSettings.LAYERS.size():
 		var layer: String = SongSettings.LAYERS[i]
 		var inst: Dictionary = instruments[i] if i < instruments.size() else {}
-		var wave := str(inst.get("wave", ""))
-		var text := wave.capitalize()
-		if wave == "pulse":
-			text = "Pulse %d%%" % int(float(inst.get("duty", 0.5)) * 100.0)
-		if layer == "Drums":
-			text = "Triangle kick and noise"
-		_rows[layer].setup(layer, SongView.LANE_COLOURS[i], text)
+		_rows[layer].setup(layer, SongView.LANE_COLOURS[i], _sound_text(layer, inst))
+		_rows[layer].set_engine_choice(str(AppState.settings.layer_engines.get(layer, "")))
 	_sync_locks()
 	_build_grid(song)
 	_fill_sections(song)
 	_refresh_editor()
+
+
+## What a layer sounds like, under its name.
+static func _sound_text(layer: String, inst: Dictionary) -> String:
+	var wave := str(inst.get("wave", ""))
+	var engine := str(inst.get("engine", "chip"))
+	if layer == "Drums":
+		return "Sampled drums" if engine == "sampled" else "Triangle kick and noise"
+	match engine:
+		"analog":
+			return "Analog %s, filtered" % ("pulse" if wave == "pulse" else "saw")
+		"fm":
+			return "FM, ratio %s" % str(inst.get("ratio", 1.0))
+		"wavetable":
+			return "Wavetable, %s bank" % str(inst.get("bank", "bright"))
+		"sampled":
+			return "Sampled %s" % str(inst.get("sample", "")).replace("epiano", "electric piano")
+	if wave == "pulse":
+		return "Pulse %d%%" % int(float(inst.get("duty", 0.5)) * 100.0)
+	return wave.capitalize()
 
 
 func _sync_locks() -> void:

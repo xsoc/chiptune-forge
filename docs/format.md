@@ -47,6 +47,24 @@ Each note is an array: `[step, length, pitch, velocity, instrument?, arp?]`.
 for a stepped, NES-style triangle), `short` (short-period noise) and `echo`
 (send level).
 
+#### Synth engines
+
+`engine` picks how the plugin makes the sound. Without it (or with `chip`)
+the keys above are all there is. The other engines add their own keys, and
+the envelope, vibrato, glide, arpeggio and echo keys still apply:
+
+| `engine` | Keys |
+|---|---|
+| `analog` | Two oscillators (`wave` `saw`, or `pulse` with `duty`) detuned by `detune` cents, through a resonant low-pass filter: `cutoff` (Hz at middle C), `resonance` (0 to 0.92), `key_track` (how far the cutoff follows the pitch, 0 to 1), and a filter envelope that starts `env_amount` octaves up and falls over `filter_decay` seconds. |
+| `fm` | A sine carrier and a sine modulator at `ratio` times its pitch. The index starts at `index` and falls to `index_end` over `index_decay` seconds; `feedback` (0 to 1.5) feeds the modulator back into itself. |
+| `wavetable` | A sweep through `bank` (`bright`, `soft`, `vocal` or `metal`, eight waves each) from position `wt_from` to `wt_to` (0 to 1) over `wt_time` seconds. |
+| `sampled` | `sample`: `pluck`, `epiano`, `strings`, `brass`, `bell`, `kick`, `snare`, `hat`, `open_hat`, `crash` or `tom`, played at the note's pitch (drums ignore it, toms follow it a little). `strings` and `brass` loop while the note is held. |
+
+The plugin makes the banks and samples from maths the first time they are
+used, so nothing is downloaded or recorded, and they are the same on every
+platform. An instrument that has an engine may also hold a `chip` object:
+the chip settings the engine replaced, which the console targets use.
+
 ## `.chipsfx` (format `chipforge-sfx`, version 1)
 
 ```json

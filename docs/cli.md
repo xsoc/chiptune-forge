@@ -25,7 +25,7 @@ Relative paths start from the folder you run the command in.
 | `export` | Exports a saved project again, for another target or format | `export level1.cforge --target nes --format console` |
 | `batch` | Runs a manifest of jobs | `batch music.manifest.json` |
 | `validate` | Checks a file against its format and a target's limits | `validate theme.chipsong --target snes --strict` |
-| `list` | Lists vibes, styles, targets, presets, formats, packs, modes, keys or structures | `list vibes --json` |
+| `list` | Lists vibes, styles, targets, presets, formats, packs, modes, keys, structures or engines | `list vibes --json` |
 | `version` | Prints the app, engine and file format versions | `version` |
 
 `help` (or no command) prints a summary of everything here.
@@ -47,6 +47,8 @@ These flags match the Generate screen:
 | `--structure` | `auto`, `loop`, `verse_chorus`, `aaba`, `rondo`, `through`, `build`, `boss` or `jingle`. |
 | `--energy` | `flat`, `build`, `wave` or `peak_drop`. |
 | `--loop`, `--no-loop`, `--intro`, `--no-intro`, `--outro`, `--no-outro` | Song form switches. |
+| `--engine` | The synth: `chip` (default, the classic sound), `auto` (the style's engine), `analog`, `fm`, `wavetable` or `sampled`. `list engines` describes them. Console targets always use their own chip. |
+| `--layer-engine Layer:engine` | One layer's synth, such as `--layer-engine Pad:sampled`. Repeat it for more layers. |
 | `--seed` | A number or a word. Without it the command picks one and prints it, so a run can always be repeated. |
 | `--settings file.json` | Loads every setting from a JSON file: a `.cforge` project, or an object like a project's `settings`. Flags override it. |
 

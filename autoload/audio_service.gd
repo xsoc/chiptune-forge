@@ -30,6 +30,7 @@ func _ready() -> void:
 	music.finished.connect(func() -> void: playback_stopped.emit())
 	music.sequencer_factory = _make_sequencer
 	AppState.target_changed.connect(_on_target_changed)
+	AppState.preview_changed.connect(func() -> void: _on_target_changed(AppState.target))
 
 
 func play_song(song: ChipSong, from_step := 0.0) -> void:
@@ -120,6 +121,8 @@ func _make_sequencer(song: ChipSong, rate: int) -> ChipSongSequencer:
 		var gba := AppState.get_gba_song()
 		if gba:
 			return GbaSequencer.new(gba, rate, song.data["channels"].size())
+	if AppState.ab_classic and song == AppState.song:
+		return ChipSongSequencer.new(SynthEngines.chip_song(song), rate)
 	return ChipSongSequencer.new(song, rate)
 
 
