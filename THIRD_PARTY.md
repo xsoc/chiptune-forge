@@ -25,6 +25,8 @@ MIT-compatible: no GPL or LGPL code, in the app or in the plugin.
 | PVSnesLib and SNESMod (Alekmaul, mukunda and contributors) | Target of the SNES exports; modelled in `scripts/targets/snes/snes_player.gd`; `snes_brr.gd` ports smconv's BRR encoder | MIT | https://github.com/alekmaul/pvsneslib. `snes_brr.gd` is a GDScript port of smconv's `brr.cpp`, and `snes_song.gd` carries SNESMod's frequency table (`LUT_FTAB` in `sm_spc_wla.asm`). Not bundled otherwise: users install PVSnesLib, and CI builds the example ROM with it. |
 | S-DSP behaviour (fullsnes and SNES development wiki write-ups) | `scripts/targets/snes/snes_dsp.gd` | Public technique | Reimplemented from the documented behaviour (BRR decoding, pitch, GAIN modes, echo); no emulator code is bundled. |
 | libopenmpt and stable-retro (Snes9x) | CI only, to play the SNES exports | Various | Installed by CI to check the exports; never bundled or linked. |
+| HuCC (pce-devel/huc) and stable-retro (Mednafen PCE Fast) | CI only, to build and play the PC Engine example ROMs | Various | Cloned and built by CI; never bundled or linked. The PC Engine player (`assets/pce/pce_player.c`) is our own MIT code. |
+| HuC6280 PSG behaviour (Paul Clifford's PSG notes, Mednafen's documented volume steps) | `scripts/targets/pce/pce_psg.gd` | Public technique | Reimplemented from the documented behaviour (waveforms, noise, 1.5 dB volume and balance steps); no emulator code is bundled. |
 | PolyBLEP oscillator method | `addons/chipforge/runtime/chip_voice.gd` | Public technique | No code copied. |
 
 Game Boy ROMs are built with GBDK-2020 and RGBDS, which users install
@@ -50,6 +52,10 @@ SNES exports are Impulse Tracker modules (and BRR samples for sound effects)
 with a small PVSnesLib project. PVSnesLib, which users install themselves,
 converts them with smconv and plays them with SNESMod; PVSnesLib is MIT
 licensed, so a game built with it carries only its MIT notice.
+
+PC Engine exports are data for our own player, `pce_player.c`, which ships
+with them under the MIT licence; HuCC, which users install themselves,
+compiles it into their game.
 
 The icons in `assets/ui/` and `addons/chipforge/icons/` were drawn for this
 project and are MIT licensed with the rest of the code.

@@ -40,7 +40,8 @@ func refresh() -> void:
 	var sms := AppState.target == "sms"
 	var genesis := AppState.target == "genesis"
 	var snes := AppState.target == "snes"
-	var console := gameboy or nes or sms or genesis or snes
+	var pce := AppState.target == "pce"
+	var console := gameboy or nes or sms or genesis or snes or pce
 	%Export.theme_type_variation = &"PrimaryButton" if music else &"SfxPrimaryButton"
 	%Midi.visible = music
 	%WavOptions.visible = music and %Wav.button_pressed
@@ -55,6 +56,8 @@ func refresh() -> void:
 		%Console.text = "Mega Drive: VGM for SGDK's XGM driver, with an example program" if music else "Mega Drive: 8-bit WAVs for SGDK's XGM driver"
 	elif snes:
 		%Console.text = "SNES: Impulse Tracker module for PVSnesLib, with a ROM project" if music else "SNES: BRR samples for PVSnesLib's sound driver"
+	elif pce:
+		%Console.text = "PC Engine: data and a small C player for HuCC, with a ROM project" if music else "PC Engine: sound data for the same C player"
 	%Godot.visible = not console
 	%Plugin.visible = not console
 	%GbOptions.visible = gameboy and music
@@ -82,6 +85,9 @@ func refresh() -> void:
 		elif snes:
 			%Wav.text = "Audio: SNES WAV, loop points included"
 			%Midi.text = "MIDI: the SNES's seven parts"
+		elif pce:
+			%Wav.text = "Audio: PC Engine WAV, loop points included"
+			%Midi.text = "MIDI: the PC Engine's six parts"
 		else:
 			%Midi.text = "MIDI: one track per channel"
 		%Export.disabled = song == null
@@ -92,7 +98,7 @@ func refresh() -> void:
 		%Godot.text = "Godot: .chipkit and .chipsfx for the plugin"
 		%Wav.text = "Audio: one WAV per sound"
 		if console:
-			%Wav.text = "Audio: one WAV per sound, as the %s plays it" % ("NES" if nes else "Master System" if sms else "Mega Drive" if genesis else "SNES" if snes else "Game Boy")
+			%Wav.text = "Audio: one WAV per sound, as the %s plays it" % ("NES" if nes else "Master System" if sms else "Mega Drive" if genesis else "SNES" if snes else "PC Engine" if pce else "Game Boy")
 		%Export.disabled = AppState.sfx == null and count == 0
 	_update_report()
 
@@ -141,6 +147,8 @@ func _update_report() -> void:
 		lines.append_array(_md_report())
 	elif AppState.target == "snes":
 		lines.append_array(_snes_report())
+	elif AppState.target == "pce":
+		lines.append_array(_pce_report())
 	elif AppState.mode == "music" and AppState.song:
 		var song: ChipSong = AppState.song
 		var used := 0
@@ -302,6 +310,27 @@ func _snes_report() -> Array[String]:
 	return lines
 
 
+func _pce_report() -> Array[String]:
+	var lines: Array[String] = [""]
+	if AppState.mode == "music":
+		var pce := AppState.get_pce_song()
+		if pce == null:
+			return lines
+		var bytes := PceWriter.song_bytes(pce).size()
+		lines.append("[color=#52d1c0]Fits[/color] after arranging for 6 channels: %.1f KB of data for the player." % (bytes / 1024.0))
+		for line in pce.report:
+			lines.append("•  " + line)
+		return lines
+	var sounds := _sounds()
+	lines.append("[color=#52d1c0]Fits.[/color] Each sound plays on channel 5, over the music.")
+	var ids := sounds.keys()
+	ids.sort()
+	for id in ids:
+		var pce_sfx := PceSfx.from_sfx(sounds[id], str(id))
+		lines.append("•  %s: %.2f s, %s" % [id, pce_sfx.frame_count() / PceSong.FRAME_HZ, "noise" if pce_sfx.noise else pce_sfx.wave.replace("_", " ") + " wave"])
+	return lines
+
+
 func _sounds() -> Dictionary:
 	var sounds: Dictionary = AppState.kit.sounds.duplicate()
 	if sounds.is_empty() and AppState.sfx:
@@ -348,6 +377,8 @@ func _on_export() -> void:
 				_job = ExportJob.for_md_song(AppState.get_md_song(), options)
 			"snes":
 				_job = ExportJob.for_snes_song(AppState.get_snes_song(), options)
+			"pce":
+				_job = ExportJob.for_pce_song(AppState.get_pce_song(), options)
 			_:
 				_job = ExportJob.for_song(AppState.song, options)
 	else:
@@ -363,6 +394,8 @@ func _on_export() -> void:
 				_job = ExportJob.for_md_sfx(sounds, prefix, options)
 			"snes":
 				_job = ExportJob.for_snes_sfx(sounds, prefix, options)
+			"pce":
+				_job = ExportJob.for_pce_sfx(sounds, prefix, options)
 			_:
 				_job = ExportJob.for_sfx(sounds, prefix, options)
 	%Export.disabled = true

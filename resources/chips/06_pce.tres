@@ -7,11 +7,29 @@ script = ExtResource("1")
 id = "pce"
 display_name = "PC Engine / TurboGrafx-16"
 chip_name = "HuC6280"
-description = "6 wavetable voices (32 x 5-bit). Exports C with a small player."
+description = "6 wavetable voices (32 x 5-bit), 2 with noise. Exports data and a small MIT C player for HuCC, with a ROM project."
 phase = 4
-available = false
+available = true
 stereo = true
 echo = false
 max_voices = 6
-voices = Array[Dictionary]([])
-export_formats = PackedStringArray("c")
+voices = Array[Dictionary]([{
+"name": "Channel 1",
+"waves": ["wavetable"]
+},{
+"name": "Channel 2",
+"waves": ["wavetable"]
+},{
+"name": "Channel 3",
+"waves": ["wavetable"]
+},{
+"name": "Channel 4",
+"waves": ["wavetable"]
+},{
+"name": "Channel 5",
+"waves": ["wavetable", "noise"]
+},{
+"name": "Channel 6",
+"waves": ["wavetable", "noise"]
+}])
+export_formats = PackedStringArray("c", "bin", "wav")
