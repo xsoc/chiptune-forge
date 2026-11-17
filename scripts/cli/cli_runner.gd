@@ -440,6 +440,9 @@ func _export_song(song: ChipSong, settings: SongSettings, target: String, format
 	_report["files"] = Array(written)
 	_say_human("%s, seed %s, %d:%02d, for %s." % [song.get_title(), settings.seed_text, int(song.get_length_seconds()) / 60, int(song.get_length_seconds()) % 60, target])
 	_say_report(report)
+	_report["similar_to"] = SimilarityCheck.find(song).get("tune", "")
+	var likeness: Array[String] = [SimilarityCheck.report_line(song)]
+	_say_report(likeness)
 	_say_human("Wrote %d files to %s." % [written.size(), out])
 	return _strict_code(flags, report)
 

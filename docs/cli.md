@@ -84,7 +84,9 @@ changes nothing.
 The JSON report holds the files written, the seed, the settings, and the
 target's report: whether it fits, whether the arranger changed the music,
 and each line of the report the Export screen shows (data size against the
-target's budget among them).
+target's budget among them). For songs, `similar_to` names a well-known tune
+the lead follows for eight notes or more, or is empty (see
+`scripts/generation/similarity_check.gd`).
 
 ### Exit codes
 
