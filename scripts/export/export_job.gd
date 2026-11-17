@@ -551,6 +551,93 @@ static func for_ay_sfx(sounds: Dictionary, kit_name: String, options: Dictionary
 	return job
 
 
+## Export for a song arranged for the Commodore 64: a PSID file, data for
+## our 6502 player with an example program, plus optional WAV (rendered
+## through the emulated SID) and MIDI of the arranged parts.
+## Options: prefix, wav, loops, midi, console.
+static func for_sid_song(sid: SidSong, options: Dictionary) -> ExportJob:
+	var job := ExportJob.new()
+	var song := sid.source
+	var prefix := sanitize(str(options.get("prefix", sid.title)))
+	if bool(options.get("console", true)):
+		job._tasks.append(func() -> bool:
+			var data := SidWriter.song_bytes(sid)
+			job.files["c64/%s.sid" % prefix] = SidWriter.psid_bytes(sid, data)
+			job.files["c64/song.bin"] = data
+			job.files["c64/sid_player.s"] = SidWriter.player_source().to_utf8_buffer()
+			job.files["c64/sid_player.bin"] = SidWriter.player_binary()
+			job.files["c64/sid_player.cfg"] = SidWriter.player_config().to_utf8_buffer()
+			job.files["c64/main.s"] = SidWriter.example_source(sid.title).to_utf8_buffer()
+			job.files["c64/main.cfg"] = SidWriter.example_config().to_utf8_buffer()
+			job.files["c64/Makefile"] = SidWriter.makefile(prefix).to_utf8_buffer()
+			job.files["c64/README.txt"] = SidWriter.song_readme(prefix, sid).to_utf8_buffer()
+			return true)
+	if bool(options.get("midi", false)):
+		job._tasks.append(func() -> bool:
+			job.files["midi/%s.mid" % prefix] = MidiWriter.encode(song)
+			return true)
+	if bool(options.get("wav", true)):
+		job._r_nes = sid
+		job._queue_render(song, "audio/%s.wav" % prefix, int(options.get("loops", 1)), [])
+	job._tasks.append(func() -> bool:
+		var meta: Dictionary = song.data.get("meta", {})
+		job.files["README.txt"] = "\n".join([
+			"%s, arranged for the Commodore 64 (SID)" % sid.title,
+			"Made with Chiptune Forge. Seed %s, %s, %d BPM on the machine." % [meta.get("seed", ""), meta.get("key", ""), int(sid.get_bpm())],
+			"",
+			str(meta.get("license", "")),
+			"",
+			"c64/      The song as a PSID file (.sid), and for Chiptune Forge's 6502 player (MIT)\n          with an example program for ca65. See c64/README.txt." if bool(options.get("console", true)) else "",
+			"audio/    WAV, 44.1 kHz, 16-bit, rendered through an emulated SID." if bool(options.get("wav", true)) else "",
+			"midi/     The arranged parts, one track each." if bool(options.get("midi", false)) else "",
+			"",
+			"Arrangement:",
+			"\n".join(Array(sid.report).map(func(line: String) -> String: return "  " + line)),
+		]).to_utf8_buffer()
+		return true)
+	return job
+
+
+## Export for sound effects on the Commodore 64: the sounds as data for our
+## 6502 player, and WAVs of how each sounds.
+static func for_sid_sfx(sounds: Dictionary, kit_name: String, options: Dictionary) -> ExportJob:
+	var job := ExportJob.new()
+	var prefix := sanitize(kit_name)
+	var converted: Array = []
+	var ids := sounds.keys()
+	ids.sort()
+	for id in ids:
+		converted.append(SidSfx.from_sfx(sounds[id], sanitize(str(id))))
+	if bool(options.get("console", true)):
+		job._tasks.append(func() -> bool:
+			job.files["c64/sfx.bin"] = SidWriter.sfx_bytes(converted)
+			job.files["c64/sid_player.s"] = SidWriter.player_source().to_utf8_buffer()
+			job.files["c64/sid_player.bin"] = SidWriter.player_binary()
+			job.files["c64/sid_player.cfg"] = SidWriter.player_config().to_utf8_buffer()
+			job.files["c64/README.txt"] = SidWriter.sfx_readme(prefix, converted).to_utf8_buffer()
+			return true)
+	if bool(options.get("wav", true)):
+		for sid_sfx in converted:
+			job._tasks.append(func() -> bool:
+				job.files["audio/%s.wav" % sid_sfx.name] = ChipAudio.encode_wav_mono(sid_sfx.render(MIX_RATE), MIX_RATE)
+				return true)
+	job._tasks.append(func() -> bool:
+		var lines: Array[String] = [
+			"Sound kit for the Commodore 64 (SID): %s" % prefix,
+			"Made with Chiptune Forge. You own these sounds and may use them for any purpose, including commercially.",
+			"",
+			"c64/    The sounds for Chiptune Forge's 6502 player (MIT).\n        See c64/README.txt to play them over your music." if bool(options.get("console", true)) else "",
+			"audio/  One WAV per sound, 44.1 kHz, as the SID plays it.",
+			"",
+			"Sounds:",
+		]
+		for i in converted.size():
+			lines.append("  %d  %s" % [i, (converted[i] as SidSfx).name])
+		job.files["README.txt"] = "\n".join(lines).to_utf8_buffer()
+		return true)
+	return job
+
+
 ## Export for sound effects on the Game Boy: a GBDK-2020 project with the
 ## sounds as cf_sfx data, plus WAVs of how each one sounds on the console.
 static func for_gameboy_sfx(sounds: Dictionary, kit_name: String, options: Dictionary) -> ExportJob:
@@ -684,6 +771,8 @@ func _start_render(song: ChipSong, path: String, loops: int, muted: Array) -> vo
 		_r_seq = PceSequencer.new(_r_nes, MIX_RATE)
 	elif _r_nes is AySong:
 		_r_seq = AySequencer.new(_r_nes, MIX_RATE)
+	elif _r_nes is SidSong:
+		_r_seq = SidSequencer.new(_r_nes, MIX_RATE)
 	elif _r_nes is MdSong:
 		_r_seq = MdSequencer.new(_r_nes, MIX_RATE)
 	elif _r_nes is SmsSong:

@@ -394,11 +394,12 @@ class Z80:
 class Stream:
     """A stream as the player's format describes it."""
 
-    def __init__(self, data, start, loop):
+    def __init__(self, data, start, loop, count=REGS, initial=None):
         self.data, self.pos, self.loop = data, start, loop
         self.wait, self.ret, self.end, self.on = 0, -1, 0, True
-        self.regs = [0] * REGS
-        self.regs[7] = 0x3F
+        self.regs = [0] * count
+        for r, v in ({7: 0x3F} if initial is None else initial).items():
+            self.regs[r] = v
 
     def step(self):
         if not self.on:

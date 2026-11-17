@@ -7,11 +7,20 @@ script = ExtResource("1")
 id = "c64"
 display_name = "Commodore 64"
 chip_name = "SID 6581/8580"
-description = "3 voices, filter, ring mod. Exports SID."
+description = "3 voices, each with its own waveform and ADSR envelope. Exports a .sid file and a small MIT 6502 player, with an example program."
 phase = 5
-available = false
+available = true
 stereo = false
 echo = false
 max_voices = 3
-voices = Array[Dictionary]([])
-export_formats = PackedStringArray("sid")
+voices = Array[Dictionary]([{
+"name": "Voice 1",
+"waves": ["pulse", "saw", "triangle", "noise"]
+},{
+"name": "Voice 2",
+"waves": ["pulse", "saw", "triangle", "noise"]
+},{
+"name": "Voice 3",
+"waves": ["pulse", "saw", "triangle", "noise"]
+}])
+export_formats = PackedStringArray("sid", "bin", "s", "wav")
