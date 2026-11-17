@@ -43,7 +43,9 @@ runs on phones, desktops and the web, and it exports straight into Godot.
   moves between by intensity or by name. Transition rules per route say
   when a change lands (now, or on the next beat, bar or phrase) and how
   (crossfade, cut or a stinger), and the Layers screen warns when a state
-  needs more voices than the chip has.
+  needs more voices than the chip has. States and intensity work in the
+  Godot plugin; the console exports play the song as one fixed arrangement,
+  without `set_state` or intensity in their C players.
 - **Exports.** `.chipsong`, `.chipsfx` and `.chipkit` JSON for the Godot
   plugin, WAV with loop points (or one WAV per layer), OGG Vorbis with loop
   tags (from our own GDScript encoder), and MIDI.
