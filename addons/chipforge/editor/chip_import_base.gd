@@ -36,6 +36,11 @@ func _parse(_text: String) -> Resource:
 	return null
 
 
+## Called with the parsed resource and the import options before it is saved.
+func _finish(_resource: Resource, _options: Dictionary) -> void:
+	pass
+
+
 func _import(source_file: String, save_path: String, _options: Dictionary, _platform_variants: Array[String], _gen_files: Array[String]) -> Error:
 	var file := FileAccess.open(source_file, FileAccess.READ)
 	if file == null:
@@ -43,4 +48,5 @@ func _import(source_file: String, save_path: String, _options: Dictionary, _plat
 	var resource := _parse(file.get_as_text())
 	if resource == null:
 		return ERR_PARSE_ERROR
+	_finish(resource, _options)
 	return ResourceSaver.save(resource, "%s.%s" % [save_path, _get_save_extension()])

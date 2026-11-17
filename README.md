@@ -45,7 +45,8 @@ runs on phones, desktops and the web, and it exports straight into Godot.
   (crossfade, cut or a stinger), and the Layers screen warns when a state
   needs more voices than the chip has.
 - **Exports.** `.chipsong`, `.chipsfx` and `.chipkit` JSON for the Godot
-  plugin, WAV with loop points (or one WAV per layer), and MIDI.
+  plugin, WAV with loop points (or one WAV per layer), OGG Vorbis with loop
+  tags (from our own GDScript encoder), and MIDI.
 - **Game Boy target.** Pick the Game Boy on the Export screen and the song is
   arranged for its four channels, previews play through an emulated Game Boy
   sound chip, and the export is a GBDK-2020 project (C data for hUGEDriver,
@@ -141,7 +142,10 @@ $Sfx.play("coin", 1.2)          # a little higher
 ```
 
 The synth is pure GDScript, so the plugin works on every platform Godot
-exports to, including the web, with nothing to compile. The file formats are
+exports to, including the web, with nothing to compile. For low-end
+devices, tick **Prerender** in a `.chipsong` file's Import dock: the song
+is rendered once to a looping OGG Vorbis stream, which `ChipMusicPlayer`
+plays instead of synthesising live (adaptive layers need live synthesis). The file formats are
 described in [docs/format.md](docs/format.md).
 
 ## Project layout
@@ -153,7 +157,7 @@ described in [docs/format.md](docs/format.md).
 | `scenes/` | One scene per screen and per reusable control. |
 | `scripts/generation/` | The generators. Plain `RefCounted` code with no scene dependencies. |
 | `scripts/editing/` | Note, bar and section editing, live input, the live synth and the take recorder. |
-| `scripts/export/` | WAV, MIDI and zip export. |
+| `scripts/export/` | WAV, OGG, MIDI and zip export (the Vorbis encoder is `addons/chipforge/core/chip_vorbis.gd`). |
 | `scripts/targets/gameboy/` | Game Boy target: sound chip emulation, hUGEDriver player, arranger, SFX conversion and C writer. |
 | `scripts/targets/nes/` | NES target: 2A03 emulation, a player that follows FamiStudio's sound engine, arranger, SFX conversion, the FamiStudio text writer and the ca65 writer for FamiStudio's sound engine. |
 | `scripts/targets/sms/` | Master System target: SN76489 emulation, a player that writes PSGlib's register stream, arranger (built on the NES one), SFX conversion and the PSGlib, C and VGM writer. |

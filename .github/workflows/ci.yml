@@ -689,6 +689,14 @@ jobs:
           python3 -m venv /tmp/schema-venv && /tmp/schema-venv/bin/pip install -q "jsonschema>=4.18"
           docker run --rm -u "$(id -u):$(id -g)" -v "$PWD:/work" chiptune-forge sfx --preset jump --preset coin --format json --out schema-check
           find examples/cli/build schema-check -name '*.chipsong' -o -name '*.chipsfx' -o -name '*.chipkit' | xargs /tmp/schema-venv/bin/python tools/check_schema.py
+      - name: Decode the OGG exports with libvorbis and FFmpeg
+        run: |
+          set -e
+          sudo apt-get update -q && sudo apt-get install -y -q --no-install-recommends vorbis-tools ffmpeg
+          docker run --rm -u "$(id -u):$(id -g)" -v "$PWD:/work" chiptune-forge generate --vibe happy --style platformer --seed 7 --format wav,ogg --out ogg-check/song
+          docker run --rm -u "$(id -u):$(id -g)" -v "$PWD:/work" chiptune-forge generate --vibe cozy --seed 3 --target gameboy --rate 48000 --format wav,ogg --out ogg-check/gameboy
+          docker run --rm -u "$(id -u):$(id -g)" -v "$PWD:/work" chiptune-forge sfx --preset jump --preset coin --format wav,ogg --out ogg-check/sfx
+          find ogg-check -name '*.ogg' | xargs python3 tools/check_ogg.py
       - name: Build the NES examples the exports include
         run: |
           set -e

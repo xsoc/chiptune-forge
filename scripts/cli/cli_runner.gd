@@ -23,6 +23,7 @@ const FORMATS := {
 	"json": "Chiptune Forge files for Godot (.chipsong, .chipsfx, .chipkit)",
 	"plugin": "the Godot plugin, beside the json files",
 	"wav": "WAV audio, with loop points for songs",
+	"ogg": "OGG Vorbis audio, loop points as LOOPSTART and LOOPLENGTH tags",
 	"stems": "one WAV per layer (songs, modern target)",
 	"midi": "a MIDI file of the song",
 	"console": "the console target's source, data and example project",
@@ -206,6 +207,7 @@ func _options(formats: PackedStringArray, prefix: String, flags: Dictionary) -> 
 		"rate": int(flags.get("rate", ExportJob.MIX_RATE)),
 		"stems": formats.has("stems"),
 		"midi": formats.has("midi"),
+		"ogg": formats.has("ogg"),
 		"console": formats.has("console"),
 	}
 
