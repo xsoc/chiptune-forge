@@ -3,11 +3,15 @@ extends RefCounted
 ## Every vibe, style, SFX preset and chip profile, loaded from their folders.
 ##
 ## New presets need no code: drop a .tres file into the matching folder.
+## Community packs ([ChipPack]) add more at run time; their items carry the
+## pack's name as the "pack" meta.
 
 const VIBES_DIR := "res://resources/vibes"
 const STYLES_DIR := "res://resources/styles"
 const SFX_DIR := "res://resources/sfx_presets"
 const CHIPS_DIR := "res://resources/chips"
+## Where installed packs live.
+const PACKS_DIR := "user://packs"
 
 ## Group order for the picker tabs, as in the spec.
 const VIBE_GROUPS: PackedStringArray = [
@@ -30,6 +34,8 @@ var vibes: Dictionary = {}
 var styles: Dictionary = {}
 var sfx_presets: Dictionary = {}
 var chips: Dictionary = {}
+## Installed packs, in the order they were added.
+var packs: Array[ChipPack] = []
 
 static var _default: Catalog
 
@@ -39,6 +45,7 @@ static func get_default() -> Catalog:
 	if _default == null:
 		_default = Catalog.new()
 		_default.load_all()
+		_default.load_packs(PACKS_DIR)
 	return _default
 
 
@@ -47,6 +54,68 @@ func load_all() -> void:
 	styles = _load_dir(STYLES_DIR)
 	sfx_presets = _load_dir(SFX_DIR)
 	chips = _load_dir(CHIPS_DIR)
+
+
+## Adds every pack in a folder. Returns the errors, one per broken file.
+func load_packs(dir: String) -> PackedStringArray:
+	var errors := PackedStringArray()
+	if not DirAccess.dir_exists_absolute(dir):
+		return errors
+	var files := Array(DirAccess.get_files_at(dir))
+	files.sort()
+	for file in files:
+		if not file.ends_with("." + ChipPack.EXTENSION):
+			continue
+		var parsed := ChipPack.parse(FileAccess.get_file_as_string(dir.path_join(file)), self)
+		var error: String = parsed.get("error", "")
+		if error == "":
+			error = add_pack(parsed["pack"])
+		if error != "":
+			errors.append("%s: %s" % [file, error])
+	return errors
+
+
+## Adds a pack's items, replacing an earlier version of the same pack.
+## Returns an error when an id is taken by another pack.
+func add_pack(pack: ChipPack) -> String:
+	for kind in ChipPack.KINDS:
+		var items: Dictionary = get(kind)
+		for res in pack.items[kind]:
+			if items.has(res.id):
+				var owner: String = items[res.id].get_meta("pack", "")
+				if owner == "":
+					return "Chiptune Forge already has \"%s\"." % res.id
+				if owner != pack.name:
+					return "The pack \"%s\" already has \"%s\"." % [owner, res.id]
+	remove_pack(pack.name)
+	for kind in ChipPack.KINDS:
+		var items: Dictionary = get(kind)
+		var order := 100000 + packs.size() * 1000
+		for res in pack.items[kind]:
+			res.set_meta("pack", pack.name)
+			res.set_meta("order", order)
+			order += 1
+			items[res.id] = res
+	packs.append(pack)
+	return ""
+
+
+func remove_pack(pack_name: String) -> void:
+	for kind in ChipPack.KINDS:
+		var items: Dictionary = get(kind)
+		for id in items.keys():
+			if items[id].get_meta("pack", "") == pack_name:
+				items.erase(id)
+	for i in range(packs.size() - 1, -1, -1):
+		if packs[i].name == pack_name:
+			packs.remove_at(i)
+
+
+func get_pack(pack_name: String) -> ChipPack:
+	for pack in packs:
+		if pack.name == pack_name:
+			return pack
+	return null
 
 
 func get_vibe(id: String) -> Vibe:

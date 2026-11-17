@@ -39,6 +39,8 @@ var _pending := ""
 func _ready() -> void:
 	var catalog: Catalog = AppState.catalog
 	%PresetPicker.setup(catalog, catalog.sfx_presets, Catalog.SFX_GROUPS)
+	AppState.catalog_changed.connect(func() -> void:
+		%PresetPicker.setup(catalog, catalog.sfx_presets, Catalog.SFX_GROUPS))
 	%PresetPicker.selection_changed.connect(func(ids: PackedStringArray) -> void: AppState.select_sfx_preset(ids[0]))
 	%Play.pressed.connect(_play)
 	%NewVariation.pressed.connect(func() -> void: AppState.roll_sfx())

@@ -8,6 +8,8 @@ signal locks_changed
 signal sfx_changed(sfx: ChipSfx)
 signal kit_changed
 signal library_changed
+## Packs were added or removed, so the vibes, styles and presets changed.
+signal catalog_changed
 signal mode_changed(mode: String)
 ## The export target changed, or its options did. Previews follow it.
 signal target_changed(target: String)
@@ -193,6 +195,31 @@ func get_gba_song() -> GbaSong:
 		_gba_song = GbaArranger.arrange(song)
 		_gba_key = key
 	return _gba_song
+
+
+## The current song arranged for the current target (cached), or null on
+## the modern target.
+func get_arranged_song() -> Variant:
+	match target:
+		"gameboy":
+			return get_gameboy_song()
+		"nes":
+			return get_nes_song()
+		"sms":
+			return get_sms_song()
+		"genesis":
+			return get_md_song()
+		"snes":
+			return get_snes_song()
+		"pce":
+			return get_pce_song()
+		"msx":
+			return get_ay_song()
+		"c64":
+			return get_sid_song()
+		"gba":
+			return get_gba_song()
+	return null
 
 
 ## True when previews play through an emulated console instead of the
@@ -446,6 +473,38 @@ func open_library_entry(index: int) -> void:
 			sfx_preset_id = str(loaded.data.get("meta", {}).get("preset", sfx_preset_id))
 			sfx_changed.emit(sfx)
 		mode = "sfx"
+
+
+# Community packs ---------------------------------------------------------------
+
+## Installs a pack from its file's text and keeps it for next time. Returns
+## an error message, or "" when it worked.
+func install_pack(text: String) -> String:
+	var parsed := ChipPack.parse(text, catalog)
+	if parsed.has("error"):
+		return parsed["error"]
+	var pack: ChipPack = parsed["pack"]
+	var error := catalog.add_pack(pack)
+	if error != "":
+		return error
+	DirAccess.make_dir_recursive_absolute(Catalog.PACKS_DIR)
+	var file := FileAccess.open(Catalog.PACKS_DIR.path_join(pack.file_name()), FileAccess.WRITE)
+	if file:
+		file.store_string(text)
+		file.close()
+	catalog_changed.emit()
+	return ""
+
+
+func remove_pack(pack_name: String) -> void:
+	var pack := catalog.get_pack(pack_name)
+	if pack == null:
+		return
+	DirAccess.remove_absolute(Catalog.PACKS_DIR.path_join(pack.file_name()))
+	catalog.remove_pack(pack_name)
+	if not catalog.sfx_presets.has(sfx_preset_id):
+		sfx_preset_id = "coin"
+	catalog_changed.emit()
 
 
 func toggle_favourite(index: int) -> void:

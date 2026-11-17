@@ -2,7 +2,9 @@ extends "res://tests/test_case.gd"
 
 
 func test_counts_match_the_spec() -> void:
-	var catalog := Catalog.get_default()
+	# The built-ins only, without any packs installed on this machine.
+	var catalog := Catalog.new()
+	catalog.load_all()
 	check_eq(catalog.vibes.size(), 147, "vibes")
 	check_eq(catalog.styles.size(), 100, "styles")
 	check(catalog.sfx_presets.size() >= 150 and catalog.sfx_presets.size() <= 170, "about 160 SFX presets, got %d" % catalog.sfx_presets.size())
