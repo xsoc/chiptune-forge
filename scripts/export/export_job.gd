@@ -28,14 +28,16 @@ var _r_fraction := 0.0
 
 
 ## Target ids, in the order the app lists them.
-const TARGETS: PackedStringArray = ["modern", "gameboy", "nes", "sms", "genesis", "snes", "pce", "gba", "msx", "c64"]
+const TARGETS: PackedStringArray = ["modern", "gameboy", "nes", "sms", "genesis", "snes", "pce", "gba", "msx", "c64", "pc"]
 
 
 ## [param song] arranged for [param target], or null for "modern" (or an
 ## unknown target). [param gameboy_options] are the Game Boy's sound effect
-## channel options (see [GbArranger]).
+## channel options (see [GbArranger]); for "pc" they hold the "card".
 static func arrange(target: String, song: ChipSong, gameboy_options := {}) -> Variant:
 	match target:
+		"pc":
+			return OplArranger.arrange(SynthEngines.chip_song(song), str(gameboy_options.get("card", PcCards.DEFAULT)))
 		"gameboy":
 			return GbArranger.arrange(SynthEngines.chip_song(song), gameboy_options)
 		"nes":
@@ -71,8 +73,12 @@ static func for_target_song(target: String, song: ChipSong, options: Dictionary,
 
 static func _song_job(target: String, song: ChipSong, options: Dictionary, arranged: Variant) -> ExportJob:
 	if arranged == null:
-		arranged = arrange(target, song, options.get("gameboy", {}))
+		var gameboy: Dictionary = options.get("gameboy", {})
+		var arrange_options: Dictionary = {"card": options.get("card", gameboy.get("card", PcCards.DEFAULT))} if target == "pc" else gameboy
+		arranged = arrange(target, song, arrange_options)
 	match target:
+		"pc":
+			return for_pc_song(arranged, options)
 		"gameboy":
 			return for_gameboy_song(arranged, options)
 		"nes":
@@ -104,6 +110,8 @@ static func for_target_sfx(target: String, sounds: Dictionary, kit_name: String,
 
 static func _sfx_job(target: String, sounds: Dictionary, kit_name: String, options: Dictionary) -> ExportJob:
 	match target:
+		"pc":
+			return for_pc_sfx(sounds, kit_name, options)
 		"gameboy":
 			return for_gameboy_sfx(sounds, kit_name, options)
 		"nes":
@@ -839,6 +847,99 @@ static func for_sid_sfx(sounds: Dictionary, kit_name: String, options: Dictionar
 	return job
 
 
+## Export for a song arranged for a PC sound card's FM chip: IMF (OPL2
+## only), DRO and VGM files, plus optional WAV (rendered through the
+## emulated chip) and MIDI of the arranged parts.
+## Options: prefix, wav, loops, midi, console.
+static func for_pc_song(opl: OplSong, options: Dictionary) -> ExportJob:
+	var job := ExportJob.new()
+	var song := opl.source
+	var prefix := sanitize(str(options.get("prefix", opl.title)))
+	var card := PcCards.name_of(opl.card)
+	if bool(options.get("console", true)):
+		job._tasks.append(func() -> bool:
+			var recorded := OplWriter.record(opl)
+			if opl.chip == "opl2":
+				job.files["pc/%s.wlf" % prefix] = OplWriter.imf_bytes(recorded, opl.title)
+			job.files["pc/%s.dro" % prefix] = OplWriter.dro_bytes(recorded, opl.chip)
+			job.files["pc/%s.vgm" % prefix] = OplWriter.vgm_bytes(recorded, opl.chip, opl.title, "IBM PC, " + card, "Made with Chiptune Forge")
+			job.files["pc/README.txt"] = OplWriter.song_readme(prefix, opl).to_utf8_buffer()
+			return true)
+	if bool(options.get("midi", false)):
+		job._tasks.append(func() -> bool:
+			job.files["midi/%s.mid" % prefix] = MidiWriter.encode(song)
+			return true)
+	if bool(options.get("wav", true)):
+		job._r_nes = opl
+		job._queue_render(song, "audio/%s.wav" % prefix, int(options.get("loops", 1)), [])
+	job._tasks.append(func() -> bool:
+		var meta: Dictionary = song.data.get("meta", {})
+		job.files["README.txt"] = "\n".join([
+			"%s, arranged for the %s (%s)" % [opl.title, card, {"opl2": "OPL2", "dual_opl2": "two OPL2s", "opl3": "OPL3"}[opl.chip]],
+			"Made with Chiptune Forge. Seed %s, %s, %d BPM on the card." % [meta.get("seed", ""), meta.get("key", ""), int(opl.get_bpm())],
+			"",
+			str(meta.get("license", "")),
+			"",
+			"pc/       The song as %s. See pc/README.txt." % ("IMF (.wlf), DRO and VGM files" if opl.chip == "opl2" else "DRO and VGM files") if bool(options.get("console", true)) else "",
+			"audio/    WAV, 44.1 kHz, 16-bit, rendered through an emulated %s." % ("OPL3" if opl.chip == "opl3" else "OPL2") if bool(options.get("wav", true)) else "",
+			"midi/     The arranged parts, one track each." if bool(options.get("midi", false)) else "",
+			"",
+			"Arrangement:",
+			"\n".join(Array(opl.report).map(func(line: String) -> String: return "  " + line)),
+		]).to_utf8_buffer()
+		return true)
+	return job
+
+
+## Export for sound effects on a PC sound card: Creative Voice files (or
+## 16-bit WAVs on the Sound Blaster 16) for the Sound Blasters' DAC, or FM
+## sounds as DRO and IMF files for the AdLib, and WAVs of how each sounds.
+static func for_pc_sfx(sounds: Dictionary, kit_name: String, options: Dictionary) -> ExportJob:
+	var job := ExportJob.new()
+	var prefix := sanitize(kit_name)
+	var card := str(options.get("card", PcCards.DEFAULT))
+	var converted: Array = []
+	var ids := sounds.keys()
+	ids.sort()
+	for id in ids:
+		converted.append(PcSfx.from_sfx(sounds[id], card, sanitize(str(id))))
+	if bool(options.get("console", true)):
+		for pc_sfx: PcSfx in converted:
+			job._tasks.append(func() -> bool:
+				if pc_sfx.is_fm():
+					var recorded := pc_sfx.recorded()
+					job.files["pc/%s.dro" % pc_sfx.name] = OplWriter.dro_bytes(recorded, "opl2")
+					job.files["pc/%s.wlf" % pc_sfx.name] = OplWriter.imf_bytes(recorded, pc_sfx.name)
+				elif pc_sfx.bits == 16:
+					job.files["pc/%s.wav" % pc_sfx.name] = pc_sfx.wav_bytes()
+				else:
+					job.files["pc/%s.voc" % pc_sfx.name] = pc_sfx.voc_bytes()
+				return true)
+		job._tasks.append(func() -> bool:
+			job.files["pc/README.txt"] = OplWriter.sfx_readme(prefix, card, converted).to_utf8_buffer()
+			return true)
+	if bool(options.get("wav", true)):
+		for pc_sfx: PcSfx in converted:
+			job._tasks.append(func() -> bool:
+				job.files["audio/%s.wav" % pc_sfx.name] = ChipAudio.encode_wav_mono(pc_sfx.render(MIX_RATE), MIX_RATE)
+				return true)
+	job._tasks.append(func() -> bool:
+		var lines: Array[String] = [
+			"Sound kit for the %s: %s" % [PcCards.name_of(card), prefix],
+			"Made with Chiptune Forge. You own these sounds and may use them for any purpose, including commercially.",
+			"",
+			"pc/     The sounds for the card. See pc/README.txt." if bool(options.get("console", true)) else "",
+			"audio/  One WAV per sound, 44.1 kHz, as the card plays it.",
+			"",
+			"Sounds:",
+		]
+		for i in converted.size():
+			lines.append("  %d  %s" % [i, (converted[i] as PcSfx).name])
+		job.files["README.txt"] = "\n".join(lines).to_utf8_buffer()
+		return true)
+	return job
+
+
 ## Export for sound effects on the Game Boy: a GBDK-2020 project with the
 ## sounds as cf_sfx data, plus WAVs of how each one sounds on the console.
 static func for_gameboy_sfx(sounds: Dictionary, kit_name: String, options: Dictionary) -> ExportJob:
@@ -966,6 +1067,8 @@ func _queue_render(song: ChipSong, path: String, loops: int, muted: Array) -> vo
 func _start_render(song: ChipSong, path: String, loops: int, muted: Array) -> void:
 	if _r_gb:
 		_r_seq = GbSequencer.new(_r_gb, MIX_RATE)
+	elif _r_nes is OplSong:
+		_r_seq = OplSequencer.new(_r_nes, MIX_RATE)
 	elif _r_nes is GbaSong:
 		_r_seq = GbaSequencer.new(_r_nes, MIX_RATE)
 	elif _r_nes is SnesSong:

@@ -126,6 +126,8 @@ func _on_sfx_changed(sfx: ChipSfx) -> void:
 		where = "The MSX and Spectrum play it on channel B, over the music."
 	elif AppState.target == "gba":
 		where = "The Game Boy Advance plays it as an 8-bit sample with Maxmod, over the music."
+	elif AppState.target == "pc":
+		where = "The AdLib plays it as FM on channel 2, in place of the harmony." if AppState.pc_card == "adlib" else "The %s plays it as a sample on its DAC, over the FM music." % PcCards.name_of(AppState.pc_card)
 	elif AppState.target == "c64":
 		where = "The Commodore 64 plays it on voice 2, over the music."
 	%Note.text = "%s · %s. %s" % [SfxGenerator.c_id(sfx.get_sound_name()), kind, where]

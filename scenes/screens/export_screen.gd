@@ -3,6 +3,7 @@ extends Control
 ## Music mode and for the kit (or the current sound) in Sound FX mode.
 
 var _job: ExportJob
+var _card: OptionButton
 
 
 func _ready() -> void:
@@ -37,7 +38,9 @@ func refresh() -> void:
 	var msx := AppState.target == "msx"
 	var c64 := AppState.target == "c64"
 	var gba := AppState.target == "gba"
-	var console := gameboy or nes or sms or genesis or snes or pce or msx or c64 or gba
+	var pc := AppState.target == "pc"
+	var card := PcCards.name_of(AppState.pc_card)
+	var console := gameboy or nes or sms or genesis or snes or pce or msx or c64 or gba or pc
 	%Export.theme_type_variation = &"PrimaryButton" if music else &"SfxPrimaryButton"
 	%Midi.visible = music
 	%WavOptions.visible = music and %Wav.button_pressed
@@ -60,7 +63,14 @@ func refresh() -> void:
 		%Console.text = "Game Boy Advance: Impulse Tracker module for Maxmod, with a ROM project" if music else "Game Boy Advance: 8-bit WAVs for Maxmod"
 	elif c64:
 		%Console.text = "Commodore 64: a .sid file and a small 6502 player, with an example program" if music else "Commodore 64: sound data for the same 6502 player"
+	elif pc:
+		var names := Array(PcCards.music_formats(AppState.pc_card)).map(func(f: String) -> String: return f.to_upper())
+		var formats := "%s and %s" % [", ".join(names.slice(0, -1)), names[-1]]
+		var sfx_text := "FM sounds as DRO and IMF files" if AppState.pc_card == "adlib" else ("16-bit WAVs" if AppState.pc_card == "sb16" else "Creative Voice files (.voc)")
+		%Console.text = ("%s: %s files for DOS players and trackers" % [card, formats]) if music else ("%s: %s" % [card, sfx_text])
 	%Godot.visible = not console
+	_card.visible = pc
+	_card.select(maxi(PcCards.CARDS.find(AppState.pc_card), 0))
 	%Plugin.visible = not console
 	%GbOptions.visible = gameboy and music
 	for button in %Targets.get_children():
@@ -99,6 +109,9 @@ func refresh() -> void:
 		elif c64:
 			%Wav.text = "Audio: SID WAV, loop points included"
 			%Midi.text = "MIDI: the four SID parts"
+		elif pc:
+			%Wav.text = "Audio: %s WAV, loop points included" % card
+			%Midi.text = "MIDI: the arranged parts"
 		else:
 			%Midi.text = "MIDI: one track per channel"
 		%Export.disabled = song == null
@@ -109,7 +122,7 @@ func refresh() -> void:
 		%Godot.text = "Godot: .chipkit and .chipsfx for the plugin"
 		%Wav.text = "Audio: one WAV per sound"
 		if console:
-			%Wav.text = "Audio: one WAV per sound, as the %s plays it" % ("NES" if nes else "Master System" if sms else "Mega Drive" if genesis else "SNES" if snes else "PC Engine" if pce else "AY-3-8910" if msx else "SID" if c64 else "Game Boy Advance" if gba else "Game Boy")
+			%Wav.text = "Audio: one WAV per sound, as the %s plays it" % ("NES" if nes else "Master System" if sms else "Mega Drive" if genesis else "SNES" if snes else "PC Engine" if pce else "AY-3-8910" if msx else "SID" if c64 else card if pc else "Game Boy Advance" if gba else "Game Boy")
 		%Export.disabled = AppState.sfx == null and count == 0
 	_update_report()
 
@@ -136,6 +149,13 @@ func _build_targets() -> void:
 		button.set_meta("target", id)
 		button.pressed.connect(func() -> void: AppState.set_target(id))
 		%Targets.add_child(button)
+	_card = OptionButton.new()
+	_card.name = "Card"
+	_card.custom_minimum_size.y = 44
+	for card in PcCards.CARDS:
+		_card.add_item("Sound card: %s (%d)" % [PcCards.name_of(card), PcCards.INFO[card]["year"]])
+	_card.item_selected.connect(func(index: int) -> void: AppState.set_pc_card(PcCards.CARDS[index]))
+	%Targets.add_child(_card)
 	var more := Label.new()
 	more.text = "With a console picked, previews play through that console's emulated sound chip."
 	more.theme_type_variation = &"MutedLabel"
@@ -153,7 +173,7 @@ func _update_report() -> void:
 		%Report.text = "\n".join(lines)
 		return
 	var arranged: Variant = AppState.get_arranged_song() if music else null
-	lines.append_array(TargetReport.lines(AppState.target, music, AppState.song, arranged, _sounds()))
+	lines.append_array(TargetReport.lines(AppState.target, music, AppState.song, arranged, _sounds(), AppState.pc_card))
 	%Report.text = "\n".join(lines)
 
 
@@ -175,14 +195,15 @@ func _on_export() -> void:
 		"stems": %Stems.button_pressed,
 		"midi": %Midi.button_pressed,
 		"console": %Console.button_pressed,
+		"card": AppState.pc_card,
 	}
 	if AppState.mode == "music":
 		if AppState.song == null:
 			return
-		options["project"] = ProjectFile.for_song(AppState.song, AppState.settings, AppState.target, AppState.gameboy_options)
+		options["project"] = ProjectFile.for_song(AppState.song, AppState.settings, AppState.target, AppState.gameboy_options.merged({"card": AppState.pc_card}) if AppState.target == "pc" else AppState.gameboy_options)
 		_job = ExportJob.for_target_song(AppState.target, AppState.song, options, AppState.get_arranged_song())
 	else:
-		options["project"] = ProjectFile.for_kit(prefix, _sounds(), AppState.target)
+		options["project"] = ProjectFile.for_kit(prefix, _sounds(), AppState.target, AppState.pc_card)
 		_job = ExportJob.for_target_sfx(AppState.target, _sounds(), prefix, options)
 	%Export.disabled = true
 	%Progress.visible = true

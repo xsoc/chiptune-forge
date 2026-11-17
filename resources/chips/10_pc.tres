@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="ChipProfile" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/types/chip_profile.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "pc"
+display_name = "DOS PC"
+chip_name = "AdLib and Sound Blaster"
+description = "The sound cards of DOS games: the AdLib and Sound Blaster's OPL2 FM chip, the Sound Blaster Pro's two OPL2s and the Sound Blaster 16's OPL3. Exports IMF, DRO and VGM music, and VOC or FM sound effects."
+phase = 7
+available = true
+stereo = true
+echo = false
+max_voices = 18
+voices = Array[Dictionary]([{
+"name": "FM 1-9",
+"waves": ["fm"]
+},{
+"name": "Rhythm",
+"waves": ["bd", "sd", "tom", "cym", "hh"]
+}])
+export_formats = PackedStringArray("wlf", "dro", "vgm", "voc", "wav")

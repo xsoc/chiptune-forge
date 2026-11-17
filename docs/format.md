@@ -311,6 +311,39 @@ and a `Makefile`. A sound kit export's `c64/` folder holds `sfx.bin` and the
 player; sounds play on voice 2 ($1006 with the sounds' address in A/X, then
 $1009 with the sound's number), which the music gets back when a sound ends.
 
+## DOS PC export
+
+The DOS PC target plays and exports for one sound card at a time: the
+AdLib (1987) and Sound Blaster (1989), both a Yamaha YM3812 (OPL2), the
+Sound Blaster Pro (two OPL2s, one per speaker) and the Sound Blaster 16
+(a YMF262, the OPL3). The arranger starts from the Mega Drive arrangement
+and gives each part a two-operator FM patch: on an OPL2 six melodic
+channels (lead, harmony, arpeggio, bass and two for the pad's chords) and
+the rhythm mode's five drums. The Sound Blaster Pro's second chip doubles
+the lead and bass and adds a third pad note, and the OPL3 pans the parts
+and uses its extra waveforms. The music driver runs at 70 Hz, as most DOS
+music did, and the tempo is fitted to it.
+
+The app's preview (`OplPlayer` writing to `Opl`, our MIT-licensed GDScript
+emulation of the OPL2 and OPL3) writes the chip's registers each frame,
+and the exports record those writes:
+
+| File | What it is |
+|---|---|
+| `pc/<name>.wlf` | IMF type 1 at 700 Hz (OPL2 cards only), the format id Software's games and many DOS engines play. |
+| `pc/<name>.dro` | DOSBox Raw OPL v2, which DOSBox captures and many players and trackers read. |
+| `pc/<name>.vgm` | VGM 1.51 for the YM3812 (two of them for the Sound Blaster Pro) or the YMF262. |
+
+CI plays every file with AdPlug's DOSBox OPL core and checks its loudness
+follows the app's preview.
+
+Sound effects on the Sound Blasters are samples for the card's DAC:
+Creative Voice files (`.voc`, 8-bit) at 11 kHz on the Sound Blaster and
+22 kHz on the Pro, and 16-bit 22 kHz WAVs on the 16. The AdLib has no DAC,
+so its effects are FM on channel 2 (the harmony's, which the music gets
+back when a sound ends), exported as DRO and IMF files of the register
+writes.
+
 ## Game Boy export
 
 Game Boy exports are not a Chiptune Forge format: they are C source for

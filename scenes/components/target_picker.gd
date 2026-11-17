@@ -9,6 +9,8 @@ extends PanelContainer
 
 var _buttons: Dictionary = {}
 var _later := ""
+var _card: OptionButton
+var _card_row: HBoxContainer
 
 
 func _ready() -> void:
@@ -36,11 +38,15 @@ func refresh() -> void:
 		%Hint.text = "Previews play through an emulated AY-3-8910, the MSX and ZX Spectrum 128 sound chip: 3 square and noise."
 	elif AppState.target == "gba":
 		%Hint.text = "Previews play through an emulation of Maxmod's mixer on the Game Boy Advance: 8-bit samples on 7 channels."
+	elif AppState.target == "pc":
+		%Hint.text = "Previews play through the %s's emulated sound: %s" % [PcCards.name_of(AppState.pc_card), PcCards.INFO[AppState.pc_card]["description"].get_slice(" Exports", 0)]
 	elif AppState.target == "c64":
 		%Hint.text = "Previews play through an emulated SID, the Commodore 64 sound chip: 3 voices with their own waveforms and envelopes."
 	else:
 		%Hint.text = "Plays on any voice, with no limits."
 	%Hint.text += _later
+	_card_row.visible = AppState.target == "pc"
+	_card.select(maxi(PcCards.CARDS.find(AppState.pc_card), 0))
 
 
 func _build() -> void:
@@ -65,5 +71,26 @@ func _build() -> void:
 		button.pressed.connect(func() -> void: AppState.set_target(id))
 		%Buttons.add_child(button)
 		_buttons[id] = button
+	_build_cards()
 	if not later.is_empty():
 		_later = " %s come later." % " and ".join(later.slice(0, 2))
+
+
+## The sound card choice, shown while the DOS PC is picked.
+func _build_cards() -> void:
+	_card_row = HBoxContainer.new()
+	_card_row.add_theme_constant_override("separation", 8)
+	var label := Label.new()
+	label.text = "Sound card"
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	label.theme_type_variation = &"MutedLabel"
+	_card_row.add_child(label)
+	_card = OptionButton.new()
+	_card.name = "Card"
+	_card.custom_minimum_size = Vector2(200, 40)
+	for card in PcCards.CARDS:
+		_card.add_item("%s (%d)" % [PcCards.name_of(card), PcCards.INFO[card]["year"]])
+	_card.item_selected.connect(func(index: int) -> void: AppState.set_pc_card(PcCards.CARDS[index]))
+	_card_row.add_child(_card)
+	%Buttons.get_parent().add_child(_card_row)
+	%Buttons.get_parent().move_child(_card_row, %Buttons.get_index() + 1)
