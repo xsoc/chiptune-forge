@@ -11,6 +11,12 @@ runs on phones, desktops and the web, and it exports straight into Godot.
 - **Sound FX mode.** About 160 presets in 12 categories, from menu clicks to
   boss roars. Every tap gives a new take; mutate it, tweak it and collect the
   keepers into a sound kit.
+- **More targets.** The SNES (SPC700 samples for SNESMod), the PC Engine
+  (wavetables for our own HuC6280 player), the Game Boy Advance (8-bit
+  samples for Maxmod), the MSX and ZX Spectrum 128 (AY-3-8910, with our Z80
+  player) and the Commodore 64 (SID, as PSID files with our 6502 player).
+  Each one arranges the song for the chip, previews it through an emulated
+  chip and exports source, data and an example project that builds.
 - **Community packs.** Add vibes, styles and sound presets that other
   people made, from one `.chippack` file each. See [packs/](packs/README.md)
   to find packs or make your own.
@@ -127,6 +133,10 @@ described in [docs/format.md](docs/format.md).
 | `scripts/targets/nes/` | NES target: 2A03 emulation, a player that follows FamiStudio's sound engine, arranger, SFX conversion, the FamiStudio text writer and the ca65 writer for FamiStudio's sound engine. |
 | `scripts/targets/sms/` | Master System target: SN76489 emulation, a player that writes PSGlib's register stream, arranger (built on the NES one), SFX conversion and the PSGlib, C and VGM writer. |
 | `scripts/targets/genesis/` | Mega Drive target: YM2612 emulation (with the Master System's SN76489), FM patches, arranger, a frame-by-frame player, the VGM writer and SFX conversion. |
+| `scripts/targets/snes/`, `pce/`, `gba/`, `msx/`, `c64/` | The SNES, PC Engine, Game Boy Advance, MSX/Spectrum and Commodore 64 targets, each with its chip emulation, arranger, player, SFX conversion and writers. |
+| `scripts/packs/`, `packs/` | Community packs: the loader, and the packs that ship with the repository. |
+| `scripts/cli/` | The headless command line ([docs/cli.md](docs/cli.md)). |
+| `store/` | App store listing text ([docs/release.md](docs/release.md)). |
 | `assets/gameboy/hUGEDriver/` | The vendored hUGEDriver source bundled with Game Boy exports. |
 | `resources/` | Vibes, styles, SFX presets and chip profiles as `.tres` files, plus the theme. |
 | `tests/` | Unit and golden-file tests. |
@@ -149,8 +159,13 @@ consoles, starting with the Mega Drive: CI converts the exported VGMs with
 SGDK's xgmtool and checks the XGM keeps every register write, builds an
 example ROM with SGDK, and compares the app's preview with libvgm's YM2612
 playing the VGM and with the ROM running in Genesis Plus GX. The SNES and
-PC Engine come next, and the last phase gives the modern synth several new
-engines.
+PC Engine followed, then the Game Boy Advance, the MSX and ZX Spectrum, and
+the Commodore 64, with the note editor and community packs. Phase 6 is the
+headless command line and its Docker image. The last phase gives the modern
+synth several new engines and adds the PC's sound cards as targets.
+[docs/release.md](docs/release.md) covers releasing to the app stores, and
+[docs/privacy.md](docs/privacy.md) is the privacy policy: the app collects
+no data.
 
 To build a Game Boy export yourself, unzip it, install
 [GBDK-2020](https://github.com/gbdk-2020/gbdk-2020) and run

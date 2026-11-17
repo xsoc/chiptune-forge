@@ -1,0 +1,23 @@
+Chiptune Forge makes chiptune music and retro sound effects for games. Pick a vibe and a style, press Generate, and keep what you like. Everything you make is yours, for any use, with no royalties or credit required.
+
+MUSIC
+• 147 vibes in 11 groups, from happy and cozy to boss fights and haunted places, and 100 styles, from platformer and metal to bossa nova.
+• Blend up to three vibes, then set intensity, complexity, tempo, key, mode, form and length.
+• Lock the layers you like and regenerate the rest, or tap notes in and out on the note grid.
+• Adaptive music: every song has layers and four states (Explore, Tension, Combat, Boss) that your game can fade between.
+
+SOUND EFFECTS
+• About 160 presets in 12 groups, from menu clicks and coins to lasers, magic and boss roars.
+• Every tap gives a new take. Mutate it, tweak it, and collect the keepers in a sound kit.
+
+FOR YOUR GAME
+• Export WAV with loop points, stems, MIDI, and files for the free Godot plugin.
+• Retro targets: songs are arranged for the sound chips of classic consoles and computers, previewed through an emulated chip, and exported as source and data for each homebrew toolchain, with example projects that build a ROM.
+• Seeds: the same settings and seed always give the same song, on every device.
+
+COMMUNITY PACKS
+Add vibes, styles and sound presets that other people made, one small file each.
+
+Chiptune Forge is free and open source (MIT). It works offline, has no ads, and collects no data.
+
+Console and computer names are trademarks of their owners. Chiptune Forge is not affiliated with or endorsed by them.

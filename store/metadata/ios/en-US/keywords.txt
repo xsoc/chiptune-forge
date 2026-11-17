@@ -1,0 +1,1 @@
+chiptune,8-bit,16-bit,game music,sound effects,sfx,retro,generator,gamedev,godot,loop,soundtrack

@@ -16,3 +16,6 @@ assets/gameboy/hUGEDriver/lib/
 
 # Built by the command line examples
 examples/cli/build/
+
+# Made by tools/store_screenshots.sh
+store/screenshots/
