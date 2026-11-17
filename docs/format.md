@@ -300,9 +300,17 @@ $1000 as `sid_player.bin`), with the song after it: init at $1000, play at
 $1003, 50 times a second (PAL). Any SID player plays them, and games load
 them like other SID music. Voice 1 plays the lead, voice 2 the
 accompaniment, voice 3 the bass, and the drums borrow voice 2's noise for as
-long as each hit sounds. The SID has no per-voice volume, so every NES
-volume envelope becomes the closest hardware ADSR envelope, and each new
-note turns its gate off for one frame so the envelope restarts.
+long as each hit sounds (the accompaniment takes the voice back mid-note
+only when it has at least six frames to sound). Low drum noise, which
+gurgles on the SID, plays for one frame and then turns into a falling
+pulse, the usual C64 kick. The SID has no per-voice volume, so every NES
+volume envelope becomes the closest hardware ADSR envelope. Each new note
+gets a two-frame hard restart, as C64 music drivers do: the gate goes off
+with attack, decay, sustain and release all 0, then on at the note. That
+dodges the SID's "ADSR bug" (a rate counter wrapping round its 15 bits
+before the envelope moves), which otherwise starts notes up to 33 ms late.
+The preview emulates the bug, and the tests check that note starts in the
+exported data stay clear of it.
 
 The data is the SID's 25 registers frame by frame, in the same register
 stream format as the MSX player (each frame writes what changed; repeats

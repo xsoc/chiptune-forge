@@ -12,7 +12,10 @@ extends RefCounted
 ##
 ## The envelope generator follows the chip's documented behaviour (rate
 ## counter periods, the exponential decay steps, attack restarting from the
-## current level). The filter, ring modulation, sync and combined waveforms
+## current level), including its "ADSR bug": when a write makes the rate
+## faster while the 15-bit rate counter is already past the new period, the
+## counter wraps all the way round first and the envelope freezes for up to
+## 33 ms. [SidPlayer]'s hard restarts keep notes clear of it. The filter, ring modulation, sync and combined waveforms
 ## are not emulated: our player never uses them.
 
 ## PAL clock.
@@ -25,6 +28,8 @@ const SAW := 0x20
 const PULSE := 0x40
 const NOISE := 0x80
 ## Clock cycles per envelope step for each attack, decay and release rate.
+## The rate counter is 15 bits.
+const RATE_COUNTER_WRAP := 32768.0
 const RATE_PERIODS: PackedInt32Array = [9, 32, 63, 95, 149, 220, 267, 313, 392, 977, 1954, 3126, 3907, 11720, 19532, 31251]
 
 var mix_rate := 44100.0
@@ -39,6 +44,8 @@ var _level := PackedInt32Array([0, 0, 0])
 ## Envelope state per voice: 0 attack, 1 decay/sustain, 2 release.
 var _state := PackedInt32Array([2, 2, 2])
 var _env_cycles := PackedFloat64Array([0.0, 0.0, 0.0])
+## The rate counter's period on the last block, per voice.
+var _period := PackedInt32Array([9, 9, 9])
 var _exp_count := PackedInt32Array([0, 0, 0])
 var _gate := PackedInt32Array([0, 0, 0])
 var _lfsr := PackedInt32Array([0x7FFFF8, 0x7FFFF8, 0x7FFFF8])
@@ -63,6 +70,8 @@ func reset() -> void:
 		_level[v] = 0
 		_state[v] = 2
 		_gate[v] = 0
+		_env_cycles[v] = 0.0
+		_period[v] = 9
 
 
 func write(reg: int, value: int) -> void:
@@ -131,6 +140,11 @@ func _render_voice(v: int, out: PackedFloat32Array, offset: int, count: int, mas
 	var level := _level[v]
 	var state := _state[v]
 	var env := _env_cycles[v]
+	# The ADSR bug: a counter already past a new, shorter period counts on
+	# to 0x7FFF and wraps before the envelope steps again.
+	var start_period: int = periods[mini(state, 2)]
+	if start_period != _period[v] and env >= start_period:
+		env -= RATE_COUNTER_WRAP
 	var exp_count := _exp_count[v]
 	var lfsr := _lfsr[v]
 	var noise := _noise_out[v]
@@ -197,6 +211,7 @@ func _render_voice(v: int, out: PackedFloat32Array, offset: int, count: int, mas
 	_level[v] = level
 	_state[v] = state
 	_env_cycles[v] = env
+	_period[v] = periods[mini(state, 2)]
 	_exp_count[v] = exp_count
 	_lfsr[v] = lfsr
 	_noise_out[v] = noise

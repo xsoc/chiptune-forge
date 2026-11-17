@@ -74,6 +74,9 @@ func to_song() -> SidSong:
 func make_player(chip: Variant) -> SidPlayer:
 	var player := SidPlayer.new(to_song(), chip)
 	player.channel_mask = 1 << channel()
+	player.hard_restart = false
+	player.pitched_drums = false
+	player.start(0)
 	return player
 
 

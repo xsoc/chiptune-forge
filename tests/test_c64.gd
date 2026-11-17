@@ -164,3 +164,137 @@ func test_export_jobs() -> void:
 	for path in ["audio/coin.wav", "c64/sfx.bin", "c64/sid_player.s", "c64/sid_player.bin", "c64/README.txt", "README.txt"]:
 		check(kit.files.has(path), path)
 	check((kit.files["c64/README.txt"] as PackedByteArray).get_string_from_utf8().contains("jsr $1009"), "how to play a sound")
+
+
+func test_chip_has_the_adsr_bug() -> void:
+	# A slow decay leaves the rate counter far past the fastest period; a
+	# switch to the fastest release then waits for the counter to wrap.
+	var chip := SidChip.new(44100.0)
+	chip.write(24, 15)
+	chip.write(5, 0x0F)
+	chip.write(6, 0xF0)
+	chip.write(4, SidChip.PULSE | SidChip.GATE)
+	var out := PackedFloat32Array()
+	out.resize(44100)
+	chip.render(out, 0, 441)
+	var guard := 0
+	while chip._env_cycles[0] < 20000.0 and guard < 1000:
+		chip.render(out, 0, 22)
+		guard += 1
+	check_eq(chip.envelope_level(0), 255, "sustain 15 holds the top")
+	chip.write(6, 0x00)
+	chip.write(4, SidChip.PULSE)
+	chip.render(out, 0, 220)
+	check_eq(chip.envelope_level(0), 255, "the release waits while the counter wraps")
+	chip.render(out, 0, 1323)
+	check(chip.envelope_level(0) < 10, "then falls away fast (%d)" % chip.envelope_level(0))
+
+
+## For each voice, the gate-ons in [param frames] that the SID's ADSR bug
+## would delay: the rate counter is past the attack period when the gate
+## goes on, so the attack waits for it to wrap round 15 bits.
+static func _late_attacks(frames: Array) -> Array:
+	const CYCLES := 19656
+	var late := [0, 0, 0]
+	for v in 3:
+		var counter := 0
+		var wrapping := false
+		var period := SidChip.RATE_PERIODS[0]
+		var state := 2
+		var level := 0
+		var gate := 0
+		for regs: PackedInt32Array in frames:
+			var ctrl := regs[v * 7 + 4]
+			var ad := regs[v * 7 + 5]
+			var sr := regs[v * 7 + 6]
+			var gate_on := false
+			if (ctrl & 1) != gate:
+				gate = ctrl & 1
+				state = 0 if gate else 2
+				gate_on = gate == 1
+				if gate_on:
+					# Hard restarts leave the level near 0.
+					level = 0
+			var now: int = SidChip.RATE_PERIODS[[ad >> 4, ad & 0x0F, sr & 0x0F][state]]
+			if now != period and counter >= now:
+				wrapping = true
+			period = now
+			if gate_on and wrapping:
+				late[v] += 1
+			var left := CYCLES
+			if wrapping:
+				var to_wrap := 32768 - counter
+				if to_wrap > left:
+					counter += left
+					continue
+				left -= to_wrap
+				counter = 0
+				wrapping = false
+			var steps := (counter + left) / period
+			counter = (counter + left) % period
+			if state == 0:
+				level += steps
+				if level >= 255:
+					level = 255
+					state = 1
+	return late
+
+
+func test_note_starts_dodge_the_adsr_bug() -> void:
+	for entry in [["happy", "platformer", "42"], ["boss_fight", "metal", "boss"], ["cozy", "bossa_nova", "7"]]:
+		var sid := SidArranger.arrange(_song(entry[0], entry[1], entry[2]))
+		var frames: Array = SidWriter.record_song(sid)["frames"]
+		var starts := [0, 0, 0]
+		for f in range(1, frames.size()):
+			for v in 3:
+				if (frames[f][v * 7 + 4] & 1) and not (frames[f - 1][v * 7 + 4] & 1):
+					starts[v] += 1
+		var late := _late_attacks(frames)
+		for v in 3:
+			# A note shorter than the hard restart can leave the next one a
+			# little late; anything more is the bug back.
+			check(late[v] * 100 <= starts[v], "%s voice %d: %d of %d notes start late on a real SID" % [entry[0], v + 1, late[v], starts[v]])
+
+
+func test_hard_restart_before_each_note() -> void:
+	var sid := SidArranger.arrange(_song())
+	var frames: Array = SidWriter.record_song(sid)["frames"]
+	var bad := 0
+	var starts := 0
+	for f in range(SidPlayer.HARD_RESTART, frames.size()):
+		for v in 3:
+			if (frames[f][v * 7 + 4] & 1) and not (frames[f - 1][v * 7 + 4] & 1):
+				starts += 1
+				if frames[f - 1][v * 7 + 5] != 0 or frames[f - 1][v * 7 + 6] != 0:
+					bad += 1
+	check(starts > 100, "notes start (%d)" % starts)
+	check_eq(bad, 0, "the frame before every gate-on releases at the fastest rate")
+
+
+func test_voice_2_does_not_stutter_between_drums() -> void:
+	for entry in [["happy", "platformer", "42"], ["boss_fight", "metal", "boss"]]:
+		var sid := SidArranger.arrange(_song(entry[0], entry[1], entry[2]))
+		var frames: Array = SidWriter.record_song(sid)["frames"]
+		var runs := 0
+		var blips := 0
+		var run := 0
+		var low_noise_run := 0
+		var low_noise_held := 0
+		for regs: PackedInt32Array in frames:
+			if regs[11] & SidChip.GATE:
+				run += 1
+			elif run > 0:
+				runs += 1
+				if run <= 2:
+					blips += 1
+				run = 0
+			var freq := regs[7] | (regs[8] << 8)
+			if (regs[11] & SidChip.NOISE) and freq < SidPlayer.THUMP_BELOW:
+				low_noise_run += 1
+				if low_noise_run > 1:
+					low_noise_held += 1
+			else:
+				low_noise_run = 0
+		check(runs > 50, "%s: voice 2 plays (%d notes)" % [entry[0], runs])
+		check(blips * 100 <= runs * 3, "%s: few blips of one or two frames on voice 2 (%d of %d)" % [entry[0], blips, runs])
+		check_eq(low_noise_held, 0, "%s: low drum noise lasts one frame, then thumps as a pulse" % entry[0])
