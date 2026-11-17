@@ -879,7 +879,11 @@ func _update_fit() -> void:
 		return
 	var report: Array[String] = TargetReport.lines(AppState.target, true, song, AppState.get_arranged_song(), {}, AppState.pc_card)
 	var text := "[b]%s:[/b] " % _target_name()
-	text += "\n".join(report.slice(0, mini(report.size(), 2)))
+	var shown: Array[String] = []
+	for line in report:
+		if line.strip_edges() != "" and shown.size() < 2:
+			shown.append(line.strip_edges())
+	text += "\n".join(shown)
 	var crowded := _crowded_parts(song)
 	if not crowded.is_empty():
 		text += "\n[color=#f0a050]More notes at once than the channel plays:[/color] %s. The last ones cut off." % ", ".join(crowded)
