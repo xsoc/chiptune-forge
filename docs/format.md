@@ -164,6 +164,46 @@ kit export's `genesis/` folder holds one 8-bit mono WAV at 14 kHz per sound
 (XGM's sample format) and `resources.res` with a `WAV name "file.wav" XGM`
 line for each; `README.txt` shows `XGM_setPCM` and `XGM_startPlayPCM`.
 
+## SNES export
+
+SNES exports are Impulse Tracker modules for SNESMod, the sound driver in
+[PVSnesLib](https://github.com/alekmaul/pvsneslib), whose `smconv` tool turns
+them into a soundbank. The module follows SNESMod's rules: instrument mode
+with one sample per instrument (every note maps to it), at most 64 patterns
+and 199 orders, 16-bit signed samples whose loops are whole 16-sample BRR
+blocks, and only the effects SNESMod plays. Notes are Impulse Tracker note
+numbers, which are MIDI notes (C-5, note 60, is middle C); each sample's
+C5 speed plays its intended pitch at note 60. Rows use:
+
+| Column | Use |
+|---|---|
+| Note | A note with its instrument and volume (0 to 64); `===` (note off) where a note ends before the next. |
+| `Axx` | Not used: the header's initial speed and tempo set the timing. |
+| `Bxx` | On the last row, channel 8: jump to the loop's first order. |
+| `Hxy` | The lead's vibrato, from a beat into long notes. |
+| `Jxy` | Arpeggios: the note, then x and y semitones above, one per tick. |
+
+Instruments carry a volume envelope (ticks, levels 0 to 64) with a sustain
+node, held until the note off. The song message holds SNESMod's echo
+commands after a `[[SNESMOD]]` line (`edl`, `efb`, `evol`, `efir`, `eon`).
+SNESMod ticks `8000 / floor(20480 / tempo)` times a second, about 2% slower
+than Impulse Tracker's `tempo * 2 / 5`, so tempos are picked for SNESMod.
+
+The arrangement: voice 1 plays the lead, 2 the harmony, 3 the arpeggio, 4
+the bass, 5 and 6 the pad's two highest notes and 7 all the drums as
+samples. Voice 8 is left free: SNESMod plays sound effects there. Samples
+are made by `scripts/targets/snes/snes_samples.gd` (single-cycle waves,
+detuned pads and drums); their BRR encodings are in `assets/snes/samples/`,
+written by `tools/snes_samples.gd` with a port of smconv's encoder, so the
+preview plays the bytes smconv will produce.
+
+A song export's `snes/` folder holds `res/<name>.it`, a `Makefile` and a
+`main.c` that build a ROM playing it with PVSnesLib 4.7 or later. A sound kit
+export's `snes/` folder holds one BRR file per sound (16 kHz, SNESMod's sound
+effect pitch 4) and `data.asm`, which puts them in the ROM between labels;
+`README.txt` shows `spcAllocateSoundRegion`, `spcSetSoundEntry` and
+`spcPlaySound`.
+
 ## Game Boy export
 
 Game Boy exports are not a Chiptune Forge format: they are C source for

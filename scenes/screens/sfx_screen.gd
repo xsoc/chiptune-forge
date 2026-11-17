@@ -116,6 +116,8 @@ func _on_sfx_changed(sfx: ChipSfx) -> void:
 		where = "The Master System plays it on Square 3 or the noise channel."
 	elif AppState.target == "genesis":
 		where = "The Mega Drive plays it as an 8-bit sample on FM 6, over the music."
+	elif AppState.target == "snes":
+		where = "The SNES plays it as a 16 kHz sample on voice 8, over the music."
 	%Note.text = "%s · %s. %s" % [SfxGenerator.c_id(sfx.get_sound_name()), kind, where]
 	%Waveform.set_samples(sfx.render(22050), 22050)
 	var params := ChipSfxSynth.with_defaults(sfx.data.get("params", {}))

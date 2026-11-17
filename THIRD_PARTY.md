@@ -22,6 +22,9 @@ MIT-compatible: no GPL or LGPL code, in the app or in the plugin.
 | YM2612 behaviour (Yamaha OPN2 documentation, MAME and Nuked-OPN2 write-ups) | `scripts/targets/genesis/ym2612.gd` | Public technique | Reimplemented from the documented behaviour (phase increments, detune table, envelope rates, algorithms); no emulator code is bundled. |
 | SGDK (Stephane Dallongeville) | Target of the Mega Drive exports (`scripts/targets/genesis/md_vgm_writer.gd`, `md_sfx.gd`) | MIT | https://github.com/Stephane-D/SGDK. Not bundled: users install it, and CI runs its Docker image to build the example ROM. |
 | libvgm (Valley Bell) and stable-retro (Genesis Plus GX) | CI only, to play the Mega Drive exports | Various | Downloaded by CI to check the exports; never bundled or linked. |
+| PVSnesLib and SNESMod (Alekmaul, mukunda and contributors) | Target of the SNES exports; modelled in `scripts/targets/snes/snes_player.gd`; `snes_brr.gd` ports smconv's BRR encoder | MIT | https://github.com/alekmaul/pvsneslib. `snes_brr.gd` is a GDScript port of smconv's `brr.cpp`, and `snes_song.gd` carries SNESMod's frequency table (`LUT_FTAB` in `sm_spc_wla.asm`). Not bundled otherwise: users install PVSnesLib, and CI builds the example ROM with it. |
+| S-DSP behaviour (fullsnes and SNES development wiki write-ups) | `scripts/targets/snes/snes_dsp.gd` | Public technique | Reimplemented from the documented behaviour (BRR decoding, pitch, GAIN modes, echo); no emulator code is bundled. |
+| libopenmpt and stable-retro (Snes9x) | CI only, to play the SNES exports | Various | Installed by CI to check the exports; never bundled or linked. |
 | PolyBLEP oscillator method | `addons/chipforge/runtime/chip_voice.gd` | Public technique | No code copied. |
 
 Game Boy ROMs are built with GBDK-2020 and RGBDS, which users install
@@ -42,6 +45,11 @@ licence terms from PSGlib.
 Mega Drive exports are VGM files and 8-bit WAVs. SGDK, which users install
 themselves, converts them and plays them with its XGM driver; SGDK is MIT
 licensed, so a game built with it carries only SGDK's MIT notice.
+
+SNES exports are Impulse Tracker modules (and BRR samples for sound effects)
+with a small PVSnesLib project. PVSnesLib, which users install themselves,
+converts them with smconv and plays them with SNESMod; PVSnesLib is MIT
+licensed, so a game built with it carries only its MIT notice.
 
 The icons in `assets/ui/` and `addons/chipforge/icons/` were drawn for this
 project and are MIT licensed with the rest of the code.

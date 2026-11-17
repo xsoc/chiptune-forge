@@ -7,11 +7,35 @@ script = ExtResource("1")
 id = "snes"
 display_name = "SNES"
 chip_name = "SPC700 + S-DSP"
-description = "8 sample voices, 64 KB audio RAM, hardware echo. Exports Impulse Tracker for PVSnesLib."
+description = "8 sample voices, 64 KB audio RAM, hardware echo. Exports Impulse Tracker modules for PVSnesLib's SNESMod, and sound effects as BRR samples."
 phase = 4
-available = false
+available = true
 stereo = true
 echo = true
 max_voices = 8
-voices = Array[Dictionary]([])
-export_formats = PackedStringArray("it")
+voices = Array[Dictionary]([{
+"name": "Voice 1",
+"waves": ["sample"]
+},{
+"name": "Voice 2",
+"waves": ["sample"]
+},{
+"name": "Voice 3",
+"waves": ["sample"]
+},{
+"name": "Voice 4",
+"waves": ["sample"]
+},{
+"name": "Voice 5",
+"waves": ["sample"]
+},{
+"name": "Voice 6",
+"waves": ["sample"]
+},{
+"name": "Voice 7",
+"waves": ["sample"]
+},{
+"name": "Voice 8",
+"waves": ["sample"]
+}])
+export_formats = PackedStringArray("it", "brr", "wav")
