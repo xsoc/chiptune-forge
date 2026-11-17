@@ -467,6 +467,90 @@ static func for_pce_sfx(sounds: Dictionary, kit_name: String, options: Dictionar
 	return job
 
 
+## Export for a song arranged for the MSX and ZX Spectrum 128: data for our
+## Z80 player with example programs for both machines, a VGM file, plus
+## optional WAV (rendered through the emulated AY-3-8910) and MIDI of the
+## arranged parts. Options: prefix, wav, loops, midi, console.
+static func for_ay_song(ay: AySong, options: Dictionary) -> ExportJob:
+	var job := ExportJob.new()
+	var song := ay.source
+	var prefix := sanitize(str(options.get("prefix", ay.title)))
+	if bool(options.get("console", true)):
+		job._tasks.append(func() -> bool:
+			for machine in AyWriter.MACHINES:
+				job.files["msx/song_%s.bin" % machine] = AyWriter.song_bytes(ay, AyWriter.MACHINES[machine])
+			job.files["msx/song.vgm"] = AyWriter.vgm_bytes(ay)
+			job.files["msx/ay_player.asm"] = AyWriter.player_asm().to_utf8_buffer()
+			job.files["msx/msx_main.asm"] = AyWriter.msx_main(ay.title).to_utf8_buffer()
+			job.files["msx/zx_main.asm"] = AyWriter.zx_main(ay.title).to_utf8_buffer()
+			job.files["msx/Makefile"] = AyWriter.makefile(prefix).to_utf8_buffer()
+			job.files["msx/README.txt"] = AyWriter.song_readme(prefix, ay).to_utf8_buffer()
+			return true)
+	if bool(options.get("midi", false)):
+		job._tasks.append(func() -> bool:
+			job.files["midi/%s.mid" % prefix] = MidiWriter.encode(song)
+			return true)
+	if bool(options.get("wav", true)):
+		job._r_nes = ay
+		job._queue_render(song, "audio/%s.wav" % prefix, int(options.get("loops", 1)), [])
+	job._tasks.append(func() -> bool:
+		var meta: Dictionary = song.data.get("meta", {})
+		job.files["README.txt"] = "\n".join([
+			"%s, arranged for the MSX and ZX Spectrum 128 (AY-3-8910)" % ay.title,
+			"Made with Chiptune Forge. Seed %s, %s, %d BPM on the machine." % [meta.get("seed", ""), meta.get("key", ""), int(ay.get_bpm())],
+			"",
+			str(meta.get("license", "")),
+			"",
+			"msx/      The song for Chiptune Forge's Z80 player (MIT), with programs that build\n          an MSX cartridge and a Spectrum tape, and a VGM file. See msx/README.txt." if bool(options.get("console", true)) else "",
+			"audio/    WAV, 44.1 kHz, 16-bit, rendered through an emulated AY-3-8910." if bool(options.get("wav", true)) else "",
+			"midi/     The arranged parts, one track each." if bool(options.get("midi", false)) else "",
+			"",
+			"Arrangement:",
+			"\n".join(Array(ay.report).map(func(line: String) -> String: return "  " + line)),
+		]).to_utf8_buffer()
+		return true)
+	return job
+
+
+## Export for sound effects on the MSX and ZX Spectrum 128: the sounds as
+## data for our Z80 player, and WAVs of how each sounds.
+static func for_ay_sfx(sounds: Dictionary, kit_name: String, options: Dictionary) -> ExportJob:
+	var job := ExportJob.new()
+	var prefix := sanitize(kit_name)
+	var converted: Array = []
+	var ids := sounds.keys()
+	ids.sort()
+	for id in ids:
+		converted.append(AySfx.from_sfx(sounds[id], sanitize(str(id))))
+	if bool(options.get("console", true)):
+		job._tasks.append(func() -> bool:
+			for machine in AyWriter.MACHINES:
+				job.files["msx/sfx_%s.bin" % machine] = AyWriter.sfx_bytes(converted, AyWriter.MACHINES[machine])
+			job.files["msx/ay_player.asm"] = AyWriter.player_asm().to_utf8_buffer()
+			job.files["msx/README.txt"] = AyWriter.sfx_readme(prefix, converted).to_utf8_buffer()
+			return true)
+	if bool(options.get("wav", true)):
+		for ay_sfx in converted:
+			job._tasks.append(func() -> bool:
+				job.files["audio/%s.wav" % ay_sfx.name] = ChipAudio.encode_wav_mono(ay_sfx.render(MIX_RATE), MIX_RATE)
+				return true)
+	job._tasks.append(func() -> bool:
+		var lines: Array[String] = [
+			"Sound kit for the MSX and ZX Spectrum 128 (AY-3-8910): %s" % prefix,
+			"Made with Chiptune Forge. You own these sounds and may use them for any purpose, including commercially.",
+			"",
+			"msx/    The sounds for Chiptune Forge's Z80 player (MIT).\n        See msx/README.txt to play them over your music." if bool(options.get("console", true)) else "",
+			"audio/  One WAV per sound, 44.1 kHz, as the AY-3-8910 plays it.",
+			"",
+			"Sounds:",
+		]
+		for i in converted.size():
+			lines.append("  %d  %s" % [i, (converted[i] as AySfx).name])
+		job.files["README.txt"] = "\n".join(lines).to_utf8_buffer()
+		return true)
+	return job
+
+
 ## Export for sound effects on the Game Boy: a GBDK-2020 project with the
 ## sounds as cf_sfx data, plus WAVs of how each one sounds on the console.
 static func for_gameboy_sfx(sounds: Dictionary, kit_name: String, options: Dictionary) -> ExportJob:
@@ -598,6 +682,8 @@ func _start_render(song: ChipSong, path: String, loops: int, muted: Array) -> vo
 		_r_seq = SnesSequencer.new(_r_nes, MIX_RATE)
 	elif _r_nes is PceSong:
 		_r_seq = PceSequencer.new(_r_nes, MIX_RATE)
+	elif _r_nes is AySong:
+		_r_seq = AySequencer.new(_r_nes, MIX_RATE)
 	elif _r_nes is MdSong:
 		_r_seq = MdSequencer.new(_r_nes, MIX_RATE)
 	elif _r_nes is SmsSong:

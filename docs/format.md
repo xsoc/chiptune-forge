@@ -222,6 +222,33 @@ that plays the song and a `Makefile`. A sound kit export's `pce/` folder
 holds `sfx.bin` and the player; sounds play on channel 5, which the music
 gets back when a sound ends.
 
+## MSX and ZX Spectrum 128 export
+
+MSX and Spectrum exports are data for Chiptune Forge's own player,
+`ay_player.asm`, which is MIT-licensed Z80 assembly (Pasmo syntax) for the
+AY-3-8910 on both machines. A song plays on the chip's three channels: A the
+lead, B the accompaniment, C the bass, and the drums borrow B's noise for as
+long as each hit sounds. The data is the chip's registers 0 to 10 frame by
+frame at 50 Hz: each frame writes the registers that changed, and repeated
+stretches play earlier ones again through a call command. The format is
+described at the top of `ay_player.asm`. `song_msx.bin` and `song_zx.bin`
+differ only in tone periods (the chips' clocks differ by about 1%). On a
+60 Hz MSX, `ay_interrupt` skips every sixth interrupt.
+
+The app's preview (`AyPlayer`) sets the registers that the data holds; the
+tests decode the data as the player does and check every frame, and CI runs
+the assembled player in a small Z80 emulator (`tools/ay_check.py`) and
+compares the registers it writes on every frame.
+
+A song export's `msx/` folder holds both songs, `song.vgm`, the player,
+`msx_main.asm` (an MSX cartridge), `zx_main.asm` (a Spectrum 128 tape) and a
+`Makefile`. A sound kit export's `msx/` folder holds `sfx_msx.bin`,
+`sfx_zx.bin` and the player; sounds play on channel B, which the music gets
+back when a sound ends.
+
+The planned Arkos Tracker 2 export was replaced by this player: its `.aks`
+format is not documented, and the data here can be checked end to end.
+
 ## Game Boy export
 
 Game Boy exports are not a Chiptune Forge format: they are C source for
