@@ -37,23 +37,23 @@ const TARGETS: PackedStringArray = ["modern", "gameboy", "nes", "sms", "genesis"
 static func arrange(target: String, song: ChipSong, gameboy_options := {}) -> Variant:
 	match target:
 		"gameboy":
-			return GbArranger.arrange(song, gameboy_options)
+			return GbArranger.arrange(SynthEngines.chip_song(song), gameboy_options)
 		"nes":
-			return NesArranger.arrange(song)
+			return NesArranger.arrange(SynthEngines.chip_song(song))
 		"sms":
-			return SmsArranger.arrange(song)
+			return SmsArranger.arrange(SynthEngines.chip_song(song))
 		"genesis":
-			return MdArranger.arrange(song)
+			return MdArranger.arrange(SynthEngines.chip_song(song))
 		"snes":
-			return SnesArranger.arrange(song)
+			return SnesArranger.arrange(SynthEngines.chip_song(song))
 		"pce":
-			return PceArranger.arrange(song)
+			return PceArranger.arrange(SynthEngines.chip_song(song))
 		"msx":
-			return AyArranger.arrange(song)
+			return AyArranger.arrange(SynthEngines.chip_song(song))
 		"c64":
-			return SidArranger.arrange(song)
+			return SidArranger.arrange(SynthEngines.chip_song(song))
 		"gba":
-			return GbaArranger.arrange(song)
+			return GbaArranger.arrange(SynthEngines.chip_song(song))
 	return null
 
 

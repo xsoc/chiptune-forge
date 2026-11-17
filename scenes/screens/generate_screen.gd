@@ -37,6 +37,13 @@ func _ready() -> void:
 	%SeedField.seed_submitted.connect(_on_seed_submitted)
 	%SeedField.dice_pressed.connect(_on_generate_new)
 	%Generate.pressed.connect(_on_generate_new)
+	%Synth.item_selected.connect(func(index: int) -> void:
+		AppState.set_engine(str(%Synth.get_item_metadata(index)))
+		_update_synth())
+	%SynthAB.toggled.connect(func(on: bool) -> void:
+		AppState.ab_classic = on
+		_update_synth())
+	AppState.target_changed.connect(func(_t: String) -> void: _update_synth())
 	%Regenerate.pressed.connect(func() -> void: AppState.regenerate_unlocked())
 	%Save.pressed.connect(_on_save)
 	%SongView.seek_requested.connect(func(step: float) -> void: seek_requested.emit(step))
@@ -68,6 +75,10 @@ func _fill_options() -> void:
 	for form in SongSettings.FORMS:
 		%Form.add_item(form_names.get(form, form))
 		%Form.set_item_metadata(%Form.item_count - 1, form)
+	%Synth.clear()
+	for choice in SynthEngines.CHOICES:
+		%Synth.add_item(SynthEngines.NAMES[choice])
+		%Synth.set_item_metadata(%Synth.item_count - 1, choice)
 	%Energy.clear()
 	var curve_names := {"flat": "Energy: flat", "build": "Energy: build", "wave": "Energy: wave", "peak_drop": "Energy: peak and drop"}
 	for curve in SongSettings.ENERGY_CURVES:
@@ -107,6 +118,8 @@ func _load_settings() -> void:
 	%Intro.button_pressed = s.intro
 	%Loop.button_pressed = s.loop
 	%Outro.button_pressed = s.outro
+	%Synth.selected = maxi(SynthEngines.CHOICES.find(s.engine), 0)
+	_update_synth()
 	%CustomLength.set_value_no_signal(s.length_seconds)
 	_sync_length_chips(s.length_seconds)
 	%SeedField.set_seed_text(s.seed_text)
@@ -203,6 +216,29 @@ func _on_song_changed(song: ChipSong) -> void:
 	if %AutoKeyTempo.button_pressed:
 		%Tempo.set_value_silently(song.get_bpm())
 	_update_hint()
+	_update_synth()
+
+
+## The note under the Synth menu, and whether A/B makes sense.
+func _update_synth() -> void:
+	var console := AppState.is_console_target()
+	%SynthBox.visible = not console
+	var choice := AppState.settings.engine
+	var engine := AppState.get_style_engine() if choice == "auto" else choice
+	var text: String = SynthEngines.DESCRIPTIONS.get(engine, "")
+	if choice == "auto":
+		text = "%s: %s" % [SynthEngines.NAMES.get(engine, engine), text]
+	var layered := not AppState.settings.layer_engines.is_empty()
+	if layered:
+		text += " Some layers have their own synth (Layers screen)."
+	var same := engine == "chip" and not layered
+	%SynthAB.disabled = same
+	if same and %SynthAB.button_pressed:
+		%SynthAB.set_pressed_no_signal(false)
+		AppState.ab_classic = false
+	if %SynthAB.button_pressed:
+		text = "Playing the classic chip synth for comparison. Press A/B again to go back."
+	%SynthNote.text = text
 
 
 ## Shows a gentle note when the vibe and style pull in different directions.

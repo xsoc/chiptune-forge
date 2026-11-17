@@ -217,6 +217,42 @@ tooltip_text = "Plays after the loop when the song does not loop"
 button_pressed = true
 text = "Outro"
 
+[node name="SynthBox" type="VBoxContainer" parent="Scroll/Margin/Stack/Columns/ControlsCard/Controls"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="SynthLabel" type="Label" parent="Scroll/Margin/Stack/Columns/ControlsCard/Controls/SynthBox"]
+layout_mode = 2
+theme_type_variation = &"SectionLabel"
+text = "SYNTH"
+
+[node name="SynthRow" type="HBoxContainer" parent="Scroll/Margin/Stack/Columns/ControlsCard/Controls/SynthBox"]
+layout_mode = 2
+
+[node name="Synth" type="OptionButton" parent="Scroll/Margin/Stack/Columns/ControlsCard/Controls/SynthBox/SynthRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+size_flags_horizontal = 3
+tooltip_text = "How the instruments are made. Console targets always use their own chip."
+clip_text = true
+fit_to_longest_item = false
+
+[node name="SynthAB" type="Button" parent="Scroll/Margin/Stack/Columns/ControlsCard/Controls/SynthBox/SynthRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+tooltip_text = "Hold the comparison: hear the song on the classic chip synth"
+toggle_mode = true
+text = "A/B: chip"
+
+[node name="SynthNote" type="Label" parent="Scroll/Margin/Stack/Columns/ControlsCard/Controls/SynthBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"MutedLabel"
+autowrap_mode = 3
+
 [node name="SongCard" type="PanelContainer" parent="Scroll/Margin/Stack/Columns"]
 layout_mode = 2
 theme_type_variation = &"Card"

@@ -62,6 +62,9 @@ static func generate(settings: SongSettings, catalog: Catalog = null, previous: 
 	PartWriter.write(ctx)
 	DrumWriter.write(ctx)
 	SoundDesigner.design(ctx)
+	var style: Style = ctx.catalog.get_style(settings.style)
+	var engine := SynthEngines.resolve(settings.engine, style)
+	ctx.instruments = SynthEngines.apply(ctx.instruments, engine, settings.layer_engines, style)
 	return assemble(ctx, previous, locked)
 
 

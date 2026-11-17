@@ -126,6 +126,27 @@ func test_batch_manifest() -> void:
 	check(DirAccess.dir_exists_absolute(dir.path_join("pce")), "the exported project")
 
 
+func test_engines() -> void:
+	var out := _out_dir("engines")
+	var cli := _run(["generate", "--vibe", "happy", "--style", "platformer", "--seed", "4", "--engine", "fm",
+		"--layer-engine", "drums:sampled", "--format", "json,project", "--name", "song", "--out", out])
+	check_eq(_code(cli), 0, "generate with engines")
+	var song := ChipSong.load_file(out.path_join("godot/song.chipsong"))
+	var engines := SynthEngines.song_engines(song)
+	check_eq(engines["Lead"], "fm", "lead is FM")
+	check_eq(engines["Drums"], "sampled", "drums sampled")
+	# The project keeps the engines, so exporting again gives the same song.
+	var again := _run(["export", out.path_join("song.cforge"), "--format", "json", "--name", "again", "--out", out])
+	check_eq(_code(again), 0, "export again")
+	var again_song := ChipSong.load_file(out.path_join("godot/again.chipsong"))
+	check_eq(SynthEngines.song_engines(again_song), engines, "same engines")
+	check_eq(JSON.stringify(again_song.data["instruments"][0]), JSON.stringify(song.data["instruments"][0]), "same lead")
+	check_eq(_code(_run(["generate", "--engine", "theremin"])), CliRunner.BAD_ARGS, "unknown engine")
+	check_eq(_code(_run(["generate", "--layer-engine", "kazoo:fm"])), CliRunner.BAD_ARGS, "unknown layer")
+	var listed := _run(["list", "engines", "--json"])
+	check_eq(_report(listed).get("items", []).size(), SynthEngines.CHOICES.size(), "list engines")
+
+
 func test_errors_and_exit_codes() -> void:
 	check_eq(_code(_run(["generate", "--vibe", "nope"])), CliRunner.BAD_ARGS, "unknown vibe")
 	check_eq(_code(_run(["generate", "--vibe", "a", "--vibe", "b", "--vibe", "c", "--vibe", "d"])), CliRunner.BAD_ARGS, "four vibes")

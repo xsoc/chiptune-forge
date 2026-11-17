@@ -29,6 +29,11 @@ var intro := true
 var outro := true
 var loop := true
 var seed_text := "1"
+## Synth engine from [constant SynthEngines.CHOICES]: "chip" (the classic
+## sound), "auto" (the style's engine), or an engine by name.
+var engine := "chip"
+## Engines for single layers, {layer: choice}, over [member engine].
+var layer_engines: Dictionary = {}
 ## Bumped per layer by "Regenerate unlocked parts", so only those layers change.
 var variations: Dictionary = {}
 
@@ -42,7 +47,7 @@ func get_variation(layer: String) -> int:
 
 
 func to_dict() -> Dictionary:
-	return {
+	var dict := {
 		"vibes": vibes.duplicate(),
 		"vibe_strengths": vibe_strengths.duplicate(),
 		"style": style,
@@ -61,6 +66,12 @@ func to_dict() -> Dictionary:
 		"seed": seed_text,
 		"variations": variations.duplicate(),
 	}
+	# Left out when unset, so songs from before the engines are unchanged.
+	if engine != "chip":
+		dict["engine"] = engine
+	if not layer_engines.is_empty():
+		dict["layer_engines"] = layer_engines.duplicate()
+	return dict
 
 
 static func from_dict(dict: Dictionary) -> SongSettings:
@@ -88,6 +99,8 @@ static func from_dict(dict: Dictionary) -> SongSettings:
 	s.loop = bool(dict.get("loop", s.loop))
 	s.seed_text = str(dict.get("seed", s.seed_text))
 	s.variations = dict.get("variations", {}).duplicate()
+	s.engine = str(dict.get("engine", "chip"))
+	s.layer_engines = dict.get("layer_engines", {}).duplicate()
 	return s
 
 
