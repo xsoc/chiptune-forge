@@ -366,9 +366,62 @@ jobs:
           name: snes-examples
           path: snes_examples/
 
+  pce:
+    name: PC Engine example built with HuCC
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: pce-devel/huc
+          path: huc
+      - name: Install Godot and stable-retro, and build HuCC
+        run: |
+          set -e
+          mkdir -p "$RUNNER_TEMP/tools"
+          cd "$RUNNER_TEMP/tools"
+          curl -sSLo godot.zip "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+          unzip -q godot.zip && mv "Godot_v${GODOT_VERSION}-stable_linux.x86_64" godot
+          echo "$RUNNER_TEMP/tools" >> $GITHUB_PATH
+          git -C "$GITHUB_WORKSPACE/huc" log -1 --format='HuCC at %H (%cs)'
+          make -C "$GITHUB_WORKSPACE/huc" > /dev/null
+          echo "$GITHUB_WORKSPACE/huc/bin" >> $GITHUB_PATH
+          echo "PCE_INCLUDE=$GITHUB_WORKSPACE/huc/include/hucc" >> $GITHUB_ENV
+          echo "PCE_PCEAS=$GITHUB_WORKSPACE/huc/bin/pceas" >> $GITHUB_ENV
+          pip install -q stable-retro
+      - name: Export the example projects
+        run: |
+          godot --headless --path . --import < /dev/null
+          godot --headless --path . -s tools/pce_examples.gd -- "$PWD/pce_examples" < /dev/null
+      - name: Build the example ROMs with HuCC
+        run: |
+          set -e
+          for dir in pce_examples/project pce_examples/sfx; do
+            make -C "$dir"
+            ls -l "$dir"/*.pce
+          done
+      - name: Play the ROMs in an emulator
+        run: |
+          set -e
+          cd pce_examples
+          # Our C player running the song data must sound like the preview.
+          python3 ../tools/md_rom_audio.py project/*.pce rom.wav 16
+          python3 ../tools/md_sound_check.py song_happy_platformer_preview.wav rom.wav --align
+          # With sound effects playing over it every two seconds, the music
+          # must still play.
+          python3 ../tools/md_rom_audio.py sfx/*.pce rom_sfx.wav 12
+          python3 ../tools/md_sound_check.py song_happy_platformer_preview.wav rom_sfx.wav --align --min-corr 0.5
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pce-examples
+          path: |
+            pce_examples/
+            !pce_examples/**/*.s
+
   export:
     name: Export ${{ matrix.preset }}
-    needs: [test, gameboy, nes, sms, genesis, snes]
+    needs: [test, gameboy, nes, sms, genesis, snes, pce]
     runs-on: ubuntu-latest
     container:
       image: barichello/godot-ci:4.5.1

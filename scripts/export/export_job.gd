@@ -387,6 +387,86 @@ static func for_snes_sfx(sounds: Dictionary, kit_name: String, options: Dictiona
 	return job
 
 
+## Export for a song arranged for the PC Engine: data for our C player
+## with a HuCC project that plays it, plus optional WAV (rendered through
+## the emulated PSG) and MIDI of the arranged parts.
+## Options: prefix, wav, loops, midi, console.
+static func for_pce_song(pce: PceSong, options: Dictionary) -> ExportJob:
+	var job := ExportJob.new()
+	var song := pce.source
+	var prefix := sanitize(str(options.get("prefix", pce.title)))
+	if bool(options.get("console", true)):
+		job._tasks.append(func() -> bool:
+			job.files["pce/song.bin"] = PceWriter.song_bytes(pce)
+			job.files["pce/pce_player.c"] = PceWriter.player_c().to_utf8_buffer()
+			job.files["pce/main.c"] = PceWriter.main_c(pce.title).to_utf8_buffer()
+			job.files["pce/Makefile"] = PceWriter.makefile(prefix).to_utf8_buffer()
+			job.files["pce/README.txt"] = PceWriter.song_readme(prefix, pce).to_utf8_buffer()
+			return true)
+	if bool(options.get("midi", false)):
+		job._tasks.append(func() -> bool:
+			job.files["midi/%s.mid" % prefix] = MidiWriter.encode(song)
+			return true)
+	if bool(options.get("wav", true)):
+		job._r_nes = pce
+		job._queue_render(song, "audio/%s.wav" % prefix, int(options.get("loops", 1)), [])
+	job._tasks.append(func() -> bool:
+		var meta: Dictionary = song.data.get("meta", {})
+		job.files["README.txt"] = "\n".join([
+			"%s, arranged for the PC Engine / TurboGrafx-16" % pce.title,
+			"Made with Chiptune Forge. Seed %s, %s, %d BPM on the console." % [meta.get("seed", ""), meta.get("key", ""), int(pce.get_bpm())],
+			"",
+			str(meta.get("license", "")),
+			"",
+			"pce/      song.bin and Chiptune Forge's C player (MIT) for HuCC, with a Makefile\n          and main.c that build a ROM playing it. See pce/README.txt." if bool(options.get("console", true)) else "",
+			"audio/    WAV, 44.1 kHz, 16-bit, rendered through an emulated PC Engine PSG." if bool(options.get("wav", true)) else "",
+			"midi/     The arranged parts, one track each." if bool(options.get("midi", false)) else "",
+			"",
+			"Arrangement:",
+			"\n".join(Array(pce.report).map(func(line: String) -> String: return "  " + line)),
+		]).to_utf8_buffer()
+		return true)
+	return job
+
+
+## Export for sound effects on the PC Engine: the sounds as data for our C
+## player, and WAVs of how each sounds.
+static func for_pce_sfx(sounds: Dictionary, kit_name: String, options: Dictionary) -> ExportJob:
+	var job := ExportJob.new()
+	var prefix := sanitize(kit_name)
+	var converted: Array = []
+	var ids := sounds.keys()
+	ids.sort()
+	for id in ids:
+		converted.append(PceSfx.from_sfx(sounds[id], sanitize(str(id))))
+	if bool(options.get("console", true)):
+		job._tasks.append(func() -> bool:
+			job.files["pce/sfx.bin"] = PceWriter.sfx_bytes(converted)
+			job.files["pce/pce_player.c"] = PceWriter.player_c().to_utf8_buffer()
+			job.files["pce/README.txt"] = PceWriter.sfx_readme(prefix, converted).to_utf8_buffer()
+			return true)
+	if bool(options.get("wav", true)):
+		for pce_sfx in converted:
+			job._tasks.append(func() -> bool:
+				job.files["audio/%s.wav" % pce_sfx.name] = ChipAudio.encode_wav_mono(pce_sfx.render(MIX_RATE), MIX_RATE)
+				return true)
+	job._tasks.append(func() -> bool:
+		var lines: Array[String] = [
+			"Sound kit for the PC Engine / TurboGrafx-16: %s" % prefix,
+			"Made with Chiptune Forge. You own these sounds and may use them for any purpose, including commercially.",
+			"",
+			"pce/    sfx.bin and Chiptune Forge's C player (MIT) for HuCC.\n        See pce/README.txt to play them over your music." if bool(options.get("console", true)) else "",
+			"audio/  One WAV per sound, 44.1 kHz, as the PC Engine plays it.",
+			"",
+			"Sounds:",
+		]
+		for i in converted.size():
+			lines.append("  %d  %s" % [i, (converted[i] as PceSfx).name])
+		job.files["README.txt"] = "\n".join(lines).to_utf8_buffer()
+		return true)
+	return job
+
+
 ## Export for sound effects on the Game Boy: a GBDK-2020 project with the
 ## sounds as cf_sfx data, plus WAVs of how each one sounds on the console.
 static func for_gameboy_sfx(sounds: Dictionary, kit_name: String, options: Dictionary) -> ExportJob:
@@ -516,6 +596,8 @@ func _start_render(song: ChipSong, path: String, loops: int, muted: Array) -> vo
 		_r_seq = GbSequencer.new(_r_gb, MIX_RATE)
 	elif _r_nes is SnesSong:
 		_r_seq = SnesSequencer.new(_r_nes, MIX_RATE)
+	elif _r_nes is PceSong:
+		_r_seq = PceSequencer.new(_r_nes, MIX_RATE)
 	elif _r_nes is MdSong:
 		_r_seq = MdSequencer.new(_r_nes, MIX_RATE)
 	elif _r_nes is SmsSong:

@@ -35,7 +35,7 @@ var sfx_recent: Array = []
 var kit := ChipSfxKit.new()
 
 ## Export target id from the catalog: "modern", "gameboy", "nes", "sms",
-## "genesis" or "snes".
+## "genesis", "snes" or "pce".
 var target := "modern"
 ## Game Boy arranger options: sfx_channel (-1 none, 1 Pulse 2, 3 noise) and
 ## sfx_free (keep that channel free of music).
@@ -50,6 +50,8 @@ var _md_song: MdSong
 var _md_key := []
 var _snes_song: SnesSong
 var _snes_key := []
+var _pce_song: PceSong
+var _pce_key := []
 
 ## Saved entries: {kind, name, favourite, created, settings | sfx}.
 var library: Array = []
@@ -135,10 +137,22 @@ func get_snes_song() -> SnesSong:
 	return _snes_song
 
 
+## The current song arranged for the PC Engine, cached until the song
+## changes. Null when there is no song.
+func get_pce_song() -> PceSong:
+	if song == null:
+		return null
+	var key := [song.get_instance_id(), song.to_json().hash()]
+	if _pce_song == null or key != _pce_key:
+		_pce_song = PceArranger.arrange(song)
+		_pce_key = key
+	return _pce_song
+
+
 ## True when previews play through an emulated console instead of the
 ## modern synth.
 func is_console_target() -> bool:
-	return target in ["gameboy", "nes", "sms", "genesis", "snes"]
+	return target in ["gameboy", "nes", "sms", "genesis", "snes", "pce"]
 
 
 func can_make_music() -> bool:

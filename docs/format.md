@@ -204,6 +204,24 @@ effect pitch 4) and `data.asm`, which puts them in the ROM between labels;
 `README.txt` shows `spcAllocateSoundRegion`, `spcSetSoundEntry` and
 `spcPlaySound`.
 
+## PC Engine export
+
+PC Engine exports are data for Chiptune Forge's own player,
+`pce_player.c`, which is MIT-licensed C for
+[HuCC](https://github.com/pce-devel/huc). A song plays on all six PSG
+channels: lead, harmony, arpeggio, bass, the pad's top note and drums (noise
+for snares, hats and cymbals; a falling sine for kicks and toms). The data
+format, a header, waveforms, instruments with volume, arpeggio and pitch
+envelopes, and one command stream per channel, is described at the top of
+`pce_player.c`. The app's preview (`PcePlayer`) writes the PSG's registers
+exactly as the player does, which the tests check frame by frame against a
+GDScript copy of the player (`PceDriver`).
+
+A song export's `pce/` folder holds `song.bin`, `pce_player.c`, a `main.c`
+that plays the song and a `Makefile`. A sound kit export's `pce/` folder
+holds `sfx.bin` and the player; sounds play on channel 5, which the music
+gets back when a sound ends.
+
 ## Game Boy export
 
 Game Boy exports are not a Chiptune Forge format: they are C source for

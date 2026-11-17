@@ -6,11 +6,11 @@
 Uses stable-retro (pip install stable-retro), which bundles the Genesis
 Plus GX, FCEUmm and Snes9x cores, to run the ROM headless for the given time
 (default 15 s) and writes the sound as a 16-bit stereo WAV. A ROM whose
-name ends in .nes runs on the NES core, .sfc on the SNES; anything else on
-the Mega Drive.
+name ends in .nes runs on the NES core, .sfc on the SNES, .pce on the PC
+Engine; anything else on the Mega Drive.
 CI uses it to hear the example ROMs: SGDK's XGM driver playing our music,
-FamiStudio's sound engine playing our NES data, and SNESMod playing our
-SNES modules.
+FamiStudio's sound engine playing our NES data, SNESMod playing our
+SNES modules, and our own C player on the PC Engine.
 """
 import os
 import shutil
@@ -29,7 +29,7 @@ def main():
     # The core is picked by the file extension.
     tmp = tempfile.mkdtemp()
     ext = os.path.splitext(sys.argv[1].lower())[1]
-    rom = os.path.join(tmp, {".nes": "rom.nes", ".sfc": "rom.sfc", ".smc": "rom.sfc"}.get(ext, "rom.md"))
+    rom = os.path.join(tmp, {".nes": "rom.nes", ".sfc": "rom.sfc", ".smc": "rom.sfc", ".pce": "rom.pce"}.get(ext, "rom.md"))
     shutil.copy(sys.argv[1], rom)
     emu = retro.RetroEmulator(rom)
     rate = int(round(emu.get_audio_rate()))
