@@ -7,6 +7,10 @@ extends RefCounted
 ## and 16-bit at 22 kHz on the 16. They export as Creative Voice files
 ## (.voc), which DOS sound libraries load directly, or WAV on the 16.
 ##
+## The Gravis Ultrasound plays them as 16-bit samples on its spare voices.
+## The MIDI modules play music only: DOS games played their sounds on a
+## Sound Blaster beside them, so those cards get the Pro's 22 kHz samples.
+##
 ## The PC speaker plays effects the way it plays music: a divisor per 1/140
 ## s, with noisy sounds as random pitches. The Tandy plays them on its
 ## SN76496 as the Master System does, on Square 3 or the noise channel.
@@ -86,7 +90,7 @@ static func from_sfx(sfx: ChipSfx, card: String, sound_name := "") -> PcSfx:
 			out.patch = {"name": "Square", "fb": 5, "cnt": 0, "mod": OplPatches.op(2, 28, 15, 0, 0, 15), "car": OplPatches.op(1, 0, 15, 0, 0, 15)}
 		return out
 	out.rate = 11025 if card == "sb" else 22050
-	out.bits = 16 if card == "sb16" else 8
+	out.bits = 16 if card in ["sb16", "gus"] else 8
 	var raw := sfx.render(out.rate)
 	var steps := 32767.0 if out.bits == 16 else 127.0
 	out.samples.resize(raw.size())
@@ -101,7 +105,7 @@ func is_fm() -> bool:
 
 ## True when the sound is a sample for a Sound Blaster's DAC.
 func is_sample() -> bool:
-	return card in ["sb", "sbpro", "sb16"]
+	return card in ["sb", "sbpro", "sb16", "mt32", "gm", "gus"]
 
 
 func seconds() -> float:

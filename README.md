@@ -21,8 +21,10 @@ runs on phones, desktops and the web, and it exports straight into Godot.
   samples for Maxmod), the MSX and ZX Spectrum 128 (AY-3-8910, with our Z80
   player), the Commodore 64 (SID, as PSID files with our 6502 player) and
   the DOS PC (the PC speaker, as C data with our DOS player; the Tandy
-  1000's SN76496 as VGM; and the AdLib and Sound Blasters' OPL2, dual OPL2
-  and OPL3 FM chips, as IMF, DRO and VGM files, with VOC sound effects).
+  1000's SN76496 as VGM; the AdLib and Sound Blasters' OPL2, dual OPL2
+  and OPL3 FM chips, as IMF, DRO and VGM files, with VOC sound effects; and
+  the Roland MT-32 and Sound Canvas as MIDI files with their SysEx setup;
+  and the Gravis Ultrasound as Impulse Tracker modules of generated samples).
   Each one arranges the song for the chip, previews it through an emulated
   chip and exports source, data and an example project that builds.
 - **Community packs.** Add vibes, styles and sound presets that other
@@ -169,9 +171,13 @@ example ROM with SGDK, and compares the app's preview with libvgm's YM2612
 playing the VGM and with the ROM running in Genesis Plus GX. The SNES and
 PC Engine followed, then the Game Boy Advance, the MSX and ZX Spectrum, and
 the Commodore 64, with the note editor and community packs. Phase 6 is the
-headless command line and its Docker image. The last phase gives the modern
+headless command line and its Docker image. Phase 7 gives the modern
 synth several new engines (analog, FM, wavetable and sampled) and adds the
-PC's sound cards as targets.
+DOS PC as a target with all its sound cards, from the PC speaker to the
+Gravis Ultrasound. CI plays each card's files in independent players
+(AdPlug's DOSBox OPL core, libvgm, FluidSynth and libopenmpt) and compares
+them with the previews, and builds the PC speaker player with Open Watcom.
+All seven phases are done.
 [docs/release.md](docs/release.md) covers releasing to the app stores, and
 [docs/privacy.md](docs/privacy.md) is the privacy policy: the app collects
 no data.

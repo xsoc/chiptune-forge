@@ -341,6 +341,23 @@ static func _pc(music: bool, arranged: Variant, sounds: Dictionary, card: String
 		for line in sp.report:
 			lines.append("•  " + line)
 		return lines
+	if music and arranged is GusSong:
+		var gus: GusSong = arranged
+		var size := ItWriter.module_bytes(gus, false).size()
+		lines.append("[color=#52d1c0]Fits[/color] on the Gravis Ultrasound: a %.0f KB Impulse Tracker module." % (size / 1024.0))
+		for line in gus.report:
+			lines.append("•  " + line)
+		return lines
+	if music and arranged is ModuleSong:
+		var mod: ModuleSong = arranged
+		var limit := 32 if mod.card == "mt32" else 24
+		if mod.peak > limit:
+			lines.append("[color=%s]Too many notes at once:[/color] %d where the %s plays %d; some will be cut off." % [WARN, mod.peak, PcCards.name_of(mod.card), limit])
+		else:
+			lines.append("[color=#52d1c0]Fits[/color] on the %s: a %.1f KB MIDI file." % [PcCards.name_of(mod.card), mod.midi_bytes().size() / 1024.0])
+		for line in mod.report:
+			lines.append("•  " + line)
+		return lines
 	if music and arranged is SmsSong:
 		var sms: SmsSong = arranged
 		lines.append("[color=#52d1c0]Fits[/color] after arranging for the SN76496's 3 squares and noise.")
@@ -362,7 +379,11 @@ static func _pc(music: bool, arranged: Variant, sounds: Dictionary, card: String
 		for line in opl.report:
 			lines.append("•  " + line)
 		return lines
-	if card == "speaker":
+	if PcCards.is_module(card):
+		lines.append("[color=#52d1c0]Fits.[/color] The %s plays music only, so each sound is a 22 kHz sample for a Sound Blaster beside it, as DOS games did." % PcCards.name_of(card))
+	elif card == "gus":
+		lines.append("[color=#52d1c0]Fits.[/color] Each sound is a 16-bit sample for a voice the music leaves free.")
+	elif card == "speaker":
 		lines.append("[color=#52d1c0]Fits.[/color] Each sound takes over the speaker while it plays; the music carries on underneath.")
 	elif card == "tandy":
 		lines.append("[color=#52d1c0]Fits.[/color] Each sound plays on Square 3 or the noise channel, over the music.")

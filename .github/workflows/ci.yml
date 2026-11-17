@@ -536,7 +536,7 @@ jobs:
           path: c64_examples/
 
   pc:
-    name: DOS PC music played with AdPlug and libvgm, player built with Open Watcom
+    name: DOS PC music played with AdPlug, libvgm, FluidSynth and libopenmpt, player built with Open Watcom
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -547,7 +547,8 @@ jobs:
       - name: Install Godot, AdPlug, FFmpeg, libvgm's vgm2wav and Open Watcom
         run: |
           set -e
-          sudo apt-get install -y -q adplay ffmpeg > /dev/null
+          sudo apt-get update -qq
+          sudo apt-get install -y -q adplay ffmpeg fluidsynth fluid-soundfont-gm openmpt123 > /dev/null
           mkdir -p "$RUNNER_TEMP/tools"
           cd "$RUNNER_TEMP/tools"
           curl -sSLo godot.zip "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
@@ -583,6 +584,23 @@ jobs:
           cd pc_examples
           vgm2wav --loops 1 tandy.vgm libvgm_tandy.wav > /dev/null
           python3 ../tools/md_sound_check.py tandy_preview.wav libvgm_tandy.wav --min-corr 0.85
+      - name: Play the Gravis Ultrasound module with libopenmpt
+        run: |
+          set -e
+          cd pc_examples
+          openmpt123 --render --force --no-float --samplerate 44100 gus.it > /dev/null
+          python3 ../tools/md_sound_check.py gus_preview.wav gus.it.wav --min-corr 0.85
+      - name: Play the MIDI module files with FluidSynth
+        run: |
+          set -e
+          cd pc_examples
+          # The previews only approximate the modules, so this checks the
+          # files play and follow the song's shape, not how they sound. The
+          # MT-32 file plays on General MIDI sounds here.
+          for card in gm mt32; do
+            fluidsynth -ni -F "$PWD/$card.wav" -r 44100 /usr/share/sounds/sf2/FluidR3_GM.sf2 "$card.mid" > /dev/null
+            python3 ../tools/md_sound_check.py "${card}_preview.wav" "$card.wav" --align --min-corr 0.3
+          done
       - name: Build the PC speaker player and examples with Open Watcom
         run: |
           set -e

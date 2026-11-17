@@ -12,7 +12,22 @@ const DRUM_NOTES := {5: 36, 6: 38, 7: 42, 8: 46, 9: 49, 10: 45, 11: 51}
 
 
 static func encode(song: ChipSong) -> PackedByteArray:
+	return encode_setup(song, {})
+
+
+## Like [method encode], set up for a particular sound module. [param setup]
+## may hold:[br]
+## - parts: {channel index: {midi, program, volume, pan, reverb, chorus}}.
+##   Channels left out are not written.[br]
+## - sysex: whole SysEx messages (F0 to F7), sent at the start a few ticks
+##   apart, as modules need time to take each one.[br]
+## - lead_in: ticks of silence before the music, after the SysEx.[br]
+## - chord_limit: {channel index: most notes of a chord to play}.
+static func encode_setup(song: ChipSong, setup: Dictionary) -> PackedByteArray:
 	var data := song.data
+	var lead_in := int(setup.get("lead_in", 0))
+	var parts: Dictionary = setup.get("parts", {})
+	var chord_limit: Dictionary = setup.get("chord_limit", {})
 	var spb := song.get_steps_per_beat()
 	var ticks_per_step := PPQ / spb
 	var swing := float(data["timing"].get("swing", 0.0))
@@ -44,18 +59,28 @@ static func encode(song: ChipSong) -> PackedByteArray:
 					pitches.clear()
 					for offset in note[5]:
 						pitches.append(int(note[2]) + int(offset))
+					if chord_limit.has(c):
+						pitches = pitches.slice(0, maxi(int(chord_limit[c]), 1))
 				if inst >= 0 and DRUM_NOTES.has(inst):
 					pitches = [DRUM_NOTES[inst]]
 					if inst == 10:
 						pitches = [45 + clampi((int(note[2]) - 43) / 3, 0, 5)]
 				for pitch in pitches:
-					per_channel[c].append([tick, length, clampi(pitch, 0, 127), clampi(velocity, 1, 127)])
+					per_channel[c].append([tick + lead_in, length, clampi(pitch, 0, 127), clampi(velocity, 1, 127)])
 		section_start += int(section["length"])
 
 	var tracks: Array[PackedByteArray] = []
-	tracks.append(_conductor(song, markers, ticks_per_step))
+	tracks.append(_conductor(song, markers, ticks_per_step, lead_in, setup.get("sysex", [])))
+	if not parts.is_empty():
+		for c in channels.size():
+			if per_channel[c].is_empty() or not parts.has(c):
+				continue
+			var part: Dictionary = parts[c]
+			tracks.append(_part_track(str(channels[c].get("name", "Channel")), per_channel[c], part))
 	var midi_channel := 0
 	for c in channels.size():
+		if not parts.is_empty():
+			break
 		if per_channel[c].is_empty():
 			continue
 		var is_drums := str(channels[c].get("layer", "")) == "Drums"
@@ -79,19 +104,46 @@ static func encode(song: ChipSong) -> PackedByteArray:
 	return out
 
 
-static func _conductor(song: ChipSong, markers: Array, ticks_per_step: int) -> PackedByteArray:
+static func _conductor(song: ChipSong, markers: Array, ticks_per_step: int, lead_in := 0, sysex: Array = []) -> PackedByteArray:
 	var events: Array = []
 	events.append([0, _meta(0x03, song.get_title().to_utf8_buffer())])
+	for i in sysex.size():
+		var message: PackedByteArray = sysex[i]
+		var body := message.slice(1)
+		var event := PackedByteArray([0xF0])
+		event.append_array(_vlq(body.size()))
+		event.append_array(body)
+		events.append([i * 8, event])
 	events.append([0, _meta(0x01, str(song.data["meta"].get("license", "")).to_utf8_buffer())])
 	var tempo := int(60000000.0 / song.get_bpm())
 	events.append([0, _meta(0x51, PackedByteArray([(tempo >> 16) & 0xFF, (tempo >> 8) & 0xFF, tempo & 0xFF]))])
 	events.append([0, _meta(0x58, PackedByteArray([song.get_beats_per_bar(), 2, 24, 8]))])
 	for marker in markers:
-		events.append([marker[0], _meta(0x06, str(marker[1]).to_utf8_buffer())])
+		events.append([marker[0] + lead_in, _meta(0x06, str(marker[1]).to_utf8_buffer())])
 	if bool(song.data["timing"].get("loop", true)):
-		events.append([song.get_loop_start_step() * ticks_per_step, _meta(0x06, "loopStart".to_ascii_buffer())])
-		events.append([song.get_loop_end_step() * ticks_per_step, _meta(0x06, "loopEnd".to_ascii_buffer())])
-	return _track_bytes(events, song.get_length_steps() * ticks_per_step)
+		events.append([song.get_loop_start_step() * ticks_per_step + lead_in, _meta(0x06, "loopStart".to_ascii_buffer())])
+		events.append([song.get_loop_end_step() * ticks_per_step + lead_in, _meta(0x06, "loopEnd".to_ascii_buffer())])
+	return _track_bytes(events, song.get_length_steps() * ticks_per_step + lead_in)
+
+
+## A track for one part of a sound module: program, volume, pan and effect
+## sends at the start (after the SysEx), then the notes.
+static func _part_track(track_name: String, notes: Array, part: Dictionary) -> PackedByteArray:
+	var channel := int(part["midi"])
+	var events: Array = []
+	events.append([0, _meta(0x03, track_name.to_utf8_buffer())])
+	var at := int(part.get("setup_tick", 0))
+	if channel != 9 and part.has("program"):
+		events.append([at, PackedByteArray([0xC0 | channel, int(part["program"])])])
+	for cc in [[7, "volume"], [10, "pan"], [91, "reverb"], [93, "chorus"]]:
+		if part.has(cc[1]):
+			events.append([at, PackedByteArray([0xB0 | channel, cc[0], clampi(int(part[cc[1]]), 0, 127)])])
+	var end := 0
+	for note in notes:
+		events.append([note[0], PackedByteArray([0x90 | channel, note[2], note[3]])])
+		events.append([note[0] + note[1], PackedByteArray([0x80 | channel, note[2], 0])])
+		end = maxi(end, note[0] + note[1])
+	return _track_bytes(events, end)
 
 
 static func _note_track(track_name: String, notes: Array, channel: int, program: int, is_drums: bool) -> PackedByteArray:
@@ -126,8 +178,10 @@ static func _track_bytes(events: Array, end_tick: int) -> PackedByteArray:
 
 static func _order(bytes: PackedByteArray) -> int:
 	var status := bytes[0] & 0xF0
-	if bytes[0] == 0xFF:
+	if bytes[0] == 0xFF or bytes[0] == 0xF0:
 		return 0
+	if status == 0xB0:
+		return 1
 	if status == 0xC0:
 		return 1
 	if status == 0x80:

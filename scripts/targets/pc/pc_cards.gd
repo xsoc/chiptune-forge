@@ -6,7 +6,7 @@ extends RefCounted
 ## speaker, [SmsArranger] for the Tandy's SN76496 and [OplArranger] for the
 ## FM cards.
 
-const CARDS: PackedStringArray = ["speaker", "tandy", "adlib", "sb", "sbpro", "sb16"]
+const CARDS: PackedStringArray = ["speaker", "tandy", "adlib", "sb", "sbpro", "sb16", "mt32", "gm", "gus"]
 const DEFAULT := "adlib"
 const INFO := {
 	"speaker": {
@@ -45,6 +45,24 @@ const INFO := {
 		"chip": "opl3",
 		"description": "Yamaha YMF262 (OPL3): 18 FM voices, eight waveforms and stereo panning, and 16-bit samples. Exports DRO, VGM and WAV sound effects.",
 	},
+	"mt32": {
+		"name": "Roland MT-32",
+		"year": 1987,
+		"chip": "la",
+		"description": "LA synthesis: 8 parts and a rhythm part, 32 partials, with reverb. Exports MIDI with the SysEx that sets it up; the preview is an approximation.",
+	},
+	"gm": {
+		"name": "Sound Canvas",
+		"year": 1991,
+		"chip": "gm",
+		"description": "Roland's General MIDI module (SC-55): 16 parts, 24 voices, reverb and chorus. Exports General MIDI with a GS reset; the preview is an approximation.",
+	},
+	"gus": {
+		"name": "Gravis Ultrasound",
+		"year": 1992,
+		"chip": "gf1",
+		"description": "The GF1 chip: 32 voices of 16-bit samples from its own memory, interpolated, with 16 pan positions. Exports an Impulse Tracker module of generated samples.",
+	},
 }
 
 
@@ -68,6 +86,10 @@ static func music_formats(card: String) -> PackedStringArray:
 			return PackedStringArray(["c", "bin"])
 		"sn76496":
 			return PackedStringArray(["vgm"])
+		"la", "gm":
+			return PackedStringArray(["mid"])
+		"gf1":
+			return PackedStringArray(["it"])
 	if chip_of(card) == "opl2":
 		return PackedStringArray(["imf", "dro", "vgm"])
 	return PackedStringArray(["dro", "vgm"])
@@ -78,10 +100,19 @@ static func is_fm(card: String) -> bool:
 	return chip_of(card) in ["opl2", "dual_opl2", "opl3"]
 
 
+## True for the MIDI sound modules, which play music only.
+static func is_module(card: String) -> bool:
+	return chip_of(card) in ["la", "gm"]
+
+
 ## [param song] arranged for [param card]: an [OplSong], an [SmsSong] (the
-## Tandy) or a [SpeakerSong].
-static func arrange(song: ChipSong, card: String) -> NesSong:
+## Tandy), a [SpeakerSong], a [ModuleSong] or a [GusSong].
+static func arrange(song: ChipSong, card: String) -> Variant:
 	match chip_of(card):
+		"la", "gm":
+			return ModuleArranger.arrange(song, card)
+		"gf1":
+			return GusArranger.arrange(song)
 		"speaker":
 			return SpeakerArranger.arrange(song)
 		"sn76496":

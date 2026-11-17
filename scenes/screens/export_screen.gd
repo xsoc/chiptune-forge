@@ -69,6 +69,12 @@ func refresh() -> void:
 				%Console.text = "PC speaker: C data and a small DOS player, with an example program" if music else "PC speaker: C data for the same DOS player"
 			"tandy":
 				%Console.text = "Tandy 1000: VGM files for the SN76496"
+			"mt32":
+				%Console.text = "MT-32: a MIDI file with the SysEx that sets it up" if music else "MT-32: sounds as Creative Voice files for a Sound Blaster beside it"
+			"gus":
+				%Console.text = "Gravis Ultrasound: an Impulse Tracker module with 16-bit samples" if music else "Gravis Ultrasound: 16-bit WAVs"
+			"gm":
+				%Console.text = "Sound Canvas: a General MIDI file with a GS reset" if music else "Sound Canvas: sounds as Creative Voice files for a Sound Blaster beside it"
 			_:
 				var names := Array(PcCards.music_formats(AppState.pc_card)).map(func(f: String) -> String: return f.to_upper())
 				var formats := "%s and %s" % [", ".join(names.slice(0, -1)), names[-1]]
