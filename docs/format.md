@@ -314,9 +314,13 @@ $1009 with the sound's number), which the music gets back when a sound ends.
 ## DOS PC export
 
 The DOS PC target plays and exports for one sound card at a time: the PC
-speaker (1981), the Tandy 1000 (1984), the AdLib (1987) and Sound Blaster (1989), both a Yamaha YM3812 (OPL2), the
-Sound Blaster Pro (two OPL2s, one per speaker) and the Sound Blaster 16
-(a YMF262, the OPL3). The arranger starts from the Mega Drive arrangement
+speaker (1981), the Tandy 1000 (1984), the AdLib (1987) and Sound Blaster
+(1989), both a Yamaha YM3812 (OPL2), the Sound Blaster Pro (two OPL2s, one
+per speaker), the Sound Blaster 16 (a YMF262, the OPL3), and the MIDI
+modules: the Roland MT-32 (1987) and Roland's Sound Canvas (1991), and the
+Gravis Ultrasound (1992).
+
+For the FM cards the arranger starts from the Mega Drive arrangement
 and gives each part a two-operator FM patch: on an OPL2 six melodic
 channels (lead, harmony, arpeggio, bass and two for the pad's chords) and
 the rhythm mode's five drums. The Sound Blaster Pro's second chip doubles
@@ -353,12 +357,38 @@ noise, so the Tandy uses the Master System arrangement and exports VGM
 files (with the SN76496's noise settings in the header), which CI plays
 with libvgm and compares with the preview.
 
+The Roland MT-32 and the Sound Canvas (General MIDI) are MIDI sound
+modules, so their export is a MIDI file set up for the module: each part
+gets the closest program (the MT-32's own presets, or General MIDI's), its
+volume, pan and effect sends, and its own channel (on the MT-32, parts 1 to
+8 on channels 2 to 9 and the rhythm part on 10, as it starts up). SysEx at
+the start sets the module up: on the MT-32 the reverb, each part's partial
+reserve, the MIDI channels and a message on its display, with Roland
+checksums; on the Sound Canvas GM System On and a GS reset. A beat of
+silence follows while the module takes it. Pad chords are cut when the
+song would need more than the module plays at once (32 partials on the
+MT-32, about two a note; 24 voices on the Sound Canvas). Neither module is
+emulated: the preview plays the song on the app's own sampled and analog
+engines, picked to match each program, with a little room echo. CI plays
+both files with FluidSynth to check they follow the song.
+
+The Gravis Ultrasound's GF1 chip plays up to 32 voices of 16-bit samples
+from its own memory, interpolated, with 16 pan positions. Its arranger is
+the SNES one (lead, harmony, arpeggio, bass, two pad voices and drums on
+the app's generated sampled instruments) at Impulse Tracker's tick rate
+with no echo, and the export is an Impulse Tracker module with 16-bit
+samples, which Impulse Tracker and the DOS sound systems games used play on
+a GUS directly. The preview (`GusMixer`) plays the samples as the GF1 does;
+CI renders the module with libopenmpt and compares it with the preview.
+
 Sound effects on the Sound Blasters are samples for the card's DAC:
 Creative Voice files (`.voc`, 8-bit) at 11 kHz on the Sound Blaster and
 22 kHz on the Pro, and 16-bit 22 kHz WAVs on the 16. The AdLib has no DAC,
 so its effects are FM on channel 2 (the harmony's, which the music gets
 back when a sound ends), exported as DRO and IMF files of the register
-writes.
+writes. The MIDI modules play music only; DOS games played their sounds on
+a Sound Blaster beside them, so those cards export 22 kHz VOC files. The
+GUS's sounds are 16-bit WAVs for voices the music leaves free.
 
 ## Game Boy export
 

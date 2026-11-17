@@ -23,8 +23,24 @@ func _initialize() -> void:
 	var song := SongGenerator.generate(s)
 	for card in PcCards.CARDS:
 		var started := Time.get_ticks_msec()
+		if PcCards.is_module(card):
+			var mod: ModuleSong = PcCards.arrange(song, card)
+			_write(out.path_join(card + ".mid"), mod.midi_bytes())
+			var preview := ChipSongSequencer.new(mod.preview, 44100)
+			preview.seek_step(0)
+			_write(out.path_join(card + "_preview.wav"), ChipAudio.encode_wav_stereo(preview.render(44100 * 12), 44100))
+			print("%s: written in %d ms" % [card, Time.get_ticks_msec() - started])
+			continue
+		if card == "gus":
+			var gus: GusSong = PcCards.arrange(song, card)
+			_write(out.path_join("gus.it"), ItWriter.module_bytes(gus, false))
+			var gus_seq := GusSequencer.new(gus, 44100)
+			gus_seq.seek_step(0)
+			_write(out.path_join("gus_preview.wav"), ChipAudio.encode_wav_stereo(gus_seq.render(44100 * 12), 44100))
+			print("gus: written in %d ms" % (Time.get_ticks_msec() - started))
+			continue
 		if not PcCards.is_fm(card):
-			var arranged := PcCards.arrange(song, card)
+			var arranged: NesSong = PcCards.arrange(song, card)
 			var job := ExportJob.for_target_song("pc", song, {"prefix": "tune", "wav": false, "card": card}, arranged)
 			job.run()
 			for path: String in job.files:

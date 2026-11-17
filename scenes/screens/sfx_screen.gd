@@ -132,6 +132,10 @@ func _on_sfx_changed(sfx: ChipSfx) -> void:
 				where = "The PC speaker plays it in place of the music while it lasts."
 			"tandy":
 				where = "The Tandy 1000 plays it on Square 3 or the noise channel, over the music."
+			"gus":
+				where = "The Gravis Ultrasound plays it as a 16-bit sample on a voice the music leaves free."
+			"mt32", "gm":
+				where = "The %s plays music only, so this plays as a sample on a Sound Blaster beside it." % PcCards.name_of(AppState.pc_card)
 			"adlib":
 				where = "The AdLib plays it as FM on channel 2, in place of the harmony."
 			_:

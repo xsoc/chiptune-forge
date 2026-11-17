@@ -230,3 +230,105 @@ func test_tandy() -> void:
 	var sfx := PcSfx.from_sfx(SfxGenerator.make_sfx(Catalog.get_default().get_sfx_preset("explosion"), 3), "tandy")
 	check(sfx.noisy, "an explosion on the noise channel")
 	check(_peak(sfx.render(22050)) > 0.05, "and it sounds")
+
+
+func _midi_has(bytes: PackedByteArray, needle: PackedByteArray) -> bool:
+	for i in bytes.size() - needle.size():
+		if bytes.slice(i, i + needle.size()) == needle:
+			return true
+	return false
+
+
+func test_roland_checksums() -> void:
+	check_eq(ModuleArranger.roland_checksum([0x10, 0x00, 0x01, 0x00]), 0x6F, "the MT-32 manual's reverb example")
+	check(ModuleArranger.roland_sysex(0x42, [0x40, 0x00, 0x7F], [0x00]) == PackedByteArray([0xF0, 0x41, 0x10, 0x42, 0x12, 0x40, 0x00, 0x7F, 0x00, 0x41, 0xF7]), "the GS reset")
+
+
+func test_mt32() -> void:
+	var song := _song()
+	var mod: ModuleSong = PcCards.arrange(song, "mt32")
+	check(mod is ModuleSong, "the MT-32 gets a module arrangement")
+	var drums := 0
+	for c in mod.parts:
+		var part: Dictionary = mod.parts[c]
+		if int(part["midi"]) == 9:
+			drums += 1
+		else:
+			check(int(part["midi"]) >= 1 and int(part["midi"]) <= 8, "parts on channels 2 to 9")
+			check(ModuleArranger.MT32_NAMES.has(int(part["program"])), "a named MT-32 preset")
+	check(drums >= 1, "drums on channel 10")
+	check(mod.peak <= 32, "within the 32 partials (%d)" % mod.peak)
+	check_eq(mod.sysex.size(), 4, "display, reverb, partial reserve and channels")
+	var reserve: PackedByteArray = mod.sysex[2]
+	var total := 0
+	for i in range(8, 17):
+		total += reserve[i]
+	check_eq(total, 32, "the partial reserve adds up to 32")
+	for message: PackedByteArray in mod.sysex:
+		var body: Array = Array(message.slice(5, message.size() - 2))
+		check_eq(message[message.size() - 2], ModuleArranger.roland_checksum(body), "checksums")
+	var midi := mod.midi_bytes()
+	check_eq(midi.slice(0, 4).get_string_from_ascii(), "MThd", "a MIDI file")
+	check(_midi_has(midi, PackedByteArray([0xF0, 0x0C, 0x41, 0x10, 0x16, 0x12, 0x10, 0x00, 0x01, 0x00, 0x05, 0x04, 0x66, 0xF7])), "with the reverb SysEx as an F0 event")
+	check(not "\n".join(mod.report).is_empty(), "a report")
+	var seq := ChipSongSequencer.new(mod.preview, 22050)
+	var buf := seq.render(22050 * 2)
+	var peak := 0.0
+	for v in buf:
+		peak = maxf(peak, absf(v.x))
+	check(peak > 0.05, "the preview plays (%.2f)" % peak)
+	var job := ExportJob.for_target_song("pc", song, {"prefix": "tune", "wav": false, "card": "mt32"}, mod)
+	job.run()
+	check(job.files.has("pc/tune.mid") and job.files.has("pc/README.txt"), "the export has the MIDI file")
+
+
+func test_sound_canvas() -> void:
+	var song := _song()
+	var mod: ModuleSong = PcCards.arrange(song, "gm")
+	check(mod.peak <= 24, "within 24 voices (%d)" % mod.peak)
+	var midi := mod.midi_bytes()
+	check(_midi_has(midi, PackedByteArray([0xF0, 0x05, 0x7E, 0x7F, 0x09, 0x01, 0xF7])), "GM System On")
+	for c in mod.parts:
+		var part: Dictionary = mod.parts[c]
+		if int(part["midi"]) != 9:
+			check(_midi_has(midi, PackedByteArray([0xC0 | int(part["midi"]), int(part["program"])])), "program change for channel %d" % (int(part["midi"]) + 1))
+	var plain := MidiWriter.encode(song)
+	check(plain == MidiWriter.encode_setup(song, {}), "plain MIDI export is unchanged")
+	var sfx := PcSfx.from_sfx(SfxGenerator.make_sfx(Catalog.get_default().get_sfx_preset("coin"), 3), "gm")
+	check(sfx.is_sample() and sfx.rate == 22050, "sounds go to a Sound Blaster beside the module")
+
+
+func test_pad_chords_trim_to_fit() -> void:
+	var song := _song()
+	var parts := {}
+	for c in song.data["channels"].size():
+		parts[c] = {"midi": 9 if str(song.data["channels"][c].get("layer", "")) == "Drums" else c}
+	var full := ModuleArranger.peak_of(song, parts, {}, 4)
+	var pad := -1
+	for c in song.data["channels"].size():
+		if str(song.data["channels"][c].get("name", "")) == "Pad":
+			pad = c
+	if pad >= 0:
+		check(ModuleArranger.peak_of(song, parts, {pad: 1}, 4) <= full, "cutting chords lowers the peak")
+
+
+func test_gravis_ultrasound() -> void:
+	var song := _song()
+	var gus: GusSong = PcCards.arrange(song, "gus")
+	check(gus is GusSong, "the GUS gets its own arrangement")
+	check(gus.standard_ticks, "at Impulse Tracker's tick rate")
+	check_eq(int(gus.echo["evol"]), 0, "no echo")
+	check(not "\n".join(gus.report).contains("SNES"), "the report talks about the GUS (%s)" % "\n".join(gus.report))
+	var it := ItWriter.module_bytes(gus, false)
+	check_eq(it.slice(0, 4).get_string_from_ascii(), "IMPM", "an Impulse Tracker module")
+	var seq := GusSequencer.new(gus, 22050, song.data["channels"].size())
+	var buf := seq.render(22050 * 3)
+	var peak := 0.0
+	for v in buf:
+		peak = maxf(peak, absf(v.x))
+	check(peak > 0.05 and peak <= 1.0, "the GUS preview plays (%.2f)" % peak)
+	var job := ExportJob.for_target_song("pc", song, {"prefix": "tune", "wav": false, "card": "gus"}, gus)
+	job.run()
+	check(job.files.has("pc/tune.it"), "the export has the module")
+	var sfx := PcSfx.from_sfx(SfxGenerator.make_sfx(Catalog.get_default().get_sfx_preset("coin"), 3), "gus")
+	check_eq(sfx.bits, 16, "16-bit sounds")

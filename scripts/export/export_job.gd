@@ -851,7 +851,11 @@ static func for_sid_sfx(sounds: Dictionary, kit_name: String, options: Dictionar
 ## only), DRO and VGM files, plus optional WAV (rendered through the
 ## emulated chip) and MIDI of the arranged parts.
 ## Options: prefix, wav, loops, midi, console.
-static func for_pc_song(arranged: NesSong, options: Dictionary) -> ExportJob:
+static func for_pc_song(arranged: Variant, options: Dictionary) -> ExportJob:
+	if arranged is ModuleSong:
+		return _for_module_song(arranged, options)
+	if arranged is GusSong:
+		return _for_gus_song(arranged, options)
 	if arranged is SpeakerSong:
 		return _for_speaker_song(arranged, options)
 	if arranged is SmsSong:
@@ -941,15 +945,69 @@ static func _for_tandy_song(sms: SmsSong, options: Dictionary) -> ExportJob:
 	return job
 
 
-## WAV, MIDI and the top README for the speaker and Tandy exports.
-static func _pc_common(job: ExportJob, arranged: NesSong, song: ChipSong, prefix: String, options: Dictionary, pc_line: String, sound: String) -> void:
+## The Gravis Ultrasound: the song as an Impulse Tracker module with 16-bit
+## samples.
+static func _for_gus_song(gus: GusSong, options: Dictionary) -> ExportJob:
+	var job := ExportJob.new()
+	var prefix := sanitize(str(options.get("prefix", gus.title)))
+	if bool(options.get("console", true)):
+		job._tasks.append(func() -> bool:
+			job.files["pc/%s.it" % prefix] = ItWriter.module_bytes(gus, false)
+			job.files["pc/README.txt"] = "\n".join([
+				"%s: music for the Gravis Ultrasound" % prefix,
+				"",
+				"%s.it  An Impulse Tracker module with 16-bit samples. Impulse Tracker plays" % prefix,
+				"        it on a GUS directly, as do the DOS sound systems games used (MIDAS,",
+				"        the Galaxy player, USMP), and OpenMPT and Schism Tracker open it.",
+				"",
+				"Channels 1 to 7 play the music; sound effects can use any voice it leaves free.",
+			]).to_utf8_buffer()
+			return true)
+	_pc_common(job, gus, gus.source, prefix, options, "pc/       The song as an Impulse Tracker module. See pc/README.txt.", "the Gravis Ultrasound")
+	return job
+
+
+## A MIDI sound module: the song as a MIDI file set up for it.
+static func _for_module_song(mod: ModuleSong, options: Dictionary) -> ExportJob:
+	var job := ExportJob.new()
+	var prefix := sanitize(str(options.get("prefix", mod.title)))
+	var name := PcCards.name_of(mod.card)
+	if bool(options.get("console", true)):
+		job._tasks.append(func() -> bool:
+			job.files["pc/%s.mid" % prefix] = mod.midi_bytes()
+			var lines: PackedStringArray = [
+				"%s: music for the %s" % [prefix, name],
+				"",
+				"%s.mid  A type 1 MIDI file set up for the %s. Play it on the module (or" % [prefix, name],
+				"         %s), or with any DOS MIDI driver." % ("Munt, the MT-32 emulator" if mod.card == "mt32" else "a GM synth with a Sound Canvas sound set"),
+				"",
+				"Parts:",
+			]
+			for c in mod.parts:
+				var part: Dictionary = mod.parts[c]
+				if part.has("program_name"):
+					lines.append("  Channel %d: %s, program %d" % [int(part["midi"]) + 1, part["program_name"], int(part["program"]) + 1])
+			lines.append("  Channel 10: drums")
+			lines.append("")
+			lines.append("The file starts with SysEx (%s), then a beat of silence while the module takes it." % ("display, reverb, partial reserve and MIDI channels" if mod.card == "mt32" else "GM System On and GS reset"))
+			job.files["pc/README.txt"] = "\n".join(lines).to_utf8_buffer()
+			return true)
+	_pc_common(job, mod, mod.source, prefix, options, "pc/       The song as a MIDI file set up for the %s. See pc/README.txt." % name, "the " + name)
+	return job
+
+
+## WAV, MIDI and the top README for the speaker, Tandy and module exports.
+static func _pc_common(job: ExportJob, arranged: Variant, song: ChipSong, prefix: String, options: Dictionary, pc_line: String, sound: String) -> void:
 	if bool(options.get("midi", false)):
 		job._tasks.append(func() -> bool:
 			job.files["midi/%s.mid" % prefix] = MidiWriter.encode(song)
 			return true)
 	if bool(options.get("wav", true)):
-		job._r_nes = arranged
-		job._queue_render(song, "audio/%s.wav" % prefix, int(options.get("loops", 1)), [])
+		if arranged is ModuleSong:
+			job._queue_render(arranged.preview, "audio/%s.wav" % prefix, int(options.get("loops", 1)), [])
+		else:
+			job._r_nes = arranged
+			job._queue_render(song, "audio/%s.wav" % prefix, int(options.get("loops", 1)), [])
 	job._tasks.append(func() -> bool:
 		var meta: Dictionary = song.data.get("meta", {})
 		job.files["README.txt"] = "\n".join([
@@ -959,7 +1017,7 @@ static func _pc_common(job: ExportJob, arranged: NesSong, song: ChipSong, prefix
 			str(meta.get("license", "")),
 			"",
 			pc_line if bool(options.get("console", true)) else "",
-			"audio/    WAV, 44.1 kHz, 16-bit, rendered through an emulation of %s." % sound if bool(options.get("wav", true)) else "",
+			("audio/    WAV, 44.1 kHz, 16-bit: an approximation of %s on the app's own synth." % sound if arranged is ModuleSong else "audio/    WAV, 44.1 kHz, 16-bit, rendered through an emulation of %s." % sound) if bool(options.get("wav", true)) else "",
 			"midi/     The arranged parts, one track each." if bool(options.get("midi", false)) else "",
 			"",
 			"Arrangement:",
@@ -1166,6 +1224,8 @@ func _start_render(song: ChipSong, path: String, loops: int, muted: Array) -> vo
 		_r_seq = GbSequencer.new(_r_gb, MIX_RATE)
 	elif _r_nes is OplSong:
 		_r_seq = OplSequencer.new(_r_nes, MIX_RATE)
+	elif _r_nes is GusSong:
+		_r_seq = GusSequencer.new(_r_nes, MIX_RATE)
 	elif _r_nes is GbaSong:
 		_r_seq = GbaSequencer.new(_r_nes, MIX_RATE)
 	elif _r_nes is SnesSong:
