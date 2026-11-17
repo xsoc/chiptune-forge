@@ -1,0 +1,160 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://xsoc.github.io/chiptune-forge/schema/chipsong.v1.schema.json",
+  "title": "Chiptune Forge song (.chipsong), version 1",
+  "description": "See docs/format.md. Readers ignore keys they do not know.",
+  "type": "object",
+  "required": ["format", "version", "timing", "instruments", "channels", "patterns", "sections", "order"],
+  "properties": {
+    "format": {"const": "chipforge-song"},
+    "version": {"const": 1},
+    "meta": {
+      "type": "object",
+      "properties": {
+        "title": {"type": "string"},
+        "seed": {"type": ["string", "integer"]},
+        "settings": {"type": "object"},
+        "key": {"type": "string"},
+        "form": {"type": "string"},
+        "target": {"type": "string"},
+        "engine_version": {"type": "string"},
+        "license": {"type": "string"}
+      }
+    },
+    "timing": {
+      "type": "object",
+      "required": ["bpm", "steps_per_beat"],
+      "properties": {
+        "bpm": {"type": "number", "exclusiveMinimum": 0},
+        "beats_per_bar": {"type": "integer", "minimum": 1},
+        "steps_per_beat": {"type": "integer", "minimum": 1},
+        "swing": {"type": "number", "minimum": 0, "maximum": 1},
+        "loop": {"type": "boolean"},
+        "loop_start": {"type": "integer", "minimum": 0},
+        "loop_end": {"type": "integer", "minimum": 0}
+      }
+    },
+    "effects": {
+      "type": "object",
+      "properties": {
+        "echo": {"type": "number", "minimum": 0},
+        "echo_beats": {"type": "number", "minimum": 0},
+        "echo_feedback": {"type": "number", "minimum": 0}
+      }
+    },
+    "instruments": {"type": "array", "items": {"$ref": "#/$defs/instrument"}},
+    "channels": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["instrument"],
+        "properties": {
+          "name": {"type": "string"},
+          "instrument": {"type": "integer", "minimum": 0},
+          "layer": {"type": "string"},
+          "volume": {"type": "number", "minimum": 0},
+          "pan": {"type": "number", "minimum": -1, "maximum": 1},
+          "polyphony": {"type": "integer", "minimum": 1}
+        }
+      }
+    },
+    "patterns": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["notes"],
+        "properties": {"notes": {"type": "array", "items": {"$ref": "#/$defs/note"}}}
+      }
+    },
+    "sections": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["length", "patterns"],
+        "properties": {
+          "name": {"type": "string"},
+          "length": {"type": "integer", "minimum": 1},
+          "patterns": {"type": "array", "items": {"type": "integer", "minimum": -1}},
+          "energy": {"type": "number"},
+          "chords": {"type": "array", "items": {"type": "array"}}
+        }
+      }
+    },
+    "order": {"type": "array", "items": {"type": "integer", "minimum": 0}},
+    "layers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "channels"],
+        "properties": {
+          "name": {"type": "string"},
+          "channels": {"type": "array", "items": {"type": "integer", "minimum": 0}}
+        }
+      }
+    },
+    "states": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "levels"],
+        "properties": {
+          "name": {"type": "string"},
+          "min_intensity": {"type": "number", "minimum": 0, "maximum": 1},
+          "levels": {
+            "type": "object",
+            "additionalProperties": {
+              "anyOf": [
+                {"enum": ["off", "low", "mid", "full"]},
+                {"type": "number", "minimum": 0, "maximum": 1}
+              ]
+            }
+          }
+        }
+      }
+    },
+    "cues": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "step"],
+        "properties": {
+          "name": {"type": "string"},
+          "step": {"type": "integer", "minimum": 0}
+        }
+      }
+    }
+  },
+  "$defs": {
+    "note": {
+      "description": "[step, length, pitch, velocity, instrument?, arp?]",
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 6,
+      "prefixItems": [
+        {"type": "integer", "minimum": 0},
+        {"type": "integer", "minimum": 1},
+        {"type": "integer", "minimum": 0, "maximum": 127},
+        {"type": "integer", "minimum": 1, "maximum": 127},
+        {"type": "integer", "minimum": -1},
+        {"type": "array", "items": {"type": "integer"}}
+      ]
+    },
+    "instrument": {
+      "type": "object",
+      "required": ["wave"],
+      "properties": {
+        "name": {"type": "string"},
+        "wave": {"enum": ["pulse", "square", "triangle", "saw", "sine", "noise", "wave"]},
+        "engine": {"enum": ["chip", "analog", "fm", "wavetable", "sampled"]},
+        "table": {"type": "array", "items": {"type": "number"}},
+        "duty": {"type": "number", "minimum": 0, "maximum": 1},
+        "attack": {"type": "number", "minimum": 0},
+        "decay": {"type": "number", "minimum": 0},
+        "sustain": {"type": "number", "minimum": 0},
+        "release": {"type": "number", "minimum": 0},
+        "volume": {"type": "number", "minimum": 0},
+        "chip": {"type": "object"}
+      }
+    }
+  }
+}

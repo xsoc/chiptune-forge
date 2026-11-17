@@ -10,7 +10,9 @@ func _ready() -> void:
 	set_process(false)
 	_build_targets()
 	%Export.pressed.connect(_on_export)
-	%Wav.toggled.connect(func(on: bool) -> void: %WavOptions.visible = on and AppState.mode == "music")
+	%Wav.toggled.connect(func(on: bool) -> void:
+		%WavOptions.visible = on and AppState.mode == "music"
+		%RateRow.visible = on)
 	%Godot.toggled.connect(func(on: bool) -> void: %Plugin.disabled = not on)
 	AppState.mode_changed.connect(func(_m: String) -> void: refresh())
 	AppState.song_changed.connect(func(_s: ChipSong) -> void: refresh())
@@ -44,6 +46,7 @@ func refresh() -> void:
 	%Export.theme_type_variation = &"PrimaryButton" if music else &"SfxPrimaryButton"
 	%Midi.visible = music
 	%WavOptions.visible = music and %Wav.button_pressed
+	%RateRow.visible = %Wav.button_pressed
 	%Stems.visible = not console
 	%Console.visible = console
 	%Console.text = "Game Boy: C project for GBDK-2020 and hUGEDriver"
@@ -204,6 +207,7 @@ func _on_export() -> void:
 		"plugin": %Plugin.button_pressed,
 		"wav": %Wav.button_pressed,
 		"loops": %Loops.get_selected_id(),
+		"rate": %Rate.get_selected_id(),
 		"stems": %Stems.button_pressed,
 		"midi": %Midi.button_pressed,
 		"console": %Console.button_pressed,

@@ -1,4 +1,4 @@
-[gd_scene load_steps=12 format=3]
+[gd_scene load_steps=13 format=3]
 
 [ext_resource type="Script" path="res://scenes/main.gd" id="1"]
 [ext_resource type="Texture2D" path="res://icon.svg" id="2"]
@@ -6,10 +6,11 @@
 [ext_resource type="PackedScene" path="res://scenes/screens/layers_screen.tscn" id="4"]
 [ext_resource type="PackedScene" path="res://scenes/screens/export_screen.tscn" id="5"]
 [ext_resource type="PackedScene" path="res://scenes/screens/library_screen.tscn" id="6"]
+[ext_resource type="PackedScene" path="res://scenes/screens/editor_screen.tscn" id="editor_screen"]
 [ext_resource type="PackedScene" path="res://scenes/screens/sfx_screen.tscn" id="7"]
 [ext_resource type="PackedScene" path="res://scenes/screens/kit_screen.tscn" id="8"]
 [ext_resource type="PackedScene" path="res://scenes/components/player_bar.tscn" id="9"]
-[ext_resource type="PackedScene" path="res://scenes/screens/editor_screen.tscn" id="editor_screen"]
+[ext_resource type="PackedScene" path="res://scenes/components/about_dialog.tscn" id="10"]
 
 [sub_resource type="ButtonGroup" id="ButtonGroup_mode"]
 
@@ -100,6 +101,14 @@ unique_name_in_owner = true
 layout_mode = 2
 theme_override_constants/separation = 2
 
+[node name="About" type="Button" parent="Layout/Header/Row"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(44, 44)
+layout_mode = 2
+tooltip_text = "About, licences and accessibility"
+theme_type_variation = &"FlatButton"
+text = "?"
+
 [node name="Screens" type="Control" parent="Layout"]
 unique_name_in_owner = true
 layout_mode = 2
@@ -165,3 +174,8 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_type_variation = &"FlatButton"
 text = "Tap to enable sound"
+
+[node name="AboutDialog" parent="." instance=ExtResource("10")]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1

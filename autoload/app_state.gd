@@ -15,8 +15,11 @@ signal mode_changed(mode: String)
 signal target_changed(target: String)
 ## The preview should restart with another sound (the A/B switch).
 signal preview_changed
+## The reduced-motion preference changed.
+signal prefs_changed
 
 const LIBRARY_PATH := "user://library.json"
+const PREFS_PATH := "user://prefs.cfg"
 const MAX_RECENT := 8
 
 var catalog: Catalog
@@ -81,12 +84,27 @@ var ab_classic := false:
 
 ## Saved entries: {kind, name, favourite, created, settings | sfx}.
 var library: Array = []
+## Accessibility: the playhead and the song view move once a bar instead
+## of smoothly. Saved between runs.
+var reduce_motion := false:
+	set(v):
+		if v == reduce_motion:
+			return
+		reduce_motion = v
+		var prefs := ConfigFile.new()
+		prefs.load(PREFS_PATH)
+		prefs.set_value("accessibility", "reduce_motion", v)
+		prefs.save(PREFS_PATH)
+		prefs_changed.emit()
 
 
 func _ready() -> void:
 	catalog = Catalog.get_default()
 	kit.kit_name = "My kit"
 	_load_library()
+	var prefs := ConfigFile.new()
+	if prefs.load(PREFS_PATH) == OK:
+		reduce_motion = bool(prefs.get_value("accessibility", "reduce_motion", false))
 	settings.seed_text = str(_fresh_seed())
 
 
@@ -443,6 +461,17 @@ func mutate_sfx() -> void:
 	next.data["meta"]["mutated"] = true
 	sfx = next
 	sfx_changed.emit(sfx)
+
+
+## "Surprise me" for music: a vibe and style that suit each other, one
+## vibe at full strength, and a new seed.
+func surprise_song() -> void:
+	var pair := catalog.surprise_pair(Pcg32.new(_fresh_seed(), 7))
+	settings.vibes.assign([pair[0]])
+	settings.vibe_strengths.assign([100.0])
+	settings.style = pair[1]
+	settings_changed.emit()
+	generate_new_song()
 
 
 ## "Surprise me": any preset, any seed.

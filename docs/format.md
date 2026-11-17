@@ -4,6 +4,12 @@ All three formats are UTF-8 JSON. Readers must ignore keys they do not know,
 so later versions can add fields without breaking older plugins. A file
 whose `version` is higher than the reader supports is rejected.
 
+JSON Schemas (draft 2020-12) for each format are published in
+[`docs/schema/`](schema/): `chipsong.v1.schema.json`,
+`chipsfx.v1.schema.json` and `chipkit.v1.schema.json`. A new schema file is
+added whenever the version changes. `tools/check_schema.py` validates files
+against them, and CI runs it on the CLI's output.
+
 The extensions are `.chipsong`, `.chipsfx` and `.chipkit`. (The plan said
 `.chipsong.json`, but Godot importers match only the last extension, so a
 double extension would be imported as plain JSON.)

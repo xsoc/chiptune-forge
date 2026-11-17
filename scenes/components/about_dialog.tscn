@@ -1,0 +1,89 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scenes/components/about_dialog.gd" id="1"]
+
+[node name="AboutDialog" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1")
+
+[node name="Dim" type="ColorRect" parent="."]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.6)
+
+[node name="Center" type="CenterContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Panel" type="PanelContainer" parent="Center"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(560, 640)
+layout_mode = 2
+theme_type_variation = &"Card"
+
+[node name="Box" type="VBoxContainer" parent="Center/Panel"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="TitleRow" type="HBoxContainer" parent="Center/Panel/Box"]
+layout_mode = 2
+
+[node name="Version" type="Label" parent="Center/Panel/Box/TitleRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"TitleLabel"
+text = "Chiptune Forge"
+autowrap_mode = 3
+
+[node name="Close" type="Button" parent="Center/Panel/Box/TitleRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(80, 44)
+layout_mode = 2
+text = "Close"
+
+[node name="Licence" type="Label" parent="Center/Panel/Box"]
+layout_mode = 2
+text = "Free and open source under the MIT licence. Music and sounds you make are yours to use for anything, including commercial games, with no royalties or credit required."
+autowrap_mode = 3
+
+[node name="ReduceMotion" type="CheckButton" parent="Center/Panel/Box"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "Reduce motion (the playhead moves once a bar)"
+autowrap_mode = 3
+
+[node name="NoticesLabel" type="Label" parent="Center/Panel/Box"]
+layout_mode = 2
+theme_type_variation = &"SectionLabel"
+text = "Third-party components and their licences"
+
+[node name="NoticesScroll" type="ScrollContainer" parent="Center/Panel/Box"]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="Notices" type="RichTextLabel" parent="Center/Panel/Box/NoticesScroll"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+bbcode_enabled = true
+fit_content = true
+scroll_active = false
+selection_enabled = true
