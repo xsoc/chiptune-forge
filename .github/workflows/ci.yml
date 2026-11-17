@@ -702,6 +702,98 @@ jobs:
           path: build/
           if-no-files-found: error
 
+  # Google Play wants an Android App Bundle, which needs Godot's Gradle
+  # build. It runs on release tags and by hand, and only with the release
+  # key: Play rejects bundles signed with a debug key.
+  play-bundle:
+    name: Google Play bundle
+    needs: export
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    container:
+      image: barichello/godot-ci:4.5.1
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install export templates
+        run: |
+          mkdir -p ~/.local/share/godot/export_templates
+          ln -s /root/.local/share/godot/export_templates/${GODOT_VERSION}.stable \
+            ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable
+      - name: Stamp build number
+        run: bash tools/stamp_build.sh "${GITHUB_RUN_NUMBER}"
+      - uses: actions/download-artifact@v4
+        with:
+          name: hugedriver-lib
+          path: assets/gameboy/hUGEDriver/lib
+      - name: Stamp release version
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: bash tools/stamp_version.sh "${GITHUB_REF_NAME}"
+      - name: Release key
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_USER: ${{ secrets.ANDROID_KEYSTORE_USER }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+        run: |
+          mkdir -p ~/.config/godot
+          cp /root/.config/godot/editor_settings-4*.tres ~/.config/godot/ 2>/dev/null || true
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "::warning::No ANDROID_KEYSTORE_BASE64 secret, so no Play bundle. See docs/release.md."
+            echo "PLAY_SKIP=1" >> $GITHUB_ENV
+            exit 0
+          fi
+          echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.keystore"
+          echo "GODOT_ANDROID_KEYSTORE_RELEASE_PATH=$RUNNER_TEMP/release.keystore" >> $GITHUB_ENV
+          echo "GODOT_ANDROID_KEYSTORE_RELEASE_USER=$KEYSTORE_USER" >> $GITHUB_ENV
+          echo "GODOT_ANDROID_KEYSTORE_RELEASE_PASSWORD=$KEYSTORE_PASSWORD" >> $GITHUB_ENV
+      - name: Export the bundle
+        if: env.PLAY_SKIP != '1'
+        run: |
+          set -e
+          godot --headless --path . --import
+          godot --headless --path . --install-android-build-template
+          mkdir -p build/play
+          godot --headless --path . --export-release "Android Play" build/play/chiptune-forge.aab
+          test -s build/play/chiptune-forge.aab
+      - uses: actions/upload-artifact@v4
+        if: env.PLAY_SKIP != '1'
+        with:
+          name: chiptune-forge-play-bundle
+          path: build/play/
+          if-no-files-found: error
+
+  # The store listing: text from store/metadata and fresh screenshots at
+  # every size the stores ask for.
+  store-listing:
+    name: Store listing
+    needs: test
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Godot and a virtual display
+        run: |
+          set -e
+          sudo apt-get update -q
+          sudo apt-get install -y -q --no-install-recommends xvfb libgl1 libglx-mesa0 libgl1-mesa-dri
+          cd "$RUNNER_TEMP"
+          curl -sSLo godot.zip "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+          unzip -q godot.zip && mv "Godot_v${GODOT_VERSION}-stable_linux.x86_64" godot
+          echo "$RUNNER_TEMP" >> $GITHUB_PATH
+      - name: Stamp build number
+        run: bash tools/stamp_build.sh "${GITHUB_RUN_NUMBER}"
+      - name: Stamp release version
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: bash tools/stamp_version.sh "${GITHUB_REF_NAME}"
+      - name: Take screenshots
+        run: |
+          godot --headless --path . --import < /dev/null
+          bash tools/store_screenshots.sh godot
+      - uses: actions/upload-artifact@v4
+        with:
+          name: chiptune-forge-store-listing
+          path: store/
+          if-no-files-found: error
+
   pages:
     name: Deploy web build to GitHub Pages
     needs: export

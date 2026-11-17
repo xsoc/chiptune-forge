@@ -1,0 +1,1 @@
+First release: music and sound effects for ten targets, the note editor, adaptive layers, community packs and exports for Godot.
